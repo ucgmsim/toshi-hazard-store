@@ -1,12 +1,17 @@
 """This module defines the pynamodb tables used to store openquake data."""
 
-from nzshm_oq_export.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION
+import logging
+
 from pynamodb.attributes import JSONAttribute, UnicodeAttribute, VersionAttribute  # NumberAttribute
 from pynamodb.models import Model
 
+from nzshm_oq_export.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION
+
+log = logging.getLogger(__name__)
+
 
 class ToshiHazardCurveObject(Model):
-    """This table store a single hazard curve."""
+    """This table stores the individual hazard curves."""
 
     class Meta:
         """Meta."""
@@ -32,6 +37,7 @@ def migrate():
         if not table.exists():
             table.create_table(wait=True)
             print(f"Migrate created table: {table}")
+            log.info(f"Migrate created table: {table}")
 
 
 def drop_tables():
@@ -40,3 +46,10 @@ def drop_tables():
         if table.exists():
             table.delete_table()
             print(f'deleted table: {table}')
+
+
+# def set_local_mode(host="http://localhost:8000"):
+#     """Used for offline testing (depends on a local SLS service)."""
+#     log.info(f"Setting tables for local dynamodb instance in offline mode")
+#     for table in table_classes:
+#         table.Meta.host = host
