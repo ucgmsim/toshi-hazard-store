@@ -49,6 +49,7 @@ jinja2 = {version = "3.0.3"}
 
 [tool.poetry.dependencies]
 python = ">=3.7.2,<4.0"
+pynamodb = "^5.2.1"
 
 
 [tool.poetry.extras]
