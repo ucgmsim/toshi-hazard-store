@@ -2,12 +2,12 @@
 import unittest
 
 from moto import mock_dynamodb
-from nzshm_oq_export import models
+from nzshm_oq_export import model
 
 # from api.datastore.datastore import get_datastore
 # from api.datastore.solvis_db_query import get_rupture_ids
 # #
-# from api.datastore.solvis_db import get_location_radius_rupture_models
+# from api.datastore.solvis_db import get_location_radius_rupture_model
 # from api.tests.test_api_location_list import TestResources
 
 
@@ -15,21 +15,27 @@ from nzshm_oq_export import models
 class PynamoTest(unittest.TestCase):
     def setUp(self):
 
-        # models.set_local_mode()
-        models.ToshiHazardCurveRlzsObject.create_table(wait=True)
+        # model.set_local_mode()
+        # model.ToshiOpenquakeHazardCurveRlzs.create_table(wait=True)
+        model.migrate()
         super(PynamoTest, self).setUp()
 
+    def tearDown(self):
+        model.drop_tables()
+        return super(PynamoTest, self).tearDown()
+
     def test_table_exists(self):
-        self.assertEqual(models.ToshiHazardCurveRlzsObject.exists(), True)
+        self.assertEqual(model.ToshiOpenquakeHazardCurveRlzs.exists(), True)
 
-    def test_save_one_object(self):
+    def test_save_one_realization_object(self):
 
-        lvps = list(map(lambda x: models.LevelValuePairAttribute(level=x / 1e3, value=(x / 1e6)), range(1, 51)))
+        lvps = list(map(lambda x: model.LevelValuePairAttribute(level=x / 1e3, value=(x / 1e6)), range(1, 51)))
         print(lvps)
 
-        obj = models.ToshiHazardCurveRlzsObject(
+        obj = model.ToshiOpenquakeHazardCurveRlzs(
             hazard_solution_id="ABCDE",
-            loc_rlz_imt_rk="WLG:rlz-010:PGA",
+            vs30_imt_loc_rlz_rk="350:PGA:WLG:rlz-010",
+            vs30=350,
             location_code="WLG",
             rlz_id="rlz-010",
             imt_code="PGA",
@@ -46,6 +52,29 @@ class PynamoTest(unittest.TestCase):
         self.assertEqual(obj.lvl_val_pairs[9].level, 0.01)
         self.assertEqual(obj.lvl_val_pairs[9].value, 0.00001)
 
-    def tearDown(self):
-        models.ToshiHazardCurveRlzsObject.delete_table()
-        return super(PynamoTest, self).tearDown()
+    def test_save_one_stats_object(self):
+
+        lvps = list(map(lambda x: model.LevelValuePairAttribute(level=x / 1e3, value=(x / 1e6)), range(1, 51)))
+        print(lvps)
+
+        obj = model.ToshiOpenquakeHazardCurveStats(
+            hazard_solution_id="ABCDE",
+            vs30_imt_loc_agg_rk="350:SA(0.5):WLG:quantile-0.1",
+            vs30=350,
+            location_code="WLG",
+            aggregation="quantile-0.1",
+            imt_code="SA(0.5)",
+            lvl_val_pairs=lvps,
+        )
+
+        print(f'obj: {obj} {obj.version}')
+        self.assertEqual(obj.version, None)
+
+        obj.save()
+        self.assertEqual(obj.version, 1)
+        print(dir(obj))
+
+        self.assertEqual(obj.lvl_val_pairs[0].level, 0.001)
+        self.assertEqual(obj.lvl_val_pairs[0].value, 0.000001)
+        self.assertEqual(obj.lvl_val_pairs[9].level, 0.01)
+        self.assertEqual(obj.lvl_val_pairs[9].value, 0.00001)

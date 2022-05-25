@@ -51,7 +51,7 @@ plugins:
       lang: en
   - mkdocstrings:
       watch:
-        - nzshm-oq-export
+        - nzshm_oq_export
 extra:
   social:
     - icon: fontawesome/brands/twitter
