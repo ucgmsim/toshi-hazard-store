@@ -28,7 +28,12 @@ class PynamoTest(unittest.TestCase):
         print(lvps)
 
         obj = models.ToshiHazardCurveRlzsObject(
-            hazard_solution_id="ABCDE", loc_imt_rk="WLG:PGA", location_code="WLG", imt_code="PGA", lvl_val_pairs=lvps
+            hazard_solution_id="ABCDE",
+            loc_rlz_imt_rk="WLG:rlz-010:PGA",
+            location_code="WLG",
+            rlz_id="rlz-010",
+            imt_code="PGA",
+            lvl_val_pairs=lvps,
         )
 
         print(f'obj: {obj} {obj.version}')

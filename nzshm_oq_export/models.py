@@ -30,9 +30,9 @@ class ToshiHazardCurveRlzsObject(Model):
             host = "http://localhost:8000"
 
     hazard_solution_id = UnicodeAttribute(hash_key=True)  # this
-    loc_imt_rk = UnicodeAttribute(range_key=True)
-
+    loc_rlz_imt_rk = UnicodeAttribute(range_key=True)
     location_code = UnicodeAttribute()
+    rlz_id = UnicodeAttribute()
     imt_code = UnicodeAttribute()
     lvl_val_pairs = ListAttribute(of=LevelValuePairAttribute)
     version = VersionAttribute()
