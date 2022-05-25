@@ -16,34 +16,31 @@ class PynamoTest(unittest.TestCase):
     def setUp(self):
 
         # models.set_local_mode()
-        models.ToshiHazardCurveObject.create_table(wait=True)
+        models.ToshiHazardCurveRlzsObject.create_table(wait=True)
         super(PynamoTest, self).setUp()
 
     def test_table_exists(self):
-        self.assertEqual(models.ToshiHazardCurveObject.exists(), True)
+        self.assertEqual(models.ToshiHazardCurveRlzsObject.exists(), True)
 
-    # def test_get_rupture_ids(self):
+    def test_save_one_object(self):
 
-    #     #with self.app.app_context():
-    #     dataframe = model.SolutionLocationRadiusRuptureSet(
-    #         solution_id = 'test_solution_id',
-    #         location_radius = 'WLG:10000',
-    #         radius =  10000,
-    #         location = 'WLG',
-    #         ruptures = [1,2,3],
-    #         rupture_count = 3
-    #         )
-    #     dataframe.save()
+        lvps = list(map(lambda x: models.LevelValuePairAttribute(level=x / 1e3, value=(x / 1e6)), range(1, 51)))
+        print(lvps)
 
-    #     ids = get_rupture_ids(solution_id='test_solution_id', locations=['WLG'], radius=10000)
+        obj = models.ToshiHazardCurveRlzsObject(
+            hazard_solution_id="ABCDE", loc_imt_rk="WLG:PGA", location_code="WLG", imt_code="PGA", lvl_val_pairs=lvps
+        )
 
-    #     self.assertEqual(len(ids), 3)
-    #     self.assertEqual(ids, set([1,2,3]))
+        print(f'obj: {obj} {obj.version}')
+        obj.save()
+        print(f'obj: {obj} {obj.version}')
+        print(dir(obj))
+
+        self.assertEqual(obj.lvl_val_pairs[0].level, 0.001)
+        self.assertEqual(obj.lvl_val_pairs[0].value, 0.000001)
+        self.assertEqual(obj.lvl_val_pairs[9].level, 0.01)
+        self.assertEqual(obj.lvl_val_pairs[9].value, 0.00001)
 
     def tearDown(self):
-        models.ToshiHazardCurveObject.delete_table()
+        models.ToshiHazardCurveRlzsObject.delete_table()
         return super(PynamoTest, self).tearDown()
-
-
-if __name__ == '__main__':
-    unittest.main()

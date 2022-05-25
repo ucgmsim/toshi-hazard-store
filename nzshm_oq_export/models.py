@@ -2,7 +2,7 @@
 
 import logging
 
-from pynamodb.attributes import JSONAttribute, UnicodeAttribute, VersionAttribute  # NumberAttribute
+from pynamodb.attributes import ListAttribute, MapAttribute, NumberAttribute, UnicodeAttribute, VersionAttribute
 from pynamodb.models import Model
 
 from nzshm_oq_export.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION
@@ -10,25 +10,56 @@ from nzshm_oq_export.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION
 log = logging.getLogger(__name__)
 
 
-class ToshiHazardCurveObject(Model):
-    """This table stores the individual hazard curves."""
+class LevelValuePairAttribute(MapAttribute):
+    """Store the IMT level and the value at the level."""
+
+    level = NumberAttribute(null=False)
+    value = NumberAttribute(null=False)
+
+
+class ToshiHazardCurveRlzsObject(Model):
+    """Stores the individual hazard realisation curves."""
 
     class Meta:
-        """Meta."""
+        """DynamoDB Metadata."""
 
         billing_mode = 'PAY_PER_REQUEST'
-        table_name = f"OpenquakeToshiHazardCurveObject-{DEPLOYMENT_STAGE}"
+        table_name = f"ToshiHazardCurveRlzsObject-{DEPLOYMENT_STAGE}"
         region = REGION
         if IS_OFFLINE:
             host = "http://localhost:8000"
 
-    object_id = UnicodeAttribute(hash_key=True)  # this will be a composite key
-    hazard_solution_id = UnicodeAttribute()
-    object_content = JSONAttribute()  # the json string
+    hazard_solution_id = UnicodeAttribute(hash_key=True)  # this
+    loc_imt_rk = UnicodeAttribute(range_key=True)
+
+    location_code = UnicodeAttribute()
+    imt_code = UnicodeAttribute()
+    lvl_val_pairs = ListAttribute(of=LevelValuePairAttribute)
     version = VersionAttribute()
 
 
-tables = [ToshiHazardCurveObject]
+# class ToshiHazardCurveStatsObject(Model):
+#     """This table stores the individual hazard statistal curves."""
+
+#     class Meta:
+#         """Meta."""
+
+#         billing_mode = 'PAY_PER_REQUEST'
+#         table_name = f"ToshiHazardCurveRlzsObject-{DEPLOYMENT_STAGE}"
+#         region = REGION
+#         if IS_OFFLINE:
+#             host = "http://localhost:8000"
+
+#     hazard_solution_id = UnicodeAttribute(hash_key=True)      #this
+#     loc_imt_rk = UnicodeAttribute(range_key=True)
+
+#     location_code = UnicodeAttribute()
+#     imt_code =  UnicodeAttribute()
+#     lvl_val_pairs = ListAttribute(of=LevelValuePairAttribute)
+#     version = VersionAttribute()
+
+
+tables = [ToshiHazardCurveRlzsObject]
 
 
 def migrate():
