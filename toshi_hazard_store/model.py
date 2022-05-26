@@ -5,7 +5,7 @@ import logging
 from pynamodb.attributes import ListAttribute, MapAttribute, NumberAttribute, UnicodeAttribute, VersionAttribute
 from pynamodb.models import Model
 
-from nzshm_oq_export.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION
+from toshi_hazard_store.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION
 
 log = logging.getLogger(__name__)
 

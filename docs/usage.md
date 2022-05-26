@@ -1,7 +1,7 @@
 # Usage
 
-To use nzshm-oq-export in a project
+To use toshi-hazard-store in a project
 
 ```
-import nzshm_oq_export
+import toshi_hazard_store
 ```

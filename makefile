@@ -1,4 +1,4 @@
-sources = nzshm_oq_export
+sources = toshi_hazard_store
 
 .PHONY: test format lint unittest coverage pre-commit clean
 test: format lint unittest

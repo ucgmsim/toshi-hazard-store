@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Tests for `nzshm_oq_export` package."""
+"""Tests for `toshi_hazard_store` package."""
 
 import pytest
 

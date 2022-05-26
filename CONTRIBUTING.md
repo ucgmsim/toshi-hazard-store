@@ -9,7 +9,7 @@ You can contribute in many ways:
 
 ### Report Bugs
 
-Report bugs at https://github.com/GNS-Science/nzshm-oq-export/issues.
+Report bugs at https://github.com/GNS-Science/toshi-hazard-store/issues.
 
 If you are reporting a bug, please include:
 
@@ -29,13 +29,13 @@ and "help wanted" is open to whoever wants to implement it.
 
 ### Write Documentation
 
-nzshm-oq-export could always use more documentation, whether as part of the
-official nzshm-oq-export docs, in docstrings, or even on the web in blog posts,
+toshi-hazard-store could always use more documentation, whether as part of the
+official toshi-hazard-store docs, in docstrings, or even on the web in blog posts,
 articles, and such.
 
 ### Submit Feedback
 
-The best way to send feedback is to file an issue at https://github.com/GNS-Science/nzshm-oq-export/issues.
+The best way to send feedback is to file an issue at https://github.com/GNS-Science/toshi-hazard-store/issues.
 
 If you are proposing a feature:
 
@@ -46,13 +46,13 @@ If you are proposing a feature:
 
 ## Get Started!
 
-Ready to contribute? Here's how to set up `nzshm-oq-export` for local development.
+Ready to contribute? Here's how to set up `toshi-hazard-store` for local development.
 
-1. Fork the `nzshm-oq-export` repo on GitHub.
+1. Fork the `toshi-hazard-store` repo on GitHub.
 2. Clone your fork locally
 
     ```
-    $ git clone git@github.com:your_name_here/nzshm-oq-export.git
+    $ git clone git@github.com:your_name_here/toshi-hazard-store.git
     ```
 
 3. Ensure [poetry](https://python-poetry.org/docs/) is installed.
@@ -96,13 +96,13 @@ Before you submit a pull request, check that it meets these guidelines:
    your new functionality into a function with a docstring, and add the
    feature to the list in README.md.
 3. The pull request should work for Python 3.6, 3.7, 3.8 and 3.9. Check
-   https://github.com/GNS-Science/nzshm-oq-export/actions
+   https://github.com/GNS-Science/toshi-hazard-store/actions
    and make sure that the tests pass for all supported Python versions.
 
 ## Tips
 
 ```
-$ poetry run pytest tests/test_nzshm_oq_export.py
+$ poetry run pytest tests/test_toshi_hazard_store.py
 ```
 
 To run a subset of tests.

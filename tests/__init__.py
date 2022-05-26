@@ -1,1 +1,1 @@
-"""Unit test package for nzshm-oq-export."""
+"""Unit test package for toshi-hazard-store."""

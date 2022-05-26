@@ -1,7 +1,7 @@
 """Queries for saving and retrieving openquake hazard results with convenience."""
 from typing import Iterable, Iterator
 
-import nzshm_oq_export.model as model
+import toshi_hazard_store.model as model
 
 
 def batch_save_hcurve_stats(toshi_id: str, models: Iterable[model.ToshiOpenquakeHazardCurveStats]) -> None:

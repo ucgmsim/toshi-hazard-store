@@ -2,33 +2,33 @@
 
 ## Stable release
 
-To install nzshm-oq-export, run this command in your
+To install toshi-hazard-store, run this command in your
 terminal:
 
 ``` console
-$ pip install nzshm-oq-export
+$ pip install toshi-hazard-store
 ```
 
-This is the preferred method to install nzshm-oq-export, as it will always install the most recent stable release.
+This is the preferred method to install toshi-hazard-store, as it will always install the most recent stable release.
 
 If you don't have [pip][] installed, this [Python installation guide][]
 can guide you through the process.
 
 ## From source
 
-The source for nzshm-oq-export can be downloaded from
+The source for toshi-hazard-store can be downloaded from
 the [Github repo][].
 
 You can either clone the public repository:
 
 ``` console
-$ git clone git://github.com/GNS-Science/nzshm-oq-export
+$ git clone git://github.com/GNS-Science/toshi-hazard-store
 ```
 
 Or download the [tarball][]:
 
 ``` console
-$ curl -OJL https://github.com/GNS-Science/nzshm-oq-export/tarball/master
+$ curl -OJL https://github.com/GNS-Science/toshi-hazard-store/tarball/master
 ```
 
 Once you have a copy of the source, you can install it with:

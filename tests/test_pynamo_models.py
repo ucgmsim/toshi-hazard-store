@@ -2,7 +2,7 @@
 import unittest
 
 from moto import mock_dynamodb
-from nzshm_oq_export import model
+from toshi_hazard_store import model
 
 # from api.datastore.datastore import get_datastore
 # from api.datastore.solvis_db_query import get_rupture_ids

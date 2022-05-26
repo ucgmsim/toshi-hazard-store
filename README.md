@@ -1,19 +1,19 @@
-# nzshm-oq-export
+# toshi-hazard-store
 
 
-[![pypi](https://img.shields.io/pypi/v/nzshm-oq-export.svg)](https://pypi.org/project/nzshm-oq-export/)
-[![python](https://img.shields.io/pypi/pyversions/nzshm-oq-export.svg)](https://pypi.org/project/nzshm-oq-export/)
-[![Build Status](https://github.com/GNS-Science/nzshm-oq-export/actions/workflows/dev.yml/badge.svg)](https://github.com/GNS-Science/nzshm-oq-export/actions/workflows/dev.yml)
-[![codecov](https://codecov.io/gh/GNS-Science/nzshm-oq-export/branch/main/graphs/badge.svg)](https://codecov.io/github/GNS-Science/nzshm-oq-export)
+[![pypi](https://img.shields.io/pypi/v/toshi-hazard-store.svg)](https://pypi.org/project/toshi-hazard-store/)
+[![python](https://img.shields.io/pypi/pyversions/toshi-hazard-store.svg)](https://pypi.org/project/toshi-hazard-store/)
+[![Build Status](https://github.com/GNS-Science/toshi-hazard-store/actions/workflows/dev.yml/badge.svg)](https://github.com/GNS-Science/toshi-hazard-store/actions/workflows/dev.yml)
+[![codecov](https://codecov.io/gh/GNS-Science/toshi-hazard-store/branch/main/graphs/badge.svg)](https://codecov.io/github/GNS-Science/toshi-hazard-store)
 
 
 
 plugin export module for openquake to manage hazard data in dynamodb.
 
 
-* Documentation: <https://GNS-Science.github.io/nzshm-oq-export>
-* GitHub: <https://github.com/GNS-Science/nzshm-oq-export>
-* PyPI: <https://pypi.org/project/nzshm-oq-export/>
+* Documentation: <https://GNS-Science.github.io/toshi-hazard-store>
+* GitHub: <https://github.com/GNS-Science/toshi-hazard-store>
+* PyPI: <https://pypi.org/project/toshi-hazard-store/>
 * Free software: GPL-3.0-only
 
 

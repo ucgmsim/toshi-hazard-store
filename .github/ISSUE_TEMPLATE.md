@@ -1,4 +1,4 @@
-* nzshm-oq-export version:
+* toshi-hazard-store version:
 * Python version:
 * Operating System:
 
