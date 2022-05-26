@@ -1,1 +1,1 @@
-```::: toshi_hazard_store```
+::: toshi_hazard_store

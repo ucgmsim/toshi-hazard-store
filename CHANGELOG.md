@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.3] - 2022-05-26
+### Changed
+ - fixed mkdoc rendering of python & markdown.
+
+
 ## [0.1.2] - 2022-05-26
 ### Changed
  - fix poetry lockfile
