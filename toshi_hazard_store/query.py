@@ -26,12 +26,23 @@ mOHCS = model.ToshiOpenquakeHazardCurveStats
 
 
 def get_hazard_curves_stats(
-    hazard_solution_id: str, vs30_val: int, imt_code: str, loc_codes: Iterable[str], agg_codes: Iterable[str]
+    hazard_solution_id: str,
+    vs30_val: int,
+    imt_code: str,
+    loc_codes: Iterable[str] = None,
+    agg_codes: Iterable[str] = None,
 ) -> Iterator[mOHCS]:
     """Use ToshiOpenquakeHazardCurveStats.vs30_imt_loc_agg_rk range key as much as possible."""
-    first_loc = sorted(loc_codes)[0]
-    range_key_first_val = f"{vs30_val}:{imt_code}:{first_loc}"
-    condition_expr = mOHCS.location_code.is_in(*loc_codes) and mOHCS.aggregation.is_in(*agg_codes)
+
+    range_key_first_val = f"{vs30_val}:{imt_code}"
+    condition_expr = (mOHCS.vs30 == vs30_val) & (mOHCS.imt_code == imt_code)
+
+    if loc_codes:
+        first_loc = sorted(loc_codes)[0]
+        range_key_first_val += f":{first_loc}"
+        condition_expr = condition_expr & mOHCS.location_code.is_in(*loc_codes)
+    if agg_codes:
+        condition_expr = condition_expr & mOHCS.aggregation.is_in(*agg_codes)
 
     for hit in model.ToshiOpenquakeHazardCurveStats.query(
         hazard_solution_id, mOHCS.vs30_imt_loc_agg_rk >= range_key_first_val, filter_condition=condition_expr

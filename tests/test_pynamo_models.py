@@ -1,14 +1,7 @@
-### flake8: noqa
 import unittest
 
 from moto import mock_dynamodb
 from toshi_hazard_store import model
-
-# from api.datastore.datastore import get_datastore
-# from api.datastore.solvis_db_query import get_rupture_ids
-# #
-# from api.datastore.solvis_db import get_location_radius_rupture_model
-# from api.tests.test_api_location_list import TestResources
 
 
 @mock_dynamodb
