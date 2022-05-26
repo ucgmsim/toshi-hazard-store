@@ -372,16 +372,19 @@
                 
                 <h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
 <p>To use toshi-hazard-store in a project</p>
-<p>```</p>
-<p>from toshi_hazard_store import model, query</p>
-<p>TOSHI_ID = "FASDASDSAD" # A real Toshi ID is necesaary of course</p>
-<p>res = query.get_hazard_curves_stats(TOSHI_ID, 250, 'PGA', ['WLG', 'QZN', 'CHC', 'DUD'], ['mean'])
+<div class="highlight"><pre><span></span><code>from toshi_hazard_store import model, query
+
+TOSHI_ID = &quot;FASDASDSAD&quot; # A real Toshi ID is necesaary of course.
+
+
+res = query.get_hazard_curves_stats(TOSHI_ID, 250, &#39;PGA&#39;, [&#39;WLG&#39;, &#39;QZN&#39;, &#39;CHC&#39;, &#39;DUD&#39;], [&#39;mean&#39;])
 for r in res:
-    print(r)</p>
-<p>res = query.get_hazard_curves_stats(TOSHI_ID, 250, 'SA(0.5)', None, ['mean'])
+    print(r)
+
+res = query.get_hazard_curves_stats(TOSHI_ID, 250, &#39;SA(0.5)&#39;, None, [&#39;mean&#39;])
 for r in res:
-    print(r)</p>
-<p>```</p>
+    print(r)
+</code></pre></div>
                 
               
               

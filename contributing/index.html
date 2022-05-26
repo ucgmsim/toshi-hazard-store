@@ -573,30 +573,35 @@ articles, and such.</p>
 <li>Fork the <code>toshi-hazard-store</code> repo on GitHub.</li>
 <li>
 <p>Clone your fork locally</p>
-<p><code>$ git clone git@github.com:your_name_here/toshi-hazard-store.git</code></p>
+<div class="highlight"><pre><span></span><code>$ git clone git@github.com:your_name_here/toshi-hazard-store.git
+</code></pre></div>
 </li>
 <li>
 <p>Ensure <a href="https://python-poetry.org/docs/">poetry</a> is installed.</p>
 </li>
 <li>
 <p>Install dependencies and start your virtualenv:</p>
-<p><code>$ poetry install -E test -E doc -E dev</code></p>
+<div class="highlight"><pre><span></span><code>$ poetry install -E test -E doc -E dev
+</code></pre></div>
 </li>
 <li>
 <p>Create a branch for local development:</p>
-<p><code>$ git checkout -b name-of-your-bugfix-or-feature</code></p>
+<div class="highlight"><pre><span></span><code>$ git checkout -b name-of-your-bugfix-or-feature
+</code></pre></div>
 <p>Now you can make your changes locally.</p>
 </li>
 <li>
 <p>When you're done making changes, check that your changes pass the
    tests, including testing other Python versions, with tox:</p>
-<p><code>$ poetry run tox</code></p>
+<div class="highlight"><pre><span></span><code>$ poetry run tox
+</code></pre></div>
 </li>
 <li>
 <p>Commit your changes and push your branch to GitHub:</p>
-<p><code>$ git add .
-$ git commit -m "Your detailed description of your changes."
-$ git push origin name-of-your-bugfix-or-feature</code></p>
+<div class="highlight"><pre><span></span><code>$ git add .
+$ git commit -m &quot;Your detailed description of your changes.&quot;
+$ git push origin name-of-your-bugfix-or-feature
+</code></pre></div>
 </li>
 <li>
 <p>Submit a pull request through the GitHub website.</p>
@@ -614,15 +619,17 @@ $ git push origin name-of-your-bugfix-or-feature</code></p>
    and make sure that the tests pass for all supported Python versions.</li>
 </ol>
 <h3 id="tips">Tips<a class="headerlink" href="#tips" title="Permanent link">&para;</a></h3>
-<p><code>$ poetry run pytest tests/test_toshi_hazard_store.py</code></p>
+<div class="highlight"><pre><span></span><code>$ poetry run pytest tests/test_toshi_hazard_store.py
+</code></pre></div>
 <p>To run a subset of tests.</p>
 <h3 id="deploying">Deploying<a class="headerlink" href="#deploying" title="Permanent link">&para;</a></h3>
 <p>A reminder for the maintainers on how to deploy.
 Make sure all your changes are committed (including an entry in CHANGELOG.md).
 Then run:</p>
-<p><code>$ poetry run bump2version patch # possible: major / minor / patch
+<div class="highlight"><pre><span></span><code>$ poetry run bump2version patch # possible: major / minor / patch
 $ git push
-$ git push --tags</code></p>
+$ git push --tags
+</code></pre></div>
 <p>GitHub Actions will then deploy to PyPI if tests pass.</p>
 <!-- END INCLUDE -->
                 
