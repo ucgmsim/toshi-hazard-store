@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.2.0] - 2022-05-27
+### Added
+ - query api improvements
+ - added meta table
+ - new query methods for meta and rlzs
+
+### Changed
+ - moved vs30 from curves to meta
+ - updated docs
+
 ## [0.1.3] - 2022-05-26
 ### Changed
  - fixed mkdoc rendering of python & markdown.
