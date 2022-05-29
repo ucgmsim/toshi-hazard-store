@@ -38,23 +38,23 @@ class ToshiOpenquakeHazardMeta(Model):
     version = VersionAttribute()
 
     # known at configuration
-    hazard_solution_id = UnicodeAttribute()
+    haz_sol_id = UnicodeAttribute()
     vs30 = NumberAttribute()  # vs30 value
-    imt_codes = UnicodeSetAttribute()  # list of IMTs
-    loc_codes = UnicodeSetAttribute()  # list of Location codes
-    source_models = UnicodeSetAttribute()  # list of source model ids
+    imts = UnicodeSetAttribute()  # list of IMTs
+    locs = UnicodeSetAttribute()  # list of Location codes
+    srcs = UnicodeSetAttribute()  # list of source model ids
 
     # extracted from the OQ HDF5
-    source_df = JSONAttribute()  # sources meta as DataFrame JSON
-    gsim_df = JSONAttribute()  # gmpe meta as DataFrame JSON
-    rlzs_df = JSONAttribute()  # realization meta as DataFrame JSON
+    src_lt = JSONAttribute()  # sources meta as DataFrame JSON
+    gsim_lt = JSONAttribute()  # gmpe meta as DataFrame JSON
+    rlz_lt = JSONAttribute()  # realization meta as DataFrame JSON
 
 
 class LevelValuePairAttribute(MapAttribute):
     """Store the IMT level and the POE value at the level."""
 
-    level = NumberAttribute(null=False)
-    value = NumberAttribute(null=False)
+    lvl = NumberAttribute(null=False)
+    val = NumberAttribute(null=False)
 
 
 class ToshiOpenquakeHazardCurveRlzs(Model):
@@ -69,14 +69,14 @@ class ToshiOpenquakeHazardCurveRlzs(Model):
         if IS_OFFLINE:
             host = "http://localhost:8000"  # pragma: no cover
 
-    hazard_solution_id = UnicodeAttribute(hash_key=True)
+    haz_sol_id = UnicodeAttribute(hash_key=True)
     imt_loc_rlz_rk = UnicodeAttribute(range_key=True)  # TODO: check we can actually use this in queries!
 
-    imt_code = UnicodeAttribute()
-    location_code = UnicodeAttribute()
-    rlz_id = UnicodeAttribute()
+    imt = UnicodeAttribute()
+    loc = UnicodeAttribute()
+    rlz = UnicodeAttribute()
 
-    lvl_val_pairs = ListAttribute(of=LevelValuePairAttribute)
+    values = ListAttribute(of=LevelValuePairAttribute)
     version = VersionAttribute()
 
 
@@ -92,14 +92,14 @@ class ToshiOpenquakeHazardCurveStats(Model):
         if IS_OFFLINE:
             host = "http://localhost:8000"  # pragma: no cover
 
-    hazard_solution_id = UnicodeAttribute(hash_key=True)
+    haz_sol_id = UnicodeAttribute(hash_key=True)
     imt_loc_agg_rk = UnicodeAttribute(range_key=True)
 
-    imt_code = UnicodeAttribute()
-    location_code = UnicodeAttribute()
-    aggregation = UnicodeAttribute()
+    imt = UnicodeAttribute()
+    loc = UnicodeAttribute()
+    agg = UnicodeAttribute()
 
-    lvl_val_pairs = ListAttribute(of=LevelValuePairAttribute)
+    values = ListAttribute(of=LevelValuePairAttribute)
     version = VersionAttribute()
 
 

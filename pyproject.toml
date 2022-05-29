@@ -19,8 +19,12 @@ classifiers=[
 ]
 packages = [
     { include = "toshi_hazard_store" },
+    { include = "scripts" },
     { include = "tests", format = "sdist" },
 ]
+
+[tool.poetry.scripts]
+store_hazard = 'scripts.store_hazard:main'
 
 [tool.poetry.dev-dependencies]
 

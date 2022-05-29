@@ -1,5 +1,12 @@
 # Changelog
 
+
+## [0.3.0] - 2022-05-28
+### Added
+ - store_hazard script for openquake systems.
+### Changed
+ - tightened up model attributes names
+
 ## [0.2.0] - 2022-05-27
 ### Added
  - query api improvements
