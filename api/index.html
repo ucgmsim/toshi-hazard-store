@@ -360,6 +360,26 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#toshi_hazard_store.model.ToshiOpenquakeHazardMeta" class="md-nav__link">
+    ToshiOpenquakeHazardMeta
+  </a>
+  
+    <nav class="md-nav" aria-label="ToshiOpenquakeHazardMeta">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#toshi_hazard_store.model.ToshiOpenquakeHazardMeta.Meta" class="md-nav__link">
+    Meta
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#toshi_hazard_store.model.drop_tables" class="md-nav__link">
     drop_tables()
   </a>
@@ -375,13 +395,6 @@
         
       </ul>
     </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#toshi_hazard_store.nzshm_oq_export" class="md-nav__link">
-    nzshm_oq_export
-  </a>
   
 </li>
       
@@ -408,8 +421,22 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#toshi_hazard_store.query.get_hazard_curves_stats" class="md-nav__link">
-    get_hazard_curves_stats()
+  <a href="#toshi_hazard_store.query.get_hazard_metadata" class="md-nav__link">
+    get_hazard_metadata()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#toshi_hazard_store.query.get_hazard_rlz_curves" class="md-nav__link">
+    get_hazard_rlz_curves()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#toshi_hazard_store.query.get_hazard_stats_curves" class="md-nav__link">
+    get_hazard_stats_curves()
   </a>
   
 </li>
@@ -562,6 +589,26 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#toshi_hazard_store.model.ToshiOpenquakeHazardMeta" class="md-nav__link">
+    ToshiOpenquakeHazardMeta
+  </a>
+  
+    <nav class="md-nav" aria-label="ToshiOpenquakeHazardMeta">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#toshi_hazard_store.model.ToshiOpenquakeHazardMeta.Meta" class="md-nav__link">
+    Meta
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#toshi_hazard_store.model.drop_tables" class="md-nav__link">
     drop_tables()
   </a>
@@ -577,13 +624,6 @@
         
       </ul>
     </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#toshi_hazard_store.nzshm_oq_export" class="md-nav__link">
-    nzshm_oq_export
-  </a>
   
 </li>
       
@@ -610,8 +650,22 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#toshi_hazard_store.query.get_hazard_curves_stats" class="md-nav__link">
-    get_hazard_curves_stats()
+  <a href="#toshi_hazard_store.query.get_hazard_metadata" class="md-nav__link">
+    get_hazard_metadata()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#toshi_hazard_store.query.get_hazard_rlz_curves" class="md-nav__link">
+    get_hazard_rlz_curves()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#toshi_hazard_store.query.get_hazard_stats_curves" class="md-nav__link">
+    get_hazard_stats_curves()
   </a>
   
 </li>
@@ -780,15 +834,15 @@
 
           <details class="quote">
             <summary>Source code in <code>toshi_hazard_store/model.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">LevelValuePairAttribute</span><span class="p">(</span><span class="n">MapAttribute</span><span class="p">):</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">LevelValuePairAttribute</span><span class="p">(</span><span class="n">MapAttribute</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Store the IMT level and the POE value at the level.&quot;&quot;&quot;</span>
 
-    <span class="n">level</span> <span class="o">=</span> <span class="n">NumberAttribute</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">value</span> <span class="o">=</span> <span class="n">NumberAttribute</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">lvl</span> <span class="o">=</span> <span class="n">NumberAttribute</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">val</span> <span class="o">=</span> <span class="n">NumberAttribute</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
           </details>
 
@@ -837,28 +891,27 @@
 
           <details class="quote">
             <summary>Source code in <code>toshi_hazard_store/model.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">20</span>
-<span class="normal">21</span>
-<span class="normal">22</span>
-<span class="normal">23</span>
-<span class="normal">24</span>
-<span class="normal">25</span>
-<span class="normal">26</span>
-<span class="normal">27</span>
-<span class="normal">28</span>
-<span class="normal">29</span>
-<span class="normal">30</span>
-<span class="normal">31</span>
-<span class="normal">32</span>
-<span class="normal">33</span>
-<span class="normal">34</span>
-<span class="normal">35</span>
-<span class="normal">36</span>
-<span class="normal">37</span>
-<span class="normal">38</span>
-<span class="normal">39</span>
-<span class="normal">40</span>
-<span class="normal">41</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">ToshiOpenquakeHazardCurveRlzs</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span>
+<span class="normal">70</span>
+<span class="normal">71</span>
+<span class="normal">72</span>
+<span class="normal">73</span>
+<span class="normal">74</span>
+<span class="normal">75</span>
+<span class="normal">76</span>
+<span class="normal">77</span>
+<span class="normal">78</span>
+<span class="normal">79</span>
+<span class="normal">80</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">ToshiOpenquakeHazardCurveRlzs</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Stores the individual hazard realisation curves.&quot;&quot;&quot;</span>
 
     <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
@@ -870,15 +923,14 @@
         <span class="k">if</span> <span class="n">IS_OFFLINE</span><span class="p">:</span>
             <span class="n">host</span> <span class="o">=</span> <span class="s2">&quot;http://localhost:8000&quot;</span>  <span class="c1"># pragma: no cover</span>
 
-    <span class="n">hazard_solution_id</span> <span class="o">=</span> <span class="n">UnicodeAttribute</span><span class="p">(</span><span class="n">hash_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">vs30_imt_loc_rlz_rk</span> <span class="o">=</span> <span class="n">UnicodeAttribute</span><span class="p">(</span><span class="n">range_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># TODO: check we can actually use this in queries!</span>
+    <span class="n">haz_sol_id</span> <span class="o">=</span> <span class="n">UnicodeAttribute</span><span class="p">(</span><span class="n">hash_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">imt_loc_rlz_rk</span> <span class="o">=</span> <span class="n">UnicodeAttribute</span><span class="p">(</span><span class="n">range_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># TODO: check we can actually use this in queries!</span>
 
-    <span class="n">vs30</span> <span class="o">=</span> <span class="n">NumberAttribute</span><span class="p">()</span>
-    <span class="n">imt_code</span> <span class="o">=</span> <span class="n">UnicodeAttribute</span><span class="p">()</span>
-    <span class="n">location_code</span> <span class="o">=</span> <span class="n">UnicodeAttribute</span><span class="p">()</span>
-    <span class="n">rlz_id</span> <span class="o">=</span> <span class="n">UnicodeAttribute</span><span class="p">()</span>
+    <span class="n">imt</span> <span class="o">=</span> <span class="n">UnicodeAttribute</span><span class="p">()</span>
+    <span class="n">loc</span> <span class="o">=</span> <span class="n">UnicodeAttribute</span><span class="p">()</span>
+    <span class="n">rlz</span> <span class="o">=</span> <span class="n">UnicodeAttribute</span><span class="p">()</span>
 
-    <span class="n">lvl_val_pairs</span> <span class="o">=</span> <span class="n">ListAttribute</span><span class="p">(</span><span class="n">of</span><span class="o">=</span><span class="n">LevelValuePairAttribute</span><span class="p">)</span>
+    <span class="n">values</span> <span class="o">=</span> <span class="n">ListAttribute</span><span class="p">(</span><span class="n">of</span><span class="o">=</span><span class="n">LevelValuePairAttribute</span><span class="p">)</span>
     <span class="n">version</span> <span class="o">=</span> <span class="n">VersionAttribute</span><span class="p">()</span>
 </code></pre></div></td></tr></table></div>
           </details>
@@ -886,7 +938,6 @@
 
 
   <div class="doc doc-children">
-
 
 
 
@@ -921,14 +972,14 @@
 
           <details class="quote">
             <summary>Source code in <code>toshi_hazard_store/model.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">23</span>
-<span class="normal">24</span>
-<span class="normal">25</span>
-<span class="normal">26</span>
-<span class="normal">27</span>
-<span class="normal">28</span>
-<span class="normal">29</span>
-<span class="normal">30</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span>
+<span class="normal">70</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;DynamoDB Metadata.&quot;&quot;&quot;</span>
 
     <span class="n">billing_mode</span> <span class="o">=</span> <span class="s1">&#39;PAY_PER_REQUEST&#39;</span>
@@ -997,28 +1048,27 @@
 
           <details class="quote">
             <summary>Source code in <code>toshi_hazard_store/model.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">44</span>
-<span class="normal">45</span>
-<span class="normal">46</span>
-<span class="normal">47</span>
-<span class="normal">48</span>
-<span class="normal">49</span>
-<span class="normal">50</span>
-<span class="normal">51</span>
-<span class="normal">52</span>
-<span class="normal">53</span>
-<span class="normal">54</span>
-<span class="normal">55</span>
-<span class="normal">56</span>
-<span class="normal">57</span>
-<span class="normal">58</span>
-<span class="normal">59</span>
-<span class="normal">60</span>
-<span class="normal">61</span>
-<span class="normal">62</span>
-<span class="normal">63</span>
-<span class="normal">64</span>
-<span class="normal">65</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">ToshiOpenquakeHazardCurveStats</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">ToshiOpenquakeHazardCurveStats</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Stores the individual hazard statistical curves.&quot;&quot;&quot;</span>
 
     <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
@@ -1030,15 +1080,14 @@
         <span class="k">if</span> <span class="n">IS_OFFLINE</span><span class="p">:</span>
             <span class="n">host</span> <span class="o">=</span> <span class="s2">&quot;http://localhost:8000&quot;</span>  <span class="c1"># pragma: no cover</span>
 
-    <span class="n">hazard_solution_id</span> <span class="o">=</span> <span class="n">UnicodeAttribute</span><span class="p">(</span><span class="n">hash_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">vs30_imt_loc_agg_rk</span> <span class="o">=</span> <span class="n">UnicodeAttribute</span><span class="p">(</span><span class="n">range_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">haz_sol_id</span> <span class="o">=</span> <span class="n">UnicodeAttribute</span><span class="p">(</span><span class="n">hash_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">imt_loc_agg_rk</span> <span class="o">=</span> <span class="n">UnicodeAttribute</span><span class="p">(</span><span class="n">range_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-    <span class="n">vs30</span> <span class="o">=</span> <span class="n">NumberAttribute</span><span class="p">()</span>
-    <span class="n">imt_code</span> <span class="o">=</span> <span class="n">UnicodeAttribute</span><span class="p">()</span>
-    <span class="n">location_code</span> <span class="o">=</span> <span class="n">UnicodeAttribute</span><span class="p">()</span>
-    <span class="n">aggregation</span> <span class="o">=</span> <span class="n">UnicodeAttribute</span><span class="p">()</span>
+    <span class="n">imt</span> <span class="o">=</span> <span class="n">UnicodeAttribute</span><span class="p">()</span>
+    <span class="n">loc</span> <span class="o">=</span> <span class="n">UnicodeAttribute</span><span class="p">()</span>
+    <span class="n">agg</span> <span class="o">=</span> <span class="n">UnicodeAttribute</span><span class="p">()</span>
 
-    <span class="n">lvl_val_pairs</span> <span class="o">=</span> <span class="n">ListAttribute</span><span class="p">(</span><span class="n">of</span><span class="o">=</span><span class="n">LevelValuePairAttribute</span><span class="p">)</span>
+    <span class="n">values</span> <span class="o">=</span> <span class="n">ListAttribute</span><span class="p">(</span><span class="n">of</span><span class="o">=</span><span class="n">LevelValuePairAttribute</span><span class="p">)</span>
     <span class="n">version</span> <span class="o">=</span> <span class="n">VersionAttribute</span><span class="p">()</span>
 </code></pre></div></td></tr></table></div>
           </details>
@@ -1046,7 +1095,6 @@
 
 
   <div class="doc doc-children">
-
 
 
 
@@ -1081,18 +1129,196 @@
 
           <details class="quote">
             <summary>Source code in <code>toshi_hazard_store/model.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">47</span>
-<span class="normal">48</span>
-<span class="normal">49</span>
-<span class="normal">50</span>
-<span class="normal">51</span>
-<span class="normal">52</span>
-<span class="normal">53</span>
-<span class="normal">54</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">86</span>
+<span class="normal">87</span>
+<span class="normal">88</span>
+<span class="normal">89</span>
+<span class="normal">90</span>
+<span class="normal">91</span>
+<span class="normal">92</span>
+<span class="normal">93</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;DynamoDB Metadata.&quot;&quot;&quot;</span>
 
     <span class="n">billing_mode</span> <span class="o">=</span> <span class="s1">&#39;PAY_PER_REQUEST&#39;</span>
     <span class="n">table_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;ToshiOpenquakeHazardCurveStats-</span><span class="si">{</span><span class="n">DEPLOYMENT_STAGE</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">region</span> <span class="o">=</span> <span class="n">REGION</span>
+    <span class="k">if</span> <span class="n">IS_OFFLINE</span><span class="p">:</span>
+        <span class="n">host</span> <span class="o">=</span> <span class="s2">&quot;http://localhost:8000&quot;</span>  <span class="c1"># pragma: no cover</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-class">
+
+
+
+<h3 id="toshi_hazard_store.model.ToshiOpenquakeHazardMeta" class="doc doc-heading">
+          <code>ToshiOpenquakeHazardMeta</code>
+
+
+
+<a href="#toshi_hazard_store.model.ToshiOpenquakeHazardMeta" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+        <p class="doc doc-class-bases">
+          Bases: <code><span title="pynamodb.models.Model">Model</span></code></p>
+
+
+      <p>Stores metadata from the job configuration and the oq HDF5.</p>
+
+
+          <details class="quote">
+            <summary>Source code in <code>toshi_hazard_store/model.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">ToshiOpenquakeHazardMeta</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Stores metadata from the job configuration and the oq HDF5.&quot;&quot;&quot;</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;DynamoDB Metadata.&quot;&quot;&quot;</span>
+
+        <span class="n">billing_mode</span> <span class="o">=</span> <span class="s1">&#39;PAY_PER_REQUEST&#39;</span>
+        <span class="n">table_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;ToshiOpenquakeHazardMeta-</span><span class="si">{</span><span class="n">DEPLOYMENT_STAGE</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">region</span> <span class="o">=</span> <span class="n">REGION</span>
+        <span class="k">if</span> <span class="n">IS_OFFLINE</span><span class="p">:</span>
+            <span class="n">host</span> <span class="o">=</span> <span class="s2">&quot;http://localhost:8000&quot;</span>  <span class="c1"># pragma: no cover</span>
+
+    <span class="n">partition_key</span> <span class="o">=</span> <span class="n">UnicodeAttribute</span><span class="p">(</span><span class="n">hash_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># a static value as we actually don&#39;t want to partition our data</span>
+    <span class="n">hazsol_vs30_rk</span> <span class="o">=</span> <span class="n">UnicodeAttribute</span><span class="p">(</span><span class="n">range_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">updated</span> <span class="o">=</span> <span class="n">UTCDateTimeAttribute</span><span class="p">()</span>
+    <span class="n">version</span> <span class="o">=</span> <span class="n">VersionAttribute</span><span class="p">()</span>
+
+    <span class="c1"># known at configuration</span>
+    <span class="n">haz_sol_id</span> <span class="o">=</span> <span class="n">UnicodeAttribute</span><span class="p">()</span>
+    <span class="n">vs30</span> <span class="o">=</span> <span class="n">NumberAttribute</span><span class="p">()</span>  <span class="c1"># vs30 value</span>
+    <span class="n">imts</span> <span class="o">=</span> <span class="n">UnicodeSetAttribute</span><span class="p">()</span>  <span class="c1"># list of IMTs</span>
+    <span class="n">locs</span> <span class="o">=</span> <span class="n">UnicodeSetAttribute</span><span class="p">()</span>  <span class="c1"># list of Location codes</span>
+    <span class="n">srcs</span> <span class="o">=</span> <span class="n">UnicodeSetAttribute</span><span class="p">()</span>  <span class="c1"># list of source model ids</span>
+
+    <span class="c1"># extracted from the OQ HDF5</span>
+    <span class="n">src_lt</span> <span class="o">=</span> <span class="n">JSONAttribute</span><span class="p">()</span>  <span class="c1"># sources meta as DataFrame JSON</span>
+    <span class="n">gsim_lt</span> <span class="o">=</span> <span class="n">JSONAttribute</span><span class="p">()</span>  <span class="c1"># gmpe meta as DataFrame JSON</span>
+    <span class="n">rlz_lt</span> <span class="o">=</span> <span class="n">JSONAttribute</span><span class="p">()</span>  <span class="c1"># realization meta as DataFrame JSON</span>
+</code></pre></div></td></tr></table></div>
+          </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-class">
+
+
+
+<h4 id="toshi_hazard_store.model.ToshiOpenquakeHazardMeta.Meta" class="doc doc-heading">
+          <code>Meta</code>
+
+
+
+<a href="#toshi_hazard_store.model.ToshiOpenquakeHazardMeta.Meta" class="headerlink" title="Permanent link">&para;</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+
+      <p>DynamoDB Metadata.</p>
+
+
+          <details class="quote">
+            <summary>Source code in <code>toshi_hazard_store/model.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;DynamoDB Metadata.&quot;&quot;&quot;</span>
+
+    <span class="n">billing_mode</span> <span class="o">=</span> <span class="s1">&#39;PAY_PER_REQUEST&#39;</span>
+    <span class="n">table_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;ToshiOpenquakeHazardMeta-</span><span class="si">{</span><span class="n">DEPLOYMENT_STAGE</span><span class="si">}</span><span class="s2">&quot;</span>
     <span class="n">region</span> <span class="o">=</span> <span class="n">REGION</span>
     <span class="k">if</span> <span class="n">IS_OFFLINE</span><span class="p">:</span>
         <span class="n">host</span> <span class="o">=</span> <span class="s2">&quot;http://localhost:8000&quot;</span>  <span class="c1"># pragma: no cover</span>
@@ -1149,17 +1375,17 @@
 
     <div class="doc doc-contents ">
 
-      <p>Drop the tables if they exist.</p>
+      <p>Drop the tables, if they exist.</p>
 
         <details class="quote">
           <summary>Source code in <code>toshi_hazard_store/model.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">80</span>
-<span class="normal">81</span>
-<span class="normal">82</span>
-<span class="normal">83</span>
-<span class="normal">84</span>
-<span class="normal">85</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">drop_tables</span><span class="p">():</span>
-    <span class="sd">&quot;&quot;&quot;Drop the tables if they exist.&quot;&quot;&quot;</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">drop_tables</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Drop the tables, if they exist.&quot;&quot;&quot;</span>
     <span class="k">for</span> <span class="n">table</span> <span class="ow">in</span> <span class="n">tables</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">table</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>  <span class="c1"># pragma: no cover</span>
             <span class="n">table</span><span class="o">.</span><span class="n">delete_table</span><span class="p">()</span>
@@ -1185,18 +1411,18 @@
 
     <div class="doc doc-contents ">
 
-      <p>Create the tables if it doesn't exist already.</p>
+      <p>Create the tables, unless they exist already.</p>
 
         <details class="quote">
           <summary>Source code in <code>toshi_hazard_store/model.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">71</span>
-<span class="normal">72</span>
-<span class="normal">73</span>
-<span class="normal">74</span>
-<span class="normal">75</span>
-<span class="normal">76</span>
-<span class="normal">77</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">migrate</span><span class="p">():</span>
-    <span class="sd">&quot;&quot;&quot;Create the tables if it doesn&#39;t exist already.&quot;&quot;&quot;</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">migrate</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Create the tables, unless they exist already.&quot;&quot;&quot;</span>
     <span class="k">for</span> <span class="n">table</span> <span class="ow">in</span> <span class="n">tables</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">table</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>  <span class="c1"># pragma: no cover</span>
             <span class="n">table</span><span class="o">.</span><span class="n">create_table</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -1224,28 +1450,6 @@
 
 
 
-<h2 id="toshi_hazard_store.nzshm_oq_export" class="doc doc-heading">
-        <code>nzshm_oq_export</code>
-
-
-
-<a href="#toshi_hazard_store.nzshm_oq_export" class="headerlink" title="Permanent link">&para;</a></h2>
-
-    <div class="doc doc-contents ">
-
-      <p>Main module.</p>
-
-
-    </div>
-
-  </div>
-
-
-
-  <div class="doc doc-object doc-module">
-
-
-
 <h2 id="toshi_hazard_store.query" class="doc doc-heading">
         <code>query</code>
 
@@ -1260,6 +1464,8 @@
 
 
   <div class="doc doc-children">
+
+
 
 
 
@@ -1296,8 +1502,8 @@
     <span class="sd">&quot;&quot;&quot;Save list of ToshiOpenquakeHazardCurveRlzs updating hash and range keys.&quot;&quot;&quot;</span>
     <span class="k">with</span> <span class="n">model</span><span class="o">.</span><span class="n">ToshiOpenquakeHazardCurveRlzs</span><span class="o">.</span><span class="n">batch_write</span><span class="p">()</span> <span class="k">as</span> <span class="n">batch</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">models</span><span class="p">:</span>
-            <span class="n">item</span><span class="o">.</span><span class="n">hazard_solution_id</span> <span class="o">=</span> <span class="n">toshi_id</span>
-            <span class="n">item</span><span class="o">.</span><span class="n">vs30_imt_loc_rlz_rk</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">vs30</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">imt_code</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">location_code</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">rlz_id</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">item</span><span class="o">.</span><span class="n">haz_sol_id</span> <span class="o">=</span> <span class="n">toshi_id</span>
+            <span class="n">item</span><span class="o">.</span><span class="n">imt_loc_rlz_rk</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">imt</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">loc</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">rlz</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="n">batch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
         </details>
@@ -1334,8 +1540,8 @@
     <span class="sd">&quot;&quot;&quot;Save list of ToshiOpenquakeHazardCurveStats updating hash and range keys.&quot;&quot;&quot;</span>
     <span class="k">with</span> <span class="n">model</span><span class="o">.</span><span class="n">ToshiOpenquakeHazardCurveStats</span><span class="o">.</span><span class="n">batch_write</span><span class="p">()</span> <span class="k">as</span> <span class="n">batch</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">models</span><span class="p">:</span>
-            <span class="n">item</span><span class="o">.</span><span class="n">hazard_solution_id</span> <span class="o">=</span> <span class="n">toshi_id</span>
-            <span class="n">item</span><span class="o">.</span><span class="n">vs30_imt_loc_agg_rk</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">vs30</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">imt_code</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">location_code</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">aggregation</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">item</span><span class="o">.</span><span class="n">haz_sol_id</span> <span class="o">=</span> <span class="n">toshi_id</span>
+            <span class="n">item</span><span class="o">.</span><span class="n">imt_loc_agg_rk</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">imt</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">loc</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">agg</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="n">batch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
         </details>
@@ -1349,22 +1555,168 @@
 
 
 
-<h3 id="toshi_hazard_store.query.get_hazard_curves_stats" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">get_hazard_curves_stats</span><span class="p">(</span><span class="n">hazard_solution_id</span><span class="p">,</span> <span class="n">vs30_val</span><span class="p">,</span> <span class="n">imt_code</span><span class="p">,</span> <span class="n">loc_codes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">agg_codes</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+<h3 id="toshi_hazard_store.query.get_hazard_metadata" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">get_hazard_metadata</span><span class="p">(</span><span class="n">haz_sol_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">vs30_vals</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 
-<a href="#toshi_hazard_store.query.get_hazard_curves_stats" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#toshi_hazard_store.query.get_hazard_metadata" class="headerlink" title="Permanent link">&para;</a></h3>
 
 
     <div class="doc doc-contents ">
 
-      <p>Use ToshiOpenquakeHazardCurveStats.vs30_imt_loc_agg_rk range key as much as possible.</p>
+      <p>Fetch ToshiOpenquakeHazardMeta based on criteria.</p>
 
         <details class="quote">
           <summary>Source code in <code>toshi_hazard_store/query.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">28</span>
-<span class="normal">29</span>
-<span class="normal">30</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_hazard_metadata</span><span class="p">(</span>
+    <span class="n">haz_sol_ids</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">vs30_vals</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">mOHM</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Fetch ToshiOpenquakeHazardMeta based on criteria.&quot;&quot;&quot;</span>
+
+    <span class="n">condition_expr</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">haz_sol_ids</span><span class="p">:</span>
+        <span class="n">condition_expr</span> <span class="o">=</span> <span class="n">condition_expr</span> <span class="o">&amp;</span> <span class="n">mOHM</span><span class="o">.</span><span class="n">haz_sol_id</span><span class="o">.</span><span class="n">is_in</span><span class="p">(</span><span class="o">*</span><span class="n">haz_sol_ids</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">vs30_vals</span><span class="p">:</span>
+        <span class="n">condition_expr</span> <span class="o">=</span> <span class="n">condition_expr</span> <span class="o">&amp;</span> <span class="n">mOHM</span><span class="o">.</span><span class="n">vs30</span><span class="o">.</span><span class="n">is_in</span><span class="p">(</span><span class="o">*</span><span class="n">vs30_vals</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">hit</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">ToshiOpenquakeHazardMeta</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
+        <span class="s2">&quot;ToshiOpenquakeHazardMeta&quot;</span><span class="p">,</span> <span class="n">filter_condition</span><span class="o">=</span><span class="n">condition_expr</span>  <span class="c1"># NB the partition key is the table name!</span>
+    <span class="p">):</span>
+        <span class="k">yield</span> <span class="p">(</span><span class="n">hit</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h3 id="toshi_hazard_store.query.get_hazard_rlz_curves" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">get_hazard_rlz_curves</span><span class="p">(</span><span class="n">haz_sol_id</span><span class="p">,</span> <span class="n">imts</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">locs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rlzs</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+
+<a href="#toshi_hazard_store.query.get_hazard_rlz_curves" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+      <p>Use ToshiOpenquakeHazardCurveRlzs.imt_loc_agg_rk range key as much as possible.</p>
+
+        <details class="quote">
+          <summary>Source code in <code>toshi_hazard_store/query.py</code></summary>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span>
+<span class="normal">70</span>
+<span class="normal">71</span>
+<span class="normal">72</span>
+<span class="normal">73</span>
+<span class="normal">74</span>
+<span class="normal">75</span>
+<span class="normal">76</span>
+<span class="normal">77</span>
+<span class="normal">78</span>
+<span class="normal">79</span>
+<span class="normal">80</span>
+<span class="normal">81</span>
+<span class="normal">82</span>
+<span class="normal">83</span>
+<span class="normal">84</span>
+<span class="normal">85</span>
+<span class="normal">86</span>
+<span class="normal">87</span>
+<span class="normal">88</span>
+<span class="normal">89</span>
+<span class="normal">90</span>
+<span class="normal">91</span>
+<span class="normal">92</span>
+<span class="normal">93</span>
+<span class="normal">94</span>
+<span class="normal">95</span>
+<span class="normal">96</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_hazard_rlz_curves</span><span class="p">(</span>
+    <span class="n">haz_sol_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">imts</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">locs</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">rlzs</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">mOHCR</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Use ToshiOpenquakeHazardCurveRlzs.imt_loc_agg_rk range key as much as possible.&quot;&quot;&quot;</span>
+
+    <span class="n">range_key_first_val</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">condition_expr</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">imts</span><span class="p">:</span>
+        <span class="n">first_imt</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">imts</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">range_key_first_val</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">first_imt</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">condition_expr</span> <span class="o">=</span> <span class="n">condition_expr</span> <span class="o">&amp;</span> <span class="n">mOHCR</span><span class="o">.</span><span class="n">imt</span><span class="o">.</span><span class="n">is_in</span><span class="p">(</span><span class="o">*</span><span class="n">imts</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">locs</span><span class="p">:</span>
+        <span class="n">condition_expr</span> <span class="o">=</span> <span class="n">condition_expr</span> <span class="o">&amp;</span> <span class="n">mOHCR</span><span class="o">.</span><span class="n">loc</span><span class="o">.</span><span class="n">is_in</span><span class="p">(</span><span class="o">*</span><span class="n">locs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">rlzs</span><span class="p">:</span>
+        <span class="n">condition_expr</span> <span class="o">=</span> <span class="n">condition_expr</span> <span class="o">&amp;</span> <span class="n">mOHCR</span><span class="o">.</span><span class="n">rlz</span><span class="o">.</span><span class="n">is_in</span><span class="p">(</span><span class="o">*</span><span class="n">rlzs</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">imts</span> <span class="ow">and</span> <span class="n">locs</span><span class="p">:</span>
+        <span class="n">first_loc</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">locs</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">range_key_first_val</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;:</span><span class="si">{</span><span class="n">first_loc</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">if</span> <span class="n">imts</span> <span class="ow">and</span> <span class="n">locs</span> <span class="ow">and</span> <span class="n">rlzs</span><span class="p">:</span>
+        <span class="n">first_rlz</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">rlzs</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">range_key_first_val</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;:</span><span class="si">{</span><span class="n">first_rlz</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;range_key_first_val: </span><span class="si">{</span><span class="n">range_key_first_val</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">condition_expr</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">hit</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">ToshiOpenquakeHazardCurveRlzs</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
+        <span class="n">haz_sol_id</span><span class="p">,</span> <span class="n">mOHCR</span><span class="o">.</span><span class="n">imt_loc_rlz_rk</span> <span class="o">&gt;=</span> <span class="n">range_key_first_val</span><span class="p">,</span> <span class="n">filter_condition</span><span class="o">=</span><span class="n">condition_expr</span>
+    <span class="p">):</span>
+        <span class="k">yield</span> <span class="p">(</span><span class="n">hit</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h3 id="toshi_hazard_store.query.get_hazard_stats_curves" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">get_hazard_stats_curves</span><span class="p">(</span><span class="n">haz_sol_id</span><span class="p">,</span> <span class="n">imts</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">locs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">aggs</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+
+<a href="#toshi_hazard_store.query.get_hazard_stats_curves" class="headerlink" title="Permanent link">&para;</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+      <p>Use ToshiOpenquakeHazardCurveStats.imt_loc_agg_rk range key as much as possible.</p>
+
+        <details class="quote">
+          <summary>Source code in <code>toshi_hazard_store/query.py</code></summary>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">30</span>
 <span class="normal">31</span>
 <span class="normal">32</span>
 <span class="normal">33</span>
@@ -1384,27 +1736,45 @@
 <span class="normal">47</span>
 <span class="normal">48</span>
 <span class="normal">49</span>
-<span class="normal">50</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_hazard_curves_stats</span><span class="p">(</span>
-    <span class="n">hazard_solution_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">vs30_val</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">imt_code</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">loc_codes</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">agg_codes</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_hazard_stats_curves</span><span class="p">(</span>
+    <span class="n">haz_sol_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">imts</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">locs</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">aggs</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">mOHCS</span><span class="p">]:</span>
-    <span class="sd">&quot;&quot;&quot;Use ToshiOpenquakeHazardCurveStats.vs30_imt_loc_agg_rk range key as much as possible.&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Use ToshiOpenquakeHazardCurveStats.imt_loc_agg_rk range key as much as possible.&quot;&quot;&quot;</span>
 
-    <span class="n">range_key_first_val</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">vs30_val</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">imt_code</span><span class="si">}</span><span class="s2">&quot;</span>
-    <span class="n">condition_expr</span> <span class="o">=</span> <span class="p">(</span><span class="n">mOHCS</span><span class="o">.</span><span class="n">vs30</span> <span class="o">==</span> <span class="n">vs30_val</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">mOHCS</span><span class="o">.</span><span class="n">imt_code</span> <span class="o">==</span> <span class="n">imt_code</span><span class="p">)</span>
+    <span class="n">range_key_first_val</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">condition_expr</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="k">if</span> <span class="n">loc_codes</span><span class="p">:</span>
-        <span class="n">first_loc</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">loc_codes</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">imts</span><span class="p">:</span>
+        <span class="n">first_imt</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">imts</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">range_key_first_val</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">first_imt</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">condition_expr</span> <span class="o">=</span> <span class="n">condition_expr</span> <span class="o">&amp;</span> <span class="n">mOHCS</span><span class="o">.</span><span class="n">imt</span><span class="o">.</span><span class="n">is_in</span><span class="p">(</span><span class="o">*</span><span class="n">imts</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">locs</span><span class="p">:</span>
+        <span class="n">condition_expr</span> <span class="o">=</span> <span class="n">condition_expr</span> <span class="o">&amp;</span> <span class="n">mOHCS</span><span class="o">.</span><span class="n">loc</span><span class="o">.</span><span class="n">is_in</span><span class="p">(</span><span class="o">*</span><span class="n">locs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">aggs</span><span class="p">:</span>
+        <span class="n">condition_expr</span> <span class="o">=</span> <span class="n">condition_expr</span> <span class="o">&amp;</span> <span class="n">mOHCS</span><span class="o">.</span><span class="n">agg</span><span class="o">.</span><span class="n">is_in</span><span class="p">(</span><span class="o">*</span><span class="n">aggs</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">imts</span> <span class="ow">and</span> <span class="n">locs</span><span class="p">:</span>
+        <span class="n">first_loc</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">locs</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">range_key_first_val</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;:</span><span class="si">{</span><span class="n">first_loc</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="n">condition_expr</span> <span class="o">=</span> <span class="n">condition_expr</span> <span class="o">&amp;</span> <span class="n">mOHCS</span><span class="o">.</span><span class="n">location_code</span><span class="o">.</span><span class="n">is_in</span><span class="p">(</span><span class="o">*</span><span class="n">loc_codes</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">agg_codes</span><span class="p">:</span>
-        <span class="n">condition_expr</span> <span class="o">=</span> <span class="n">condition_expr</span> <span class="o">&amp;</span> <span class="n">mOHCS</span><span class="o">.</span><span class="n">aggregation</span><span class="o">.</span><span class="n">is_in</span><span class="p">(</span><span class="o">*</span><span class="n">agg_codes</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">imts</span> <span class="ow">and</span> <span class="n">locs</span> <span class="ow">and</span> <span class="n">aggs</span><span class="p">:</span>
+        <span class="n">first_agg</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">aggs</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">range_key_first_val</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;:</span><span class="si">{</span><span class="n">first_agg</span><span class="si">}</span><span class="s2">&quot;</span>
 
     <span class="k">for</span> <span class="n">hit</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">ToshiOpenquakeHazardCurveStats</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
-        <span class="n">hazard_solution_id</span><span class="p">,</span> <span class="n">mOHCS</span><span class="o">.</span><span class="n">vs30_imt_loc_agg_rk</span> <span class="o">&gt;=</span> <span class="n">range_key_first_val</span><span class="p">,</span> <span class="n">filter_condition</span><span class="o">=</span><span class="n">condition_expr</span>
+        <span class="n">haz_sol_id</span><span class="p">,</span> <span class="n">mOHCS</span><span class="o">.</span><span class="n">imt_loc_agg_rk</span> <span class="o">&gt;=</span> <span class="n">range_key_first_val</span><span class="p">,</span> <span class="n">filter_condition</span><span class="o">=</span><span class="n">condition_expr</span>
     <span class="p">):</span>
         <span class="k">yield</span> <span class="p">(</span><span class="n">hit</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
