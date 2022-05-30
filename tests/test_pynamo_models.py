@@ -86,6 +86,8 @@ class PynamoTest(unittest.TestCase):
             imts=['PGA', 'SA(0.5)'],  # list of IMTs
             locs=['WLG', 'AKL'],  # list of Location codes
             srcs=['A', 'B'],  # list of source model ids
+            aggs=['0.1'],
+            inv_time=1.0,
             # extracted from the OQ HDF5
             src_lt=json.dumps(dict(sources=[1, 2])),  # sources meta as DataFrame JSON
             gsim_lt=json.dumps(dict(gsims=[1, 2])),  # gmpe meta as DataFrame JSON

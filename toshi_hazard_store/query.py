@@ -13,7 +13,7 @@ def batch_save_hcurve_stats(toshi_id: str, models: Iterable[model.ToshiOpenquake
             batch.save(item)
 
 
-def batch_save_hcurve_rlzs(toshi_id, models: Iterable[model.ToshiOpenquakeHazardCurveRlzs]):
+def batch_save_hcurve_rlzs(toshi_id: str, models: Iterable[model.ToshiOpenquakeHazardCurveRlzs]) -> None:
     """Save list of ToshiOpenquakeHazardCurveRlzs updating hash and range keys."""
     with model.ToshiOpenquakeHazardCurveRlzs.batch_write() as batch:
         for item in models:
@@ -54,9 +54,20 @@ def get_hazard_stats_curves(
         first_agg = sorted(aggs)[0]
         range_key_first_val += f":{first_agg}"
 
-    for hit in model.ToshiOpenquakeHazardCurveStats.query(
-        haz_sol_id, mOHCS.imt_loc_agg_rk >= range_key_first_val, filter_condition=condition_expr
-    ):
+    print(f"range_key_first_val: {range_key_first_val}")
+    print(condition_expr)
+
+    if range_key_first_val:
+        qry = mOHCS.query(haz_sol_id, mOHCS.imt_loc_agg_rk >= range_key_first_val, filter_condition=condition_expr)
+    else:
+        qry = mOHCS.query(
+            haz_sol_id,
+            mOHCS.imt_loc_agg_rk >= " ",  # lowest printable char in ascii table is SPACE. (NULL is first control)
+            filter_condition=condition_expr,
+        )
+
+    print(f"get_hazard_stats_curves: qry {qry}")
+    for hit in qry:
         yield (hit)
 
 
@@ -90,9 +101,17 @@ def get_hazard_rlz_curves(
     print(f"range_key_first_val: {range_key_first_val}")
     print(condition_expr)
 
-    for hit in model.ToshiOpenquakeHazardCurveRlzs.query(
-        haz_sol_id, mOHCR.imt_loc_rlz_rk >= range_key_first_val, filter_condition=condition_expr
-    ):
+    if range_key_first_val:
+        qry = mOHCR.query(haz_sol_id, mOHCR.imt_loc_rlz_rk >= range_key_first_val, filter_condition=condition_expr)
+    else:
+        qry = mOHCR.query(
+            haz_sol_id,
+            mOHCR.imt_loc_rlz_rk >= " ",  # lowest printable char in ascii table is SPACE. (NULL is first control)
+            filter_condition=condition_expr,
+        )
+
+    print(f"get_hazard_rlz_curves: qry {qry}")
+    for hit in qry:
         yield (hit)
 
 

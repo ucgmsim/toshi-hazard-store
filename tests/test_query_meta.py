@@ -24,6 +24,8 @@ def build_meta_object(toshi_id, vs30):
         imts=['PGA', 'SA(0.5)'],  # list of IMTs
         locs=['WLG', 'AKL'],  # list of Location codes
         srcs=['A', 'B'],  # list of source model ids
+        aggs=['0.1', '0.5', '0.9', 'mean'],
+        inv_time=1.0,
         # extracted from the OQ HDF5
         src_lt=json.dumps(dict(sources=[1, 2])),  # sources meta as DataFrame JSON
         gsim_lt=json.dumps(dict(gsims=[1, 2])),  # gmpe meta as DataFrame JSON
@@ -89,3 +91,13 @@ class QueryModuleTest(unittest.TestCase):
         build_test_metas()
         meta = list(query.get_hazard_metadata())
         self.assertEqual(len(list(meta)), len(vs30s) * len(TOSHI_IDS))
+
+    def test_query_meta_aggs_attribute(self):
+        build_test_metas()
+        meta = list(query.get_hazard_metadata())
+        self.assertTrue('0.1' in meta[0].aggs)
+
+    def test_query_meta_inv_time_attribute(self):
+        build_test_metas()
+        meta = list(query.get_hazard_metadata())
+        self.assertTrue(meta[0].inv_time == 1.0)

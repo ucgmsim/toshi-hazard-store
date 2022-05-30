@@ -43,6 +43,8 @@ class ToshiOpenquakeHazardMeta(Model):
     imts = UnicodeSetAttribute()  # list of IMTs
     locs = UnicodeSetAttribute()  # list of Location codes
     srcs = UnicodeSetAttribute()  # list of source model ids
+    aggs = UnicodeSetAttribute()  # list of aggregration/quantile ids e.g. "0.1. 0.5, mean, 0.9"
+    inv_time = NumberAttribute()  # Invesigation time in years
 
     # extracted from the OQ HDF5
     src_lt = JSONAttribute()  # sources meta as DataFrame JSON
