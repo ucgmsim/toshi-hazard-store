@@ -9,5 +9,5 @@ def boolean_env(environ_name: str, default: str = 'FALSE') -> bool:
 
 
 IS_OFFLINE = boolean_env('SLS_OFFLINE')  # set by serverless-wsgi plugin
-REGION = os.getenv('REGION', 'us-east-1')
-DEPLOYMENT_STAGE = os.getenv('DEPLOYMENT_STAGE', 'LOCAL').upper()
+REGION = os.getenv('NZSHM22_HAZARD_STORE_REGION', 'us-east-1')
+DEPLOYMENT_STAGE = os.getenv('NZSHM22_HAZARD_STORE_STAGE', 'LOCAL').upper()

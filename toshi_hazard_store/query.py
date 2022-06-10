@@ -22,9 +22,30 @@ def batch_save_hcurve_rlzs(toshi_id: str, models: Iterable[model.ToshiOpenquakeH
             batch.save(item)
 
 
+def batch_save_hcurve_rlzs_v2(toshi_id: str, models: Iterable[model.ToshiOpenquakeHazardCurveRlzsV2]) -> None:
+    """Save list of ToshiOpenquakeHazardCurveRlzsV2 updating hash and range keys."""
+    with model.ToshiOpenquakeHazardCurveRlzsV2.batch_write() as batch:
+        for item in models:
+            item.haz_sol_id = toshi_id
+            item.loc_rlz_rk = f"{item.loc}:{item.rlz}"
+            batch.save(item)
+
+
+def batch_save_hcurve_stats_v2(toshi_id: str, models: Iterable[model.ToshiOpenquakeHazardCurveStatsV2]) -> None:
+    """Save list of ToshiOpenquakeHazardCurveRlzsV2 updating hash and range keys."""
+    with model.ToshiOpenquakeHazardCurveStatsV2.batch_write() as batch:
+        for item in models:
+            item.haz_sol_id = toshi_id
+            item.loc_agg_rk = f"{item.loc}:{item.agg}"
+            batch.save(item)
+
+
 mOHCS = model.ToshiOpenquakeHazardCurveStats
 mOHCR = model.ToshiOpenquakeHazardCurveRlzs
 mOHM = model.ToshiOpenquakeHazardMeta
+
+mOHCS2 = model.ToshiOpenquakeHazardCurveStatsV2
+mOHCR2 = model.ToshiOpenquakeHazardCurveRlzsV2
 
 
 def get_hazard_stats_curves(
@@ -112,6 +133,94 @@ def get_hazard_rlz_curves(
 
     print(f"get_hazard_rlz_curves: qry {qry}")
     for hit in qry:
+        yield (hit)
+
+
+def get_hazard_rlz_curves_v2(
+    haz_sol_id: str,
+    imts: Iterable[str] = [],
+    locs: Iterable[str] = [],
+    rlzs: Iterable[str] = [],
+) -> Iterator[mOHCR2]:
+    """Use mOHCR2.loc_agg_rk range key as much as possible."""
+
+    range_key_first_val = ""
+    condition_expr = None
+
+    # if imts:
+    #     first_imt = sorted(imts)[0]
+    #     range_key_first_val += f"{first_imt}"
+    #     condition_expr = condition_expr & mOHCR.imt.is_in(*imts)
+    if locs:
+        condition_expr = condition_expr & mOHCR2.loc.is_in(*locs)
+    if rlzs:
+        condition_expr = condition_expr & mOHCR2.rlz.is_in(*rlzs)
+
+    if locs:
+        first_loc = sorted(locs)[0]
+        range_key_first_val += f"{first_loc}"
+    if locs and rlzs:
+        first_rlz = sorted(rlzs)[0]
+        range_key_first_val += f":{first_rlz}"
+
+    print(f"range_key_first_val: {range_key_first_val}")
+    print(condition_expr)
+
+    if range_key_first_val:
+        qry = mOHCR2.query(haz_sol_id, mOHCR2.loc_rlz_rk >= range_key_first_val, filter_condition=condition_expr)
+    else:
+        qry = mOHCR2.query(
+            haz_sol_id,
+            mOHCR2.loc_rlz_rk >= " ",  # lowest printable char in ascii table is SPACE. (NULL is first control)
+            filter_condition=condition_expr,
+        )
+
+    print(f"get_hazard_rlz_curves_v2: qry {qry}")
+    for hit in qry:
+        if imts:
+            hit.values = list(filter(lambda x: x.imt in imts, hit.values))
+        yield (hit)
+
+
+def get_hazard_stats_curves_v2(
+    haz_sol_id: str,
+    imts: Iterable[str] = [],
+    locs: Iterable[str] = [],
+    aggs: Iterable[str] = [],
+) -> Iterator[mOHCS2]:
+    """Use mOHCS2.loc_agg_rk range key as much as possible."""
+
+    range_key_first_val = ""
+    condition_expr = None
+
+    if locs:
+        condition_expr = condition_expr & mOHCS2.loc.is_in(*locs)
+    if aggs:
+        condition_expr = condition_expr & mOHCS2.agg.is_in(*aggs)
+
+    if locs:
+        first_loc = sorted(locs)[0]
+        range_key_first_val += f"{first_loc}"
+    if locs and aggs:
+        first_agg = sorted(aggs)[0]
+        range_key_first_val += f":{first_agg}"
+
+    print(f"range_key_first_val: {range_key_first_val}")
+    print(condition_expr)
+
+    if range_key_first_val:
+        qry = mOHCS2.query(haz_sol_id, mOHCS2.loc_agg_rk >= range_key_first_val, filter_condition=condition_expr)
+    else:
+        qry = mOHCS2.query(
+            haz_sol_id,
+            mOHCS2.loc_agg_rk >= " ",  # lowest printable char in ascii table is SPACE. (NULL is first control)
+            filter_condition=condition_expr,
+        )
+
+    print(f"get_hazard_stats_curves_v2: qry {qry}")
+    for hit in qry:
+        if imts:
+            hit.values = list(filter(lambda x: x.imt in imts, hit.values))
         yield (hit)
 
 

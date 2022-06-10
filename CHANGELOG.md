@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0] - 2022-06-10
+### Added
+ - new V2 models for stats and rlzs.
+ - new get_hazard script for manual testing.
+ - extra test coverage with optional openquake install as DEV dependency.
+
+### Changed
+ - meta dataframes are cut back to dstore defaults to minimise size.
 
 ## [0.3.2] - 2022-05-30
 ### Added

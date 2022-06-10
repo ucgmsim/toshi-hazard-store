@@ -25,6 +25,7 @@ packages = [
 
 [tool.poetry.scripts]
 store_hazard = 'scripts.store_hazard:main'
+get_hazard = 'scripts.get_hazard:main'
 
 [tool.poetry.dev-dependencies]
 
@@ -63,6 +64,7 @@ bump2version = {version = "^1.0.1"}
 jinja2 = {version = "3.0.3"}
 moto = "^3.1.10"
 types-python-dateutil = "^2.8.16"
+"openquake.engine" = "^3.14.0"
 
 [tool.poetry.dependencies]
 python = ">=3.7.2,<4.0"

@@ -52,6 +52,29 @@ class QueryModuleTest(unittest.TestCase):
         model.drop_tables()
         return super(QueryModuleTest, self).tearDown()
 
+    def test_partial_meta(self):
+        obj = model.ToshiOpenquakeHazardMeta(
+            partition_key="ToshiOpenquakeHazardMeta",
+            updated=dt.datetime.now(tzutc()),
+            # known at configuration
+            vs30=760.0,  # vs30 value
+            haz_sol_id="YABBA",
+            imts=['PGA', 'SA(0.5)'],  # list of IMTs
+            locs=['WLG', 'AKL'],  # list of Location codes
+            srcs=['A', 'B'],  # list of source model ids
+            aggs=['0.1', '0.5', '0.9', 'mean'],
+            inv_time=1.0,
+            # extracted from the OQ HDF5
+            src_lt="{}",  # json.dumps(dict()),  # sources meta as DataFrame JSON
+            gsim_lt="{}",  # json.dumps(dict()),  # gmpe meta as DataFrame JSON
+            rlz_lt="{}",  # json.dumps(dict()),  # realization meta as DataFrame JSON
+        )
+        obj.hazsol_vs30_rk = f"{obj.haz_sol_id}:{obj.vs30}"
+        obj.save()
+
+        saved = model.ToshiOpenquakeHazardMeta.scan()
+        self.assertEqual(len(list(saved)), 1)
+
     def test_batch_save_meta_objects(self):
         self.assertEqual(model.ToshiOpenquakeHazardMeta.exists(), True)
 

@@ -24,6 +24,7 @@ class PynamoTest(unittest.TestCase):
     def test_table_exists(self):
         self.assertEqual(model.ToshiOpenquakeHazardCurveRlzs.exists(), True)
 
+    # @unittest.skip('deprecated')
     def test_save_one_realization_object(self):
 
         lvps = list(map(lambda x: model.LevelValuePairAttribute(lvl=x / 1e3, val=(x / 1e6)), range(1, 51)))
@@ -47,6 +48,58 @@ class PynamoTest(unittest.TestCase):
         self.assertEqual(obj.values[0].val, 0.000001)
         self.assertEqual(obj.values[9].lvl, 0.01)
         self.assertEqual(obj.values[9].val, 0.00001)
+
+    def test_save_one_new_realization_object(self):
+        """New realization handles all the IMT levels."""
+        imtvs = []
+        for t in ['PGA', 'SA(0.5)', 'SA(1.0)']:
+            levels = range(1, 51)
+            values = range(101, 151)
+            imtvs.append(model.IMTValuesAttribute(imt="PGA", lvls=levels, vals=values))
+
+        obj = model.ToshiOpenquakeHazardCurveRlzsV2(
+            haz_sol_id="ABCDE",
+            loc_rlz_rk="WLG:010",
+            loc="WLG",
+            rlz="010",
+            values=imtvs,
+        )
+
+        print(f'obj: {obj} {obj.version}')
+        obj.save()
+        print(f'obj: {obj} {obj.version}')
+        print(dir(obj))
+
+        self.assertEqual(obj.values[0].lvls[0], 1)
+        self.assertEqual(obj.values[0].vals[0], 101)
+        self.assertEqual(obj.values[0].lvls[-1], 50)
+        self.assertEqual(obj.values[0].vals[-1], 150)
+
+    def test_save_one_new_stats_object(self):
+        """New stats handles all the IMT levels."""
+        imtvs = []
+        for t in ['PGA', 'SA(0.5)', 'SA(1.0)']:
+            levels = range(1, 51)
+            values = range(101, 151)
+            imtvs.append(model.IMTValuesAttribute(imt="PGA", lvls=levels, vals=values))
+
+        obj = model.ToshiOpenquakeHazardCurveStatsV2(
+            haz_sol_id="ABCDE",
+            loc_agg_rk="WLG:mean",
+            loc="WLG",
+            agg="mean",
+            values=imtvs,
+        )
+
+        print(f'obj: {obj} {obj.version}')
+        obj.save()
+        print(f'obj: {obj} {obj.version}')
+        print(dir(obj))
+
+        self.assertEqual(obj.values[0].lvls[0], 1)
+        self.assertEqual(obj.values[0].vals[0], 101)
+        self.assertEqual(obj.values[0].lvls[-1], 50)
+        self.assertEqual(obj.values[0].vals[-1], 150)
 
     def test_save_one_stats_object(self):
 
