@@ -1,7 +1,7 @@
 [tool]
 [tool.poetry]
 name = "toshi-hazard-store"
-version = "0.4.0"
+version = "0.5.0"
 homepage = "https://github.com/GNS-Science/toshi-hazard-store"
 description = "Library for saving and retrieving NZHSM openquake hazard results with convenience (uses AWS Dynamodb)."
 authors = ["GNS Science <chrisbc@artisan.co.nz>"]
