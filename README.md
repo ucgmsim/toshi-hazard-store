@@ -7,19 +7,16 @@
 [![codecov](https://codecov.io/gh/GNS-Science/toshi-hazard-store/branch/main/graphs/badge.svg)](https://codecov.io/github/GNS-Science/toshi-hazard-store)
 
 
-
-plugin export module for openquake to manage hazard data in dynamodb.
-
-
 * Documentation: <https://GNS-Science.github.io/toshi-hazard-store>
 * GitHub: <https://github.com/GNS-Science/toshi-hazard-store>
 * PyPI: <https://pypi.org/project/toshi-hazard-store/>
 * Free software: GPL-3.0-only
 
-
 ## Features
 
-* TODO
+* Main purpose is to upload Openquake hazard results to a DynamodDB tables defined herein.
+* relates the results to the toshi hazard id identifying the OQ hazard job run.
+* extracts metadata from the openquake hdf5 solution
 
 ## Credits
 

@@ -13,7 +13,6 @@ classifiers=[
     'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
     'Natural Language :: English',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
 ]
@@ -25,7 +24,9 @@ packages = [
 
 [tool.poetry.scripts]
 store_hazard = 'scripts.store_hazard:main'
+store_hazard_v3 = 'scripts.store_hazard_v3:main'
 get_hazard = 'scripts.get_hazard:main'
+query_meta = 'scripts.query_meta:main'
 
 [tool.poetry.dev-dependencies]
 
@@ -65,10 +66,15 @@ jinja2 = {version = "3.0.3"}
 moto = "^3.1.10"
 types-python-dateutil = "^2.8.16"
 "openquake.engine" = "^3.14.0"
+ipython = "^8.4.0"
 
 [tool.poetry.dependencies]
-python = ">=3.7.2,<4.0"
+python = ">=3.8,<4.0"
 pynamodb = "^5.2.1"
+pynamodb-attributes = "^0.3.2"
+numpy = "^1.23.1"
+pandas = "^1.4.3"
+nzshm-common = {git = "https://github.com/GNS-Science/nzshm-common-py.git", rev = "main"}
 
 
 [tool.poetry.extras]
@@ -96,7 +102,7 @@ doc = [
 [tool.black]
 line-length = 120
 skip-string-normalization = true
-target-version = ['py36', 'py37', 'py38']
+target-version = ['py38', 'py39']
 include = '\.pyi?$'
 exclude = '''
 /(

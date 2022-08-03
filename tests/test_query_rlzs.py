@@ -11,6 +11,8 @@ imts = ['PGA', 'SA(0.5)']
 locs = ['WLG', 'QZN']
 rlzs = [f"00{x}" for x in range(5)]
 lvps = list(map(lambda x: model.LevelValuePairAttribute(lvl=x / 1e3, val=(x / 1e6)), range(1, 51)))
+lat = -41.3
+lon = 174.78
 
 
 def build_rlzs_models():
@@ -27,7 +29,7 @@ def build_rlzs_v2_models():
         imtvs.append(model.IMTValuesAttribute(imt="PGA", lvls=levels, vals=values))
 
     for (loc, rlz) in itertools.product(locs, rlzs):
-        yield model.ToshiOpenquakeHazardCurveRlzsV2(loc=loc, rlz=rlz, values=imtvs)
+        yield model.ToshiOpenquakeHazardCurveRlzsV2(loc=loc, rlz=rlz, values=imtvs, lat=lat, lon=lon)
 
 
 @mock_dynamodb

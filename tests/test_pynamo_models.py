@@ -32,8 +32,8 @@ class PynamoTest(unittest.TestCase):
 
         obj = model.ToshiOpenquakeHazardCurveRlzs(
             haz_sol_id="ABCDE",
-            imt_loc_rlz_rk="350:PGA:WLG:rlz-010",
-            loc="WLG",
+            imt_loc_rlz_rk="350:PGA:[-41.3~174.78]:rlz-010",
+            loc="[-41.3~174.78]",
             rlz="rlz-010",
             imt="PGA",
             values=lvps,
@@ -59,8 +59,10 @@ class PynamoTest(unittest.TestCase):
 
         obj = model.ToshiOpenquakeHazardCurveRlzsV2(
             haz_sol_id="ABCDE",
-            loc_rlz_rk="WLG:010",
-            loc="WLG",
+            loc_rlz_rk="[-41.3~174.78]:010",
+            loc="[-41.3~174.78]",
+            lat=-41.3,
+            lon=174.78,
             rlz="010",
             values=imtvs,
         )
@@ -85,8 +87,10 @@ class PynamoTest(unittest.TestCase):
 
         obj = model.ToshiOpenquakeHazardCurveStatsV2(
             haz_sol_id="ABCDE",
-            loc_agg_rk="WLG:mean",
-            loc="WLG",
+            loc_agg_rk="[-41.3~174.78]:mean",
+            loc="[-41.3~174.78]",
+            lat=-41.3,
+            lon=174.78,
             agg="mean",
             values=imtvs,
         )
@@ -108,8 +112,8 @@ class PynamoTest(unittest.TestCase):
 
         obj = model.ToshiOpenquakeHazardCurveStats(
             haz_sol_id="ABCDE",
-            imt_loc_agg_rk="350:SA(0.5):WLG:quantile-0.1",
-            loc="WLG",
+            imt_loc_agg_rk="350:SA(0.5):[-41.3~174.78]:quantile-0.1",
+            loc="[-41.3~174.78]",
             agg="quantile-0.1",
             imt="SA(0.5)",
             values=lvps,
@@ -137,7 +141,7 @@ class PynamoTest(unittest.TestCase):
             # known at configuration
             vs30=350,  # vs30 value
             imts=['PGA', 'SA(0.5)'],  # list of IMTs
-            locs=['WLG', 'AKL'],  # list of Location codes
+            locs=['[-41.3~174.78]', 'AKL'],  # list of Location codes
             srcs=['A', 'B'],  # list of source model ids
             aggs=['0.1'],
             inv_time=1.0,

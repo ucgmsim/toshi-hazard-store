@@ -3,7 +3,12 @@
 
 ### Environment & Authorisation pre-requisites
 
-TODO
+```
+NZSHM22_HAZARD_STORE_STAGE=XXXX (TEST or PROD)
+NZSHM22_HAZARD_STORE_REGION=XXXXX (ap-southeast-2)
+AWS_PROFILE- ... (See AWS authentication)
+
+```
 
 ## toshi-hazard-store (library)
 

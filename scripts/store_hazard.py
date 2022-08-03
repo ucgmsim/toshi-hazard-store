@@ -2,11 +2,14 @@
 
 import argparse
 import datetime as dt
+from pathlib import Path
 
 try:
     from openquake.commonlib import datastore
 
-    from toshi_hazard_store.transform import export_meta, export_rlzs, export_rlzs_v2, export_stats, export_stats_v2
+    from toshi_hazard_store.export import export_rlzs_v2, export_stats_v2
+    from toshi_hazard_store.export_v1 import export_rlzs, export_stats
+    from toshi_hazard_store.transform import export_meta
 except ImportError:
     print("WARNING: the transform module uses the optional openquake dependencies - h5py, pandas and openquake.")
     raise
@@ -17,11 +20,17 @@ from toshi_hazard_store import model
 def extract_and_save(args):
     """Do the work."""
 
-    calc_id = int(args.calc_id)
+    hdf5_path = Path(args.calc_id)
+    if hdf5_path.exists():
+        # we have a file path to work with
+        dstore = datastore.DataStore(str(hdf5_path))
+    else:
+        calc_id = int(args.calc_id)
+        dstore = datastore.read(calc_id)
+
     toshi_id = args.toshi_id
     skip_rlzs = args.skip_rlzs
 
-    dstore = datastore.read(calc_id)
     oq = dstore['oqparam']
     R = len(dstore['full_lt'].get_realizations())
 
@@ -29,7 +38,7 @@ def extract_and_save(args):
     t0 = dt.datetime.utcnow()
     if args.verbose:
         print('Begin saving meta')
-    export_meta(toshi_id, dstore)
+    export_meta(toshi_id, dstore, force_normalized_sites=args.force_normal_codes)
     if args.verbose:
         print("Done saving meta, took %s secs" % (dt.datetime.utcnow() - t0).total_seconds())
 
@@ -62,7 +71,7 @@ def extract_and_save(args):
     t0 = dt.datetime.utcnow()
     if args.verbose:
         print('Begin saving stats (V2)')
-    export_stats_v2(dstore, toshi_id)
+    export_stats_v2(dstore, toshi_id, force_normalized_sites=args.force_normal_codes)
     if args.verbose:
         t1 = dt.datetime.utcnow()
         print("Done saving stats, took %s secs" % (t1 - t0).total_seconds())
@@ -72,7 +81,7 @@ def extract_and_save(args):
     if not skip_rlzs:
         if args.verbose:
             print('Begin saving realisations (V2)')
-        export_rlzs_v2(dstore, toshi_id)
+        export_rlzs_v2(dstore, toshi_id, force_normalized_sites=args.force_normal_codes)
         if args.verbose:
             t1 = dt.datetime.utcnow()
             print("Done saving realisations, took %s secs" % (t1 - t0).total_seconds())
@@ -86,12 +95,19 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description='store_hazard.py (store_hazard)  - extract oq hazard by calc_id and store it.'
     )
-    parser.add_argument('calc_id', help='openquake calc id.')
+    parser.add_argument('calc_id', help='an openquake calc id OR filepath to the hdf5 file.')
     parser.add_argument('toshi_id', help='openquake_hazard_solution id.')
     parser.add_argument('-c', '--create-tables', action="store_true", help="Ensure tables exist.")
     parser.add_argument('-k', '--skip-rlzs', action="store_true", help="Skip the realizations store.")
     parser.add_argument('-v', '--verbose', help="Increase output verbosity.", action="store_true")
     parser.add_argument('-n', '--new-version-only', help="Only use the latest table version.", action="store_true")
+    parser.add_argument(
+        '-f',
+        '--force-normal-codes',
+        help="Enforce use of normalized site code. Use when the OQ job uses custom-site-id"
+        "and you don't want to store those codes.",
+        action="store_true",
+    )
     # parser.add_argument("-s", "--summary", help="summarise output", action="store_true")
     # parser.add_argument('-D', '--debug', action="store_true", help="print debug statements")
     args = parser.parse_args()
