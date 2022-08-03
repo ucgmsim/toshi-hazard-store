@@ -849,8 +849,8 @@ develop = false
 [package.source]
 type = "git"
 url = "https://github.com/GNS-Science/nzshm-common-py.git"
-reference = "main"
-resolved_reference = "437bf7a72cda70680d15c439ef0ec83e449d9375"
+reference = "d95df51787c1b42e471e9d8e793c119d07a95e74"
+resolved_reference = "d95df51787c1b42e471e9d8e793c119d07a95e74"
 
 [[package]]
 name = "openquake.engine"
@@ -1654,7 +1654,7 @@ test = []
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8,<4.0"
-content-hash = "6c2f8aeab51db3fd4bc98bcf9d7bcf510fdb693f698a927d8e1eed9bff5e95f6"
+content-hash = "88e25c6766007ff9e3e11024653a4ea126507238ce7ef75ed94e1b956bd9a6e8"
 
 [metadata.files]
 appnope = [
