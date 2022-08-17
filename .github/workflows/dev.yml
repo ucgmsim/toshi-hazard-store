@@ -32,10 +32,19 @@ jobs:
         with:
           python-version: ${{ matrix.python-versions }}
 
+      - name: Install and configure Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.2.0b3
+          virtualenvs-create: true
+          virtualenvs-in-project: false
+          installer-parallel: true
+
       - name: Install dependencies
         run: |
+          #curl -sSL https://install.python-poetry.org | POETRY_PREVIEW=1 python3 -
           python -m pip install --upgrade pip
-          pip install poetry==1.2.0b3
+          # pip install poetry==1.2.0b3
           # app requirements
           poetry export --dev --without-hashes > reqs.txt
           pip install -r reqs.txt
