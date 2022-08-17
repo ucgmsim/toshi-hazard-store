@@ -44,7 +44,7 @@ pytest = { version = "^6.2.4"}
 pytest-cov  = { version = "^2.12.0"}
 tox = { version = "^3.20.1"}
 virtualenv  = { version = "^20.2.2", optional = true}
-pip  = { version = "^20.3.1", optional = true}
+# pip  = { version = "^20.3.1", optional = true}
 
 mkdocs  = { version = "^1.1.2"}
 mkdocs-include-markdown-plugin  = { version = "^1.0.0"}
@@ -88,7 +88,7 @@ test = [
     "pytest-cov"
     ]
 
-dev = ["tox", "pre-commit", "virtualenv", "pip", "twine", "toml", "bump2version"]
+dev = ["tox", "pre-commit", "virtualenv", "twine", "toml", "bump2version"]
 
 doc = [
     "mkdocs",
