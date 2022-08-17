@@ -35,10 +35,11 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install poetry tox tox-gh-actions
+          pip install poetry==1.2.0b3
           # app requirements
           poetry export --dev --without-hashes > reqs.txt
           pip install -r reqs.txt
+          pip install tox tox-gh-actions
           pip install .
 
       - name: test with tox
