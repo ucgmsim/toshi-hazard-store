@@ -56,7 +56,7 @@ jobs:
       - name: Install dependencies w Poetry
         run: |
           poetry install --with dev
-          poetry install tox tox-gh-actions
+          poetry add tox-gh-actions
 
       - name: test with tox (uses tox-gh-actions to select correct environment)
         run:
