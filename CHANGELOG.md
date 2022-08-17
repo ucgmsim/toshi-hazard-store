@@ -1,9 +1,9 @@
 # Changelog
 
-## [0.5.2] - 2022-08-17
+## [0.5.3] - 2022-08-18
 
 ### Changed
- - ref to nzshm-common remove #main ref (this requires poetry >=1.2 - use POETRY_PREVIEW=1).
+ - using nzshm-common==0.3.2 from pypi.
  - specify poetry==1.2.0b3 in all the GHA yml files.
 
 ## [0.5.1] - 2022-08-17

@@ -856,23 +856,17 @@ python-versions = ">=3.8"
 
 [[package]]
 name = "nzshm-common"
-version = "0.3.0"
+version = "0.3.2"
 description = "A small pure python library for shared NZ NSHM data like locations."
 category = "main"
 optional = false
 python-versions = ">=3.8,<4.0.0"
-develop = false
+
+[package.dependencies]
+Shapely = {version = ">=1.8.3,<2.0.0", extras = ["geometry"]}
 
 [package.extras]
 geometry = ["geopandas[geometry] (>=0.11.1,<0.12.0)"]
-test = []
-dev = []
-
-[package.source]
-type = "git"
-url = "https://github.com/GNS-Science/nzshm-common-py.git"
-reference = "HEAD"
-resolved_reference = "289cfb990c87d31e12dcf1485eac4a3b4016d887"
 
 [[package]]
 name = "openquake-engine"
@@ -1445,7 +1439,7 @@ toml = ["setuptools (>=42)"]
 name = "shapely"
 version = "1.8.3"
 description = "Geometric objects, predicates, and operations"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.6"
 
@@ -1711,7 +1705,7 @@ test = []
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8,<4.0"
-content-hash = "9d5d38c7e336e737bb4f3a9b80f7ca20c9fdc64a9ac8712cace96f8b84563a55"
+content-hash = "33ab058adcf1712f4406f34032fffe8b0809e69e5f1a415af6e7dc94612c8118"
 
 [metadata.files]
 appnope = [
@@ -2344,7 +2338,10 @@ numpy = [
     {file = "numpy-1.23.2-pp38-pypy38_pp73-win_amd64.whl", hash = "sha256:be6b350dfbc7f708d9d853663772a9310783ea58f6035eec649fb9c4371b5389"},
     {file = "numpy-1.23.2.tar.gz", hash = "sha256:b78d00e48261fbbd04aa0d7427cf78d18401ee0abd89c7559bbf422e5b1c7d01"},
 ]
-nzshm-common = []
+nzshm-common = [
+    {file = "nzshm-common-0.3.2.tar.gz", hash = "sha256:6b9a0bba2e529f15d783bfe8029fb6b5da07ad3be244aa89a584b926688084be"},
+    {file = "nzshm_common-0.3.2-py3-none-any.whl", hash = "sha256:3449b9f1958d2c69c5c88579e46cec3dffe2c0051b5f0cb23c5eb776a3a222fb"},
+]
 openquake-engine = [
     {file = "openquake.engine-3.14.0-py3-none-any.whl", hash = "sha256:90151e1f61c05f28eeb31620bfd6fdd5e5dc1078c83c024ca290d8c379294762"},
     {file = "openquake.engine-3.14.0.tar.gz", hash = "sha256:741ab0c69faa957e0ee8b3f0e26b1bfe1161ed9607607d264fc0a3ad2229c637"},
