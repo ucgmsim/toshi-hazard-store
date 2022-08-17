@@ -37,23 +37,23 @@ jobs:
         with:
           version: 1.2.0b3
           virtualenvs-create: true
-          virtualenvs-in-project: false
+          virtualenvs-in-project: true
           installer-parallel: true
 
       - name: Install dependencies
         run: |
           #curl -sSL https://install.python-poetry.org | POETRY_PREVIEW=1 python3 -
-          python -m pip install --upgrade pip
+          # python -m pip install --upgrade pip
           # pip install poetry==1.2.0b3
           # app requirements
-          poetry export --dev --without-hashes > reqs.txt
-          pip install -r reqs.txt
-          pip install tox tox-gh-actions
-          pip install .
+          poetry install --with dev
+          # pip install -r reqs.txt
+          # pip install tox tox-gh-actions
+          # pip install .
 
       - name: test with tox
         run:
-          tox
+          poetry run tox
 
       - name: list files
         run: ls -l .
