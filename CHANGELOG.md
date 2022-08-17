@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.5.2] - 2022-08-17
+
+### Changed
+ - ref to nzshm-common remove #main ref (this requires poetry >=1.2 - use POETRY_PREVIEW=1).
+ - specify poetry==1.2.0b3 in all the GHA yml files.
+
 ## [0.5.1] - 2022-08-17
 
 ### Added

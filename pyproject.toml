@@ -74,7 +74,7 @@ pynamodb = "^5.2.1"
 pynamodb-attributes = "^0.3.2"
 numpy = "^1.23.1"
 pandas = "^1.4.3"
-nzshm-common = {git = "https://github.com/GNS-Science/nzshm-common-py.git", rev = "main"}
+nzshm-common = {git = "https://github.com/GNS-Science/nzshm-common-py.git"}
 
 
 [tool.poetry.extras]
