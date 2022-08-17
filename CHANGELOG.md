@@ -1,7 +1,6 @@
 # Changelog
 
-
-## [0.5.1] - 2022-08-05
+## [0.5.1] - 2022-08-17
 
 ### Added
  - THS_HazardAggregation table support for csv serialisation.
@@ -11,6 +10,8 @@
 
 ### Removed
  - one openquake test no longer works as expected. It's off-piste so skipping it for now.
+ - data_functions migrated to THP
+ - branch_combinator migrated to THP
 
 ## [0.5.0] - 2022-08-03
 
