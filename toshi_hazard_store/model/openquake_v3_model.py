@@ -3,6 +3,7 @@
 import logging
 import uuid
 from datetime import datetime, timezone
+from typing import Iterable, Iterator, Sequence, Union
 
 from nzshm_common.location.code_location import CodedLocation
 from pynamodb.attributes import (
@@ -61,14 +62,6 @@ class ToshiOpenquakeMeta(Model):
     src_lt = JSONAttribute()  # sources meta as DataFrame JSON
     gsim_lt = JSONAttribute()  # gmpe meta as DataFrame JSON
     rlz_lt = JSONAttribute()  # realization meta as DataFrame JSON
-
-    # def hazard_solution_index(self):
-    #     _class, _id = from_global_id(self.hazard_solution_id)
-    #     return _id
-
-    # def general_task_index(self):
-    #     _class, _id = from_global_id(self.general_task_id)
-    #     return _id
 
 
 class vs30_nloc1_gt_rlz_index(LocalSecondaryIndex):
@@ -150,18 +143,6 @@ class HazardAggregation(LocationIndexedModel):
 
     values = ListAttribute(of=LevelValuePairAttribute)
 
-    # aggregation_info = # details about the aggregation
-    # count of aggregated items
-    # aggregation configuration: filtering, grouping
-    # subject: rlzs or aggregations
-    # requested
-    # time_seconds:
-    # started:
-
-    # Secondary Index attributes
-    # index1 = vs30_nloc1_gt_rlz_index()
-    # index1_rk = UnicodeAttribute()
-
     def set_location(self, location: CodedLocation):
         """Set internal fields, indices etc from the location."""
         super().set_location(location)
@@ -171,6 +152,35 @@ class HazardAggregation(LocationIndexedModel):
         self.partition_key = self.nloc_1
         self.sort_key = f'{self.nloc_001}:{vs30s}:{self.imt}:{self.agg}:{self.hazard_model_id}'
         return self
+
+    @staticmethod
+    def to_csv(models: Iterable['HazardAggregation']) -> Iterator[Sequence[Union[str, float]]]:
+        """Generate lists ready for csv module - including a header, followed by n rows."""
+        n_models = 0
+        for model in models:
+            # create the header row, removing unneeded attributes
+            if n_models == 0:
+                model_attrs = list(model.attribute_values.keys())
+                for attr in [
+                    'hazard_model_id',
+                    'uniq_id',
+                    'created',
+                    'nloc_0',
+                    'nloc_001',
+                    'nloc_01',
+                    'nloc_1',
+                    'partition_key',
+                    'sort_key',
+                    'values',
+                ]:
+                    model_attrs.remove(attr)
+
+                levels = [f'poe-{value.lvl}' for value in model.values]
+                yield (model_attrs + levels)
+
+            # the data
+            yield [getattr(model, attr) for attr in model_attrs] + [value.val for value in model.values]
+            n_models += 1
 
 
 class OpenquakeRealization(LocationIndexedModel):

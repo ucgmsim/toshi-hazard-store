@@ -7,8 +7,7 @@ from pathlib import Path
 try:
     from openquake.commonlib import datastore
 
-    from toshi_hazard_store.export import export_rlzs_v2, export_stats_v2
-    from toshi_hazard_store.export_v1 import export_rlzs, export_stats
+    from toshi_hazard_store.oq_import import export_rlzs, export_rlzs_v2, export_stats, export_stats_v2
     from toshi_hazard_store.transform import export_meta
 except ImportError:
     print("WARNING: the transform module uses the optional openquake dependencies - h5py, pandas and openquake.")

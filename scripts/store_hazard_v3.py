@@ -7,7 +7,7 @@ from pathlib import Path
 try:
     from openquake.commonlib import datastore
 
-    from toshi_hazard_store.export_v3 import export_meta_v3, export_rlzs_v3
+    from toshi_hazard_store.oq_import import export_meta_v3, export_rlzs_v3
 except ImportError:
     print("WARNING: the transform module uses the optional openquake dependencies - h5py, pandas and openquake.")
     raise
@@ -59,7 +59,7 @@ def extract_and_save(args):
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='store_hazard.py (store_hazard)  - extract oq hazard by calc_id and store it.'
+        description='store_hazard.py (store_hazard) - extract oq hazard by calc_id and store it.'
     )
     parser.add_argument('calc_id', help='an openquake calc id OR filepath to the hdf5 file.')
     parser.add_argument('toshi_hazard_id', help='hazard_solution id.')
@@ -87,9 +87,5 @@ def handle_args(args):
     extract_and_save(args)
 
 
-def main():
-    handle_args(parse_args())
-
-
 if __name__ == '__main__':
-    main()  # pragma: no cover
+    handle_args(parse_args())  # pragma: no cover

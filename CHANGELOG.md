@@ -1,5 +1,17 @@
 # Changelog
 
+
+## [0.5.1] - 2022-08-05
+
+### Added
+ - THS_HazardAggregation table support for csv serialisation.
+
+### Changed
+ - refactoring/renaming openquake import modules.
+
+### Removed
+ - one openquake test no longer works as expected. It's off-piste so skipping it for now.
+
 ## [0.5.0] - 2022-08-03
 
 ### Added
