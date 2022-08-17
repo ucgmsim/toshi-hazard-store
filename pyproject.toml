@@ -131,5 +131,5 @@ skip_gitignore = true
 #skip_glob = docs/conf.py
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core>=1.1.0b3"]
 build-backend = "poetry.core.masonry.api"
