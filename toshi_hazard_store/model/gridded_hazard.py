@@ -55,7 +55,7 @@ class GriddedHazard(Model):
         """DynamoDB Metadata."""
 
         billing_mode = 'PAY_PER_REQUEST'
-        table_name = f"THH_GriddedHazard-{DEPLOYMENT_STAGE}"
+        table_name = f"THS_GriddedHazard-{DEPLOYMENT_STAGE}"
         region = REGION
         if IS_OFFLINE:
             host = "http://localhost:8000"  # pragma: no cover
