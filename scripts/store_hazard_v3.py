@@ -41,18 +41,19 @@ def extract_and_save(args):
     if args.verbose:
         print("Done saving meta, took %s secs" % (dt.datetime.utcnow() - t0).total_seconds())
 
-    # new v3 realisations storage
-    t0 = dt.datetime.utcnow()
-    if args.verbose:
-        print('Begin saving realisations (V3)')
-    export_rlzs_v3(
-        dstore,
-        meta,
-    )
+    if not args.meta_data_only:
+        # new v3 realisations storage
+        t0 = dt.datetime.utcnow()
+        if args.verbose:
+            print('Begin saving realisations (V3)')
+        export_rlzs_v3(
+            dstore,
+            meta,
+        )
 
-    if args.verbose:
-        t1 = dt.datetime.utcnow()
-        print("Done saving realisations, took %s secs" % (t1 - t0).total_seconds())
+        if args.verbose:
+            t1 = dt.datetime.utcnow()
+            print("Done saving realisations, took %s secs" % (t1 - t0).total_seconds())
 
     dstore.close()
 
@@ -70,6 +71,7 @@ def parse_args():
 
     parser.add_argument('-c', '--create-tables', action="store_true", help="Ensure tables exist.")
     parser.add_argument('-v', '--verbose', help="Increase output verbosity.", action="store_true")
+    parser.add_argument('-m', '--meta-data-only', action="store_true", help="Do just the meta data, then stop.")
 
     args = parser.parse_args()
     return args
