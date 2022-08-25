@@ -89,5 +89,9 @@ def handle_args(args):
     extract_and_save(args)
 
 
+def main():
+    handle_args(parse_args())
+
+
 if __name__ == '__main__':
-    handle_args(parse_args())  # pragma: no cover
+    main()  # pragma: no cover
