@@ -34,7 +34,7 @@ def get_gridded_hazard(
         sort_key = sort_key + f":{sorted(poes)[0]}" if grid_ids and vs30s and imts and aggs and poes else sort_key
         return sort_key
 
-    def build_condition_expr(lhazard_model_id, location_grid_ids, vs30s, imts, aggs, poes):
+    def build_condition_expr(hazard_model_id, location_grid_ids, vs30s, imts, aggs, poes):
         """Build filter condition."""
         condition_expr = mGH.hazard_model_id == hazard_model_id
         if location_grid_ids:
@@ -67,6 +67,6 @@ def get_gridded_hazard(
                 filter_condition=condition_expr,
             )
 
-        log.debug(f"get_hazard_rlz_curves_v3: qry {qry}")
+        log.debug(f"get_gridded_hazard: qry {qry}")
         for hit in qry:
             yield (hit)

@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.5.4]
+
+### Changed
+ - improving logging
+ - more test cover
+
 ## [0.5.3] - 2022-08-18
 
 ### Changed
