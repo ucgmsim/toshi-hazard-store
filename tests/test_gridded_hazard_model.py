@@ -12,7 +12,7 @@ log = logging.getLogger()
 logging.basicConfig(level=logging.INFO)
 logging.getLogger('botocore').setLevel(logging.INFO)
 logging.getLogger('pynamodb').setLevel(logging.DEBUG)
-logging.getLogger('toshi_hazard_store').setLevel(logging.INFO)
+logging.getLogger('toshi_hazard_store').setLevel(logging.DEBUG)
 
 GRID = "NZGRID"
 HAZARD_MODELS = "SOMESUCH"
@@ -73,7 +73,7 @@ class PynamoTestQuery(unittest.TestCase):
         model.drop_tables()
         return super(PynamoTestQuery, self).tearDown()
 
-    def test_query_one_gridded_hazard_aggr(self):
+    def test_query_tupled_gridded_hazard_aggr(self):
         res = list(
             query.get_gridded_hazard(
                 hazard_model_ids=tuple([HAZARD_MODELS]),
@@ -88,3 +88,20 @@ class PynamoTestQuery(unittest.TestCase):
         print(res)
         self.assertEqual(len(res), 1)
         self.assertEqual(res[0].grid_poes, [1.0, 2.0, 3.0])
+
+    def test_query_one_gridded_hazard_aggr(self):
+        res = list(
+            query.get_one_gridded_hazard(
+                hazard_model_id=HAZARD_MODELS,
+                location_grid_id=GRID,
+                vs30=400,
+                imt='PGA',
+                agg='0.995',
+                poe=0.02,
+            )
+        )
+
+        print(res)
+        self.assertEqual(len(res), 1)
+        self.assertEqual(res[0].grid_poes, [1.0, 2.0, 3.0])
+        self.assertEqual(res[0].agg, '0.995')

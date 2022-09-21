@@ -2,6 +2,9 @@
 
 ## [0.5.4]
 
+### Added
+ - new query get_one_gridded_hazard
+
 ### Changed
  - improving logging
  - more test cover

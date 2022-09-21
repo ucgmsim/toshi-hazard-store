@@ -10,6 +10,22 @@ log = logging.getLogger(__name__)
 mGH = GriddedHazard
 
 
+def get_one_gridded_hazard(
+    hazard_model_id: str,
+    location_grid_id: str,
+    vs30: float,
+    imt: str,
+    agg: str,
+    poe: float,
+) -> mGH:
+    """Fetch GriddedHazard based on single criteria."""
+
+    qry = mGH.query(hazard_model_id, mGH.sort_key == f'{hazard_model_id}:{location_grid_id}:{vs30}:{imt}:{agg}:{poe}')
+    log.debug(f"get_gridded_hazard: qry {qry}")
+    for hit in qry:
+        yield (hit)
+
+
 def get_gridded_hazard(
     hazard_model_ids: Iterable[str],
     location_grid_ids: Iterable[str],
