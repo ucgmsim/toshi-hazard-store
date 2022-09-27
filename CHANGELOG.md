@@ -3,6 +3,7 @@
 ## [0.5.4] - 2022-09-27
 ### Added
  - new query get_one_gridded_hazard
+ - -m option to script to export meta tables only
 ### Changed
  - migrated print statements to logging.debug
  - removed monkey patch for BASE183 - it iss in oqengine 3.15 now
