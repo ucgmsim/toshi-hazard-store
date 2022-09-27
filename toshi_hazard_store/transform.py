@@ -1,14 +1,9 @@
 """Helper functions to export an openquake calculation and save it with toshi-hazard-store."""
 
-import datetime as dt
 import re
 from collections import namedtuple
 
 import numpy as np
-from dateutil.tz import tzutc
-
-from toshi_hazard_store import model
-from toshi_hazard_store.utils import CodedLocation, normalise_site_code
 
 CustomLocation = namedtuple("CustomLocation", "site_code lon lat")
 CustomHazardCurve = namedtuple("CustomHazardCurve", "loc poes")
@@ -16,17 +11,10 @@ CustomHazardCurve = namedtuple("CustomHazardCurve", "loc poes")
 try:
     import h5py
     import pandas as pd
-    from openquake.calculators.export.hazard import extract, get_sites
-    from openquake.commonlib import datastore
+    from openquake.baselib.general import BASE183
 
-    # from openquake.baselib.general import BASE183
-    # NB this is required until the stable openquake release includes BASE183
-    BASE183 = (
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmno"
-        "pqrstuvwxyz{|}!#$%&'()*+-/0123456789:;<=>?@¡¢"
-        "£¤¥¦§¨©ª«¬®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑ"
-        "ÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ"
-    )
+    # from openquake.calculators.export.hazard import extract, get_sites
+    from openquake.commonlib import datastore
 except ImportError:
     print("WARNING: the transform module uses the optional openquake dependencies - h5py, pandas and openquake.")
     raise
@@ -91,50 +79,3 @@ def parse_logic_tree_branches(file_id):
             rlz_lt.loc[i_rlz, trt] = gsim
 
     return source_lt, gsim_lt, rlz_lt
-
-
-def get_data(dstore, im, kind):
-    sitemesh = get_sites(dstore['sitecol'])
-    key = 'hcurves?kind=%s&imt=%s' % (kind, im)
-    hcurves = extract(dstore, key)[kind]  # shape (N, 1, L1)
-
-    # Local helper classes, the oq classes aren't helping
-    return [CustomHazardCurve(CodedLocation(*site), poes[0]) for site, poes in zip(sitemesh, hcurves)]
-
-
-def export_meta(toshi_id, dstore, *, force_normalized_sites: bool = False):
-    """Extract and same the meta data."""
-    oq = dstore['oqparam']
-    sitemesh = get_sites(dstore['sitecol'])
-    source_lt, gsim_lt, rlz_lt = parse_logic_tree_branches(dstore.filename)
-
-    quantiles = [str(q) for q in vars(oq).get('quantiles', [])] + [
-        'mean'
-    ]  # mean is default, other values come from the config
-
-    df_len = 0
-    df_len += len(source_lt.to_json())
-    df_len += len(gsim_lt.to_json())
-    df_len += len(rlz_lt.to_json())
-
-    if df_len >= 300e3:
-        print('WARNING: Dataframes for this job may be too large to store on DynamoDB.')
-
-    obj = model.ToshiOpenquakeHazardMeta(
-        partition_key="ToshiOpenquakeHazardMeta",
-        updated=dt.datetime.now(tzutc()),
-        vs30=oq.reference_vs30_value,  # vs30 value
-        haz_sol_id=toshi_id,
-        imts=list(oq.imtls.keys()),  # list of IMTs
-        locs=[
-            normalise_site_code(loc, force_normalized_sites).code for loc in sitemesh.tolist()
-        ],  # list of Location codes, can be normalised
-        # important configuration arguments
-        aggs=quantiles,
-        inv_time=vars(oq)['investigation_time'],
-        src_lt=source_lt.to_json(),  # sources meta as DataFrame JSON
-        gsim_lt=gsim_lt.to_json(),  # gmpe meta as DataFrame JSON
-        rlz_lt=rlz_lt.to_json(),  # realization meta as DataFrame JSON
-    )
-    obj.hazsol_vs30_rk = f"{obj.haz_sol_id}:{obj.vs30}"
-    obj.save()

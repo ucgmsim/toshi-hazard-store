@@ -74,8 +74,7 @@ pynamodb = "^5.2.1"
 pynamodb-attributes = "^0.3.2"
 numpy = "^1.23.1"
 pandas = "^1.4.3"
-nzshm-common = "^0.3.2"
-
+nzshm-common = ">=0.4.0"
 
 [tool.poetry.extras]
 test = [

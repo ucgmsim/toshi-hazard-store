@@ -1,30 +1,32 @@
 # Changelog
 
-## [0.5.3] - 2022-08-18
+## [0.5.4] - 2022-09-27
+### Added
+ - new query get_one_gridded_hazard
+### Changed
+ - migrated print statements to logging.debug
+ - removed monkey patch for BASE183 - it iss in oqengine 3.15 now
+ - more test cover
 
+## [0.5.3] - 2022-08-18
 ### Changed
  - using nzshm-common==0.3.2 from pypi.
  - specify poetry==1.2.0b3 in all the GHA yml files.
 
 ## [0.5.1] - 2022-08-17
-
 ### Added
  - THS_HazardAggregation table support for csv serialisation.
-
 ### Changed
  - refactoring/renaming openquake import modules.
-
 ### Removed
  - one openquake test no longer works as expected. It's off-piste so skipping it for now.
  - data_functions migrated to THP
  - branch_combinator migrated to THP
 
 ## [0.5.0] - 2022-08-03
-
 ### Added
  - V3 THS table models with improved indexing and and performance (esp. THS_HazardAggregation table)
  - using latest CodedLocation API to manage gridded lcoations and resampling.
-
 ### Removed
  -  realisation aggregration computations. These have moving to toshi-hazard-post
 
