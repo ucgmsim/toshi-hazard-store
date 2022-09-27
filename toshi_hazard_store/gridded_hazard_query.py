@@ -17,7 +17,7 @@ def get_one_gridded_hazard(
     imt: str,
     agg: str,
     poe: float,
-) -> mGH:
+) -> Iterator[mGH]:
     """Fetch GriddedHazard based on single criteria."""
 
     qry = mGH.query(hazard_model_id, mGH.sort_key == f'{hazard_model_id}:{location_grid_id}:{vs30}:{imt}:{agg}:{poe}')
