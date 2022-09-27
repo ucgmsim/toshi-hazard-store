@@ -11,18 +11,10 @@ CustomHazardCurve = namedtuple("CustomHazardCurve", "loc poes")
 try:
     import h5py
     import pandas as pd
+    from openquake.baselib.general import BASE183
 
     # from openquake.calculators.export.hazard import extract, get_sites
     from openquake.commonlib import datastore
-
-    # from openquake.baselib.general import BASE183
-    # NB this is required until the stable openquake release includes BASE183
-    BASE183 = (
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmno"
-        "pqrstuvwxyz{|}!#$%&'()*+-/0123456789:;<=>?@¡¢"
-        "£¤¥¦§¨©ª«¬®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑ"
-        "ÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ"
-    )
 except ImportError:
     print("WARNING: the transform module uses the optional openquake dependencies - h5py, pandas and openquake.")
     raise

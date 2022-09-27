@@ -18,21 +18,6 @@ except ImportError:
 HAVE_MOCK_SERVER = False  # todo set up the moto mock_server properly
 
 
-class TestOpenquakeVersion(unittest.TestCase):
-    def test_alert_when_openquake_includes_base183(self):
-        try:
-            from openquake.baselib.general import BASE183  # noqa
-
-            HAVE_BASE183 = True
-        except ImportError:
-            HAVE_BASE183 = False
-        self.assertEqual(
-            HAVE_BASE183,
-            False,
-            "When this test passes, please refactor transform.py to use BASE183 from openquake.baselib.general.",
-        )
-
-
 class TestWithoutOpenquake(unittest.TestCase):
     """This test class disables openquake for testing, even if it's actually installed."""
 
