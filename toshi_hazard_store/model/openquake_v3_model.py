@@ -22,6 +22,8 @@ from toshi_hazard_store.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION
 from toshi_hazard_store.model.openquake_v1_model import LevelValuePairAttribute
 from toshi_hazard_store.model.openquake_v2_model import IMTValuesAttribute
 
+VS30_KEYLEN = 3  # string length for VS30 field indices
+
 
 def datetime_now():
     return datetime.now(tz=timezone.utc)
@@ -148,7 +150,7 @@ class HazardAggregation(LocationIndexedModel):
         super().set_location(location)
 
         # update the indices
-        vs30s = str(self.vs30).zfill(3)
+        vs30s = str(self.vs30).zfill(VS30_KEYLEN)
         self.partition_key = self.nloc_1
         self.sort_key = f'{self.nloc_001}:{vs30s}:{self.imt}:{self.agg}:{self.hazard_model_id}'
         return self
@@ -213,7 +215,7 @@ class OpenquakeRealization(LocationIndexedModel):
         # update the indices
         rlzs = str(self.rlz).zfill(6)
 
-        vs30s = str(self.vs30).zfill(3)
+        vs30s = str(self.vs30).zfill(VS30_KEYLEN)
         self.partition_key = self.nloc_1
         self.sort_key = f'{self.nloc_001}:{vs30s}:{rlzs}:{self.hazard_solution_id}'
         self.index1_rk = f'{self.nloc_1}:{vs30s}:{rlzs}:{self.hazard_solution_id}'

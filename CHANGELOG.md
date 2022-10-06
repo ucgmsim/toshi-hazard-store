@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.5.5] - 2022-10-06
+### Changed
+ - fix for queries with mixed length vs30 index keys
+ - migrate more print statements to logging.debug
+
 ## [0.5.4] - 2022-09-27
 ### Added
  - new query get_one_gridded_hazard

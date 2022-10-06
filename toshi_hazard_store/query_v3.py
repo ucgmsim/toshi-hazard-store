@@ -1,11 +1,13 @@
 """Queries for saving and retrieving openquake hazard results with convenience."""
 import decimal
+import logging
 from typing import Iterable, Iterator
 
-# from toshi_hazard_store.utils import CodedLocation
 from nzshm_common.location.code_location import CodedLocation
 
 import toshi_hazard_store.model as model
+
+log = logging.getLogger(__name__)
 
 mOQM = model.ToshiOpenquakeMeta
 mRLZ = model.OpenquakeRealization
@@ -45,6 +47,30 @@ def get_hashes(locs: Iterable[str]):
     return sorted(list(hashes))
 
 
+def have_mixed_length_vs30s(vs30s):
+    """Does the list of vs30s require mixed length index keys."""
+    max_vs30 = max(vs30s)
+    min_vs30 = min(vs30s)
+    if max_vs30 >= 1000:
+        if min_vs30 < 1000:
+            return True
+    else:
+        return False
+
+
+def first_vs30_key(vs30s):
+    """This function handles vs30 index keys with variable length (3 or 4), which occur since the addition
+    of vs30 values 1000 & 1500.
+
+    DynamoDB sort key is not mutable, so we must handle this in our query instead, which is slighlty less
+    efficient. Leave this in place unldess the table can be rewritten with a new vs30 key length of 4 characters.
+    """
+    if have_mixed_length_vs30s(vs30s):
+        vsLong = filter(lambda x: x >= 1000, vs30s)
+        return str(int(min(vsLong) / 10)).zfill(model.VS30_KEYLEN)
+    return str(min(vs30s)).zfill(model.VS30_KEYLEN)
+
+
 def get_rlz_curves_v3(
     locs: Iterable[str] = [],  # nloc_001
     vs30s: Iterable[int] = [],  # vs30s
@@ -70,8 +96,6 @@ def get_rlz_curves_v3(
         res = float(decimal.Decimal(10) ** places)
         locs = [downsample_code(loc, res) for loc in locs]
 
-        # print()
-        # print(f'res {res} locs {locs}')
         condition_expr = None
 
         if places == -1:
@@ -97,8 +121,9 @@ def get_rlz_curves_v3(
         sort_key_first_val += f"{first_loc}"
 
         if vs30s:
-            first_vs30 = sorted(vs30s)[0]
-            sort_key_first_val += f":{first_vs30}"
+            sort_key_first_val += f":{first_vs30_key(vs30s)}"
+            if have_mixed_length_vs30s(vs30s):  # we must stop the sort_key build here
+                return sort_key_first_val
         if vs30s and rlzs:
             first_rlz = str(sorted(rlzs)[0]).zfill(6)
             sort_key_first_val += f":{first_rlz}"
@@ -196,8 +221,9 @@ def get_hazard_curves(
         sort_key_first_val += f"{first_loc}"
 
         if vs30s:
-            first_vs30 = sorted(vs30s)[0]
-            sort_key_first_val += f":{first_vs30}"
+            sort_key_first_val += f":{first_vs30_key(vs30s)}"
+            if have_mixed_length_vs30s(vs30s):  # we must stop the sort_key build here
+                return sort_key_first_val
         if vs30s and imts:
             first_imt = sorted(imts)[0]
             sort_key_first_val += f":{first_imt}"
@@ -213,15 +239,14 @@ def get_hazard_curves(
     # TODO: use https://pypi.org/project/InPynamoDB/
     for hash_location_code in get_hashes(locs):
 
-        print(f'hash_key {hash_location_code}')
+        log.debug('hash_key %s' % hash_location_code)
 
         hash_locs = list(filter(lambda loc: downsample_code(loc, 0.1) == hash_location_code, locs))
-
         sort_key_first_val = build_sort_key(hash_locs, vs30s, hazard_model_ids)
         condition_expr = build_condition_expr(hash_locs, vs30s, hazard_model_ids)
 
-        print(f'sort_key_first_val {sort_key_first_val}')
-        print(f'condition_expr {condition_expr}')
+        log.debug('sort_key_first_val: %s' % sort_key_first_val)
+        log.debug('condition_expr: %s' % condition_expr)
 
         if sort_key_first_val:
             qry = mHAG.query(hash_location_code, mHAG.sort_key >= sort_key_first_val, filter_condition=condition_expr)
@@ -232,6 +257,6 @@ def get_hazard_curves(
                 filter_condition=condition_expr,
             )
 
-        print(f"get_hazard_rlz_curves_v3: qry {qry}")
+        log.debug("get_hazard_rlz_curves_v3: qry %s" % qry)
         for hit in qry:
             yield (hit)

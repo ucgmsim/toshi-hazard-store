@@ -56,25 +56,3 @@ class QueryHazardAggregationV3Test(unittest.TestCase):
         print(res)
         self.assertEqual(len(res), len(imts) * len(aggs) * len(vs30s) * len(locs[:2]))
         self.assertEqual(res[0].nloc_001, qlocs[0])
-
-    # def test_query_hazard_aggr_3(self):
-
-    #     res = list(query.get_hazard_rlz_curves_v3(HAZARD_MODEL_ID, ['PGA'], None, None))
-    #     print(res)
-    #     self.assertEqual(len(res), len(rlzs) * len(locs))
-
-    # def test_query_hazard_aggr_4(self):
-
-    #     res = list(query.get_hazard_rlz_curves_v3(HAZARD_MODEL_ID, ['PGA'], ['WLG', 'QZN'], ['001']))
-    #     print(res)
-    #     self.assertEqual(len(res), 2)
-    #     self.assertEqual(res[0].loc, 'QZN')
-    #     self.assertEqual(res[1].loc, 'WLG')
-    #     self.assertEqual(res[0].rlz, '001')
-
-    # def test_query_hazard_aggr_all(self):
-
-    #     res = list(query.get_hazard_rlz_curves_v3(HAZARD_MODEL_ID))
-    #     print(res)
-    #     self.assertEqual(len(res), len(list(build_hazard_aggregation_models())))
-    #     self.assertEqual(res[0].loc, 'QZN')
