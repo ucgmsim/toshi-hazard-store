@@ -1,7 +1,7 @@
 [tool]
 [tool.poetry]
 name = "toshi-hazard-store"
-version = "0.5.5"
+version = "0.7.0"
 homepage = "https://github.com/GNS-Science/toshi-hazard-store"
 description = "Library for saving and retrieving NZHSM openquake hazard results with convenience (uses AWS Dynamodb)."
 authors = ["GNS Science <chrisbc@artisan.co.nz>"]
@@ -15,6 +15,7 @@ classifiers=[
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10'
 ]
 packages = [
     { include = "toshi_hazard_store" },
@@ -27,63 +28,53 @@ store_hazard = 'scripts.store_hazard:main'
 store_hazard_v3 = 'scripts.store_hazard_v3:main'
 get_hazard = 'scripts.get_hazard:main'
 query_meta = 'scripts.query_meta:main'
-
-[tool.poetry.dev-dependencies]
-
-# Newer versions
-#flake8 = "^4.0.1"
-#pytest = "^7.1.2"
-#tox = "^3.25.0"
-
-black  = { version = "^22.3"}
-isort  = { version = "^5.8.0"}
-flake8  = { version = "^3.9.2"}
-flake8-docstrings = { version = "^1.6.0", optional = true }
-mypy = {version = "^0.900"}
-pytest = { version = "^6.2.4"}
-pytest-cov  = { version = "^2.12.0"}
-tox = { version = "^3.20.1"}
-virtualenv  = { version = "^20.2.2", optional = true}
-# pip  = { version = "^20.3.1", optional = true}
-
-mkdocs  = { version = "^1.1.2"}
-mkdocs-include-markdown-plugin  = { version = "^1.0.0"}
-mkdocs-material  = { version = "^6.1.7"}
-mkdocstrings  = { version = "^0.18.0"}
-mkdocs-material-extensions  = { version = "^1.0.1"}
-mkdocs-autorefs = {version = "^0.3.1"}
-
-pymdown-extensions = {version = "^9.4"}
-mkdocstrings-python = {version = "^0.6.5"}
-mkdocs-pymdownx-material-extras = "^2.0.3"
-
-twine  = { version = "^3.3.0"}
-
-pre-commit = {version = "^2.12.0", optional = true}
-toml = {version = "^0.10.2", optional = true}
-bump2version = {version = "^1.0.1"}
-jinja2 = {version = "3.0.3"}
-moto = "^3.1.10"
-types-python-dateutil = "^2.8.16"
-"openquake.engine" = "^3.14.0"
-ipython = "^8.4.0"
+ths_cache = 'scripts.ths_cache:cli'
 
 [tool.poetry.dependencies]
-python = ">=3.8,<4.0"
+numpy = "^1.23.1"
+nzshm-common = "^0.5.0"
+openquake-engine = {version = "^3.16", optional = true}
+pandas = "^1.4.3"
 pynamodb = "^5.2.1"
 pynamodb-attributes = "^0.3.2"
-numpy = "^1.23.1"
-pandas = "^1.4.3"
-nzshm-common = ">=0.4.0"
+python = ">=3.8,<4.0"
+
+[tool.poetry.group.dev.dependencies]
+black  = { version = "^22.3"}
+bump2version = {version = "^1.0.1"}
+flake8  = { version = "^3.9.2"}
+flake8-docstrings = { version = "^1.6.0", optional = true }
+ipython = "^8.4.0"
+isort  = { version = "^5.8.0"}
+jinja2 = {version = "3.0.3"}
+mkdocs  = { version = "^1.1.2"}
+mkdocs-autorefs = {version = "^0.3.1"}
+mkdocs-include-markdown-plugin  = { version = "^1.0.0"}
+mkdocs-material  = { version = "^6.1.7"}
+mkdocs-material-extensions  = { version = "^1.0.1"}
+mkdocs-pymdownx-material-extras = "^2.0.3"
+mkdocstrings  = { version = "^0.18.0"}
+mkdocstrings-python = {version = "^0.6.5"}
+moto = "^3.1.10"
+mypy = {version = "^0.900"}
+pre-commit = "^3.0.4"
+pymdown-extensions = {version = "^9.4"}
+pytest = { version = "^6.2.4"}
+pytest-cov  = { version = "^2.12.0"}
+toml = {version = "^0.10.2", optional = true}
+tox = "^4.4.5"
+twine  = { version = "^3.3.0"}
+types-python-dateutil = "^2.8.16"
+virtualenv  = { version = "^20.2.2", optional = true}
 
 [tool.poetry.extras]
 test = [
-    "pytest",
     "black",
-    "isort",
-    "mypy",
     "flake8",
     "flake8-docstrings",
+    "isort",
+    "mypy",
+    "pytest",
     "pytest-cov"
     ]
 
@@ -97,6 +88,8 @@ doc = [
     "mkdocs-material-extension",
     "mkdocs-autorefs"
     ]
+
+openquake = ["openquake-engine"]
 
 [tool.black]
 line-length = 120

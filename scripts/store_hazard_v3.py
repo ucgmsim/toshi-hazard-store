@@ -8,9 +8,9 @@ try:
     from openquake.commonlib import datastore
 
     from toshi_hazard_store.oq_import import export_meta_v3, export_rlzs_v3
-except ImportError:
+except (ModuleNotFoundError, ImportError):
     print("WARNING: the transform module uses the optional openquake dependencies - h5py, pandas and openquake.")
-    raise
+
 
 from toshi_hazard_store import model
 

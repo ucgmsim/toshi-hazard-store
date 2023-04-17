@@ -1,3 +1,4 @@
+import math
 from dataclasses import dataclass
 
 import pandas as pd
@@ -36,14 +37,17 @@ def export_meta_v3(dstore, toshi_hazard_id, toshi_gt_id, locations_id, source_ta
     if df_len >= 300e3:
         print('WARNING: Dataframes for this job may be too large to store on DynamoDB.')
 
+    vs30 = oq.reference_vs30_value
+    if math.isnan(vs30):
+        vs30 = 0
     obj = model.ToshiOpenquakeMeta(
         partition_key="ToshiOpenquakeMeta",
         hazard_solution_id=toshi_hazard_id,
         general_task_id=toshi_gt_id,
-        hazsol_vs30_rk=f"{toshi_hazard_id}:{str(int(oq.reference_vs30_value)).zfill(3)}",
+        hazsol_vs30_rk=f"{toshi_hazard_id}:{str(int(vs30)).zfill(3)}",
         # updated=dt.datetime.now(tzutc()),
         # known at configuration
-        vs30=int(oq.reference_vs30_value),  # vs30 value
+        vs30=int(vs30),  # vs30 value
         imts=list(oq.imtls.keys()),  # list of IMTs
         locations_id=locations_id,  # Location code or list ID
         source_tags=source_tags,
@@ -95,6 +99,8 @@ def export_rlzs_v3(dstore, oqmeta: OpenquakeMeta):
                     source_tags=oqmeta.model.source_tags,
                     source_ids=oqmeta.model.source_ids,
                 )
+                if oqmeta.model.vs30 == 0:
+                    rlz.site_vs30 = dstore['sitecol']['vs30'][site]
                 rlz.set_location(loc)
                 yield rlz
 

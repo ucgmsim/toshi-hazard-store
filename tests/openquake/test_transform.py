@@ -15,7 +15,6 @@ try:
 except ImportError:
     HAVE_OQ = False
 
-
 HAVE_MOCK_SERVER = False  # todo set up the moto mock_server properly
 
 
@@ -42,14 +41,13 @@ class TestWithoutOpenquake(unittest.TestCase):
             flag = True
         self.assertTrue(flag)
 
-    @unittest.skip("export refactoring somehow stops this working ??!!")
+    # @unittest.skip("export refactoring somehow stops this working ??!!")
+    @unittest.skipUnless(not HAVE_OQ, "This test fails if openquake is installed")
     def test_no_openquake_raises_import_error_on_transform_modules(self):
         flag = False
         try:
             import toshi_hazard_store.transform  # noqa
-
-            assert 0
-        except ImportError:
+        except (ModuleNotFoundError, ImportError):
             flag = True
         self.assertTrue(flag)
 
@@ -64,30 +62,31 @@ class TestMetaWithOpenquake(unittest.TestCase):
         model.drop_tables()
         return super(TestMetaWithOpenquake, self).tearDown()
 
-        # @unittest.skipUnless(HAVE_OQ, "This test requires openquake")
-        # def test_export_meta_normalized_sitecode(self):
-        #     from openquake.calculators.export.hazard import get_sites
-        #     from openquake.commonlib import datastore
+    @unittest.skip('poetry and openquake are not workign together')
+    @unittest.skipUnless(HAVE_OQ, "This test requires openquake")
+    def test_export_meta_normalized_sitecode(self):
+        from openquake.calculators.export.hazard import get_sites
+        from openquake.commonlib import datastore
 
-        #     from toshi_hazard_store import transform
+        from toshi_hazard_store import transform
 
-        #     TOSHI_ID = 'ABCBD'
-        #     p = Path(Path(__file__).parent.parent, 'fixtures', 'calc_1822.hdf5')
-        #     dstore = datastore.read(str(p))
+        TOSHI_ID = 'ABCBD'
+        p = Path(Path(__file__).parent.parent, 'fixtures', 'calc_1822.hdf5')
+        dstore = datastore.read(str(p))
 
-        #     sitemesh = get_sites(dstore['sitecol'])
-        #     print('sitemesh', sitemesh)
+        sitemesh = get_sites(dstore['sitecol'])
+        print('sitemesh', sitemesh)
 
-        #     # do the saving....
-        #     transform.export_meta(TOSHI_ID, dstore, force_normalized_sites=True)
-        #     # saved = list(model.ToshiOpenquakeHazardMeta.query(TOSHI_ID))
-        #     saved = list(model.ToshiOpenquakeHazardMeta.scan())
-        #     print('saved', saved)
+        # do the saving....
+        transform.export_meta(TOSHI_ID, dstore, force_normalized_sites=True)
+        # saved = list(model.ToshiOpenquakeHazardMeta.query(TOSHI_ID))
+        saved = list(model.ToshiOpenquakeHazardMeta.scan())
+        print('saved', saved)
 
-        # self.assertEqual(len(saved), 1)
-        # self.assertTrue('PGA' in saved[0].imts)
-        # self.assertIn("-35.220~173.970", saved[0].locs)
-        # print('saved', saved[0].locs)
+        self.assertEqual(len(saved), 1)
+        self.assertTrue('PGA' in saved[0].imts)
+        self.assertIn("-35.220~173.970", saved[0].locs)
+        print('saved', saved[0].locs)
 
     @unittest.skip('this calc file needs later build of openquake: ValueError: Unknown GSIM: Atkinson2022SInter')
     @unittest.skipUnless(HAVE_OQ, "This test requires openquake")
@@ -105,8 +104,8 @@ class TestMetaWithOpenquake(unittest.TestCase):
         print('sitemesh', sitemesh)
 
         # do the saving....
-        oq_import.export_meta_v3(TOSHI_ID, dstore)
-        # oq_import.export_meta_v3(dstore, TOSHI_ID, toshi_gt_id, locations_id, source_tags, source_ids)
+        # oq_import.export_meta_v3(TOSHI_ID, dstore)
+        oq_import.export_meta_v3(dstore, TOSHI_ID, "toshi_gt_id", "", ["source_tags"], ["source_ids"])
         # saved = list(model.ToshiOpenquakeHazardMeta.query(TOSHI_ID))
         saved = list(model.ToshiOpenquakeHazardMeta.scan())
         print('saved', saved)
@@ -115,27 +114,3 @@ class TestMetaWithOpenquake(unittest.TestCase):
         self.assertTrue('PGA' in saved[0].imts)
         self.assertIn("-35.220~173.970", saved[0].locs)
         print('saved', saved[0].locs)
-
-    # @unittest.skip("transform.export_meta is DEPRECATED")
-    # @unittest.skipUnless(HAVE_OQ, "This test requires openquake")
-    # def test_export_meta_non_normalized_sitecode(self):
-    #     from openquake.calculators.export.hazard import get_sites
-    #     from openquake.commonlib import datastore
-
-    #     from toshi_hazard_store import transform
-
-    #     TOSHI_ID = 'ABCBD'
-    #     p = Path(Path(__file__).parent.parent, 'fixtures', 'calc_1822.hdf5')
-    #     dstore = datastore.read(str(p))
-
-    #     sitemesh = get_sites(dstore['sitecol'])
-    #     print('sitemesh', sitemesh)
-
-    #     # do the saving....
-    #     transform.export_meta(TOSHI_ID, dstore, force_normalized_sites=False)
-    #     # saved = list(model.ToshiOpenquakeHazardMeta.query(TOSHI_ID))
-    #     saved = list(model.ToshiOpenquakeHazardMeta.scan())
-    #     print('saved', saved)
-
-    #     self.assertEqual(len(saved), 1)
-    #     self.assertIn("AKL", saved[0].locs)

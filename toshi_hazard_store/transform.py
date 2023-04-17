@@ -15,9 +15,10 @@ try:
 
     # from openquake.calculators.export.hazard import extract, get_sites
     from openquake.commonlib import datastore
-except ImportError:
+except (Exception) as err:
     print("WARNING: the transform module uses the optional openquake dependencies - h5py, pandas and openquake.")
-    raise
+    print(err)
+    raise err
 
 
 def parse_logic_tree_branches(file_id):

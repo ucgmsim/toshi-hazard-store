@@ -1,7 +1,7 @@
 import multiprocessing
 import random
 
-from toshi_hazard_store import model, query
+from toshi_hazard_store import model
 
 
 class DynamoBatchWorker(multiprocessing.Process):
@@ -47,11 +47,11 @@ class DynamoBatchWorker(multiprocessing.Process):
 
     def _batch_save(self, models):
         # print(f"worker {self.name} saving batch of len: {len(models)}")
-        if self.model == model.ToshiOpenquakeHazardCurveStatsV2:
-            query.batch_save_hcurve_stats_v2(self.toshi_id, models=models)
-        elif self.model == model.ToshiOpenquakeHazardCurveRlzsV2:
-            query.batch_save_hcurve_rlzs_v2(self.toshi_id, models=models)
-        elif self.model == model.OpenquakeRealization:
+        # if self.model == model.ToshiOpenquakeHazardCurveStatsV2:
+        #     query.batch_save_hcurve_stats_v2(self.toshi_id, models=models)
+        # elif self.model == model.ToshiOpenquakeHazardCurveRlzsV2:
+        #     query.batch_save_hcurve_rlzs_v2(self.toshi_id, models=models)
+        if self.model == model.OpenquakeRealization:
             with model.OpenquakeRealization.batch_write() as batch:
                 for item in models:
                     batch.save(item)

@@ -1,8 +1,6 @@
 """This module defines the pynamodb tables used to store openquake data. Third iteration"""
 
 import logging
-import uuid
-from datetime import datetime, timezone
 from typing import Iterable, Iterator, Sequence, Union
 
 from nzshm_common.location.code_location import CodedLocation
@@ -16,18 +14,14 @@ from pynamodb.attributes import (
 )
 from pynamodb.indexes import AllProjection, LocalSecondaryIndex
 from pynamodb.models import Model
-from pynamodb_attributes import FloatAttribute, IntegerAttribute, TimestampAttribute
+from pynamodb_attributes import IntegerAttribute, TimestampAttribute
 
 from toshi_hazard_store.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION
-from toshi_hazard_store.model.openquake_v1_model import LevelValuePairAttribute
-from toshi_hazard_store.model.openquake_v2_model import IMTValuesAttribute
+from toshi_hazard_store.model.caching import ModelCacheMixin
 
-VS30_KEYLEN = 3  # string length for VS30 field indices
-
-
-def datetime_now():
-    return datetime.now(tz=timezone.utc)
-
+from .attributes import EnumConstrainedUnicodeAttribute, IMTValuesAttribute, LevelValuePairAttribute
+from .constraints import AggregationEnum, IntensityMeasureTypeEnum
+from .location_indexed_model import VS30_KEYLEN, LocationIndexedModel, datetime_now
 
 log = logging.getLogger(__name__)
 
@@ -92,43 +86,8 @@ class vs30_nloc001_gt_rlz_index(LocalSecondaryIndex):
     index2_rk = UnicodeAttribute(range_key=True)
 
 
-class LocationIndexedModel(Model):
-    """Model base class."""
-
-    partition_key = UnicodeAttribute(hash_key=True)  # For this we will use a downsampled location to 1.0 degree
-    sort_key = UnicodeAttribute(range_key=True)
-
-    nloc_001 = UnicodeAttribute()  # 0.001deg ~100m grid
-    nloc_01 = UnicodeAttribute()  # 0.01deg ~1km grid
-    nloc_1 = UnicodeAttribute()  # 0.1deg ~10km grid
-    nloc_0 = UnicodeAttribute()  # 1.0deg ~100km grid
-
-    version = VersionAttribute()
-    uniq_id = UnicodeAttribute()
-
-    lat = FloatAttribute()  # latitude decimal degrees
-    lon = FloatAttribute()  # longitude decimal degrees
-    vs30 = FloatAttribute()
-
-    created = TimestampAttribute(default=datetime_now)
-
-    def set_location(self, location: CodedLocation):
-        """Set internal fields, indices etc from the location."""
-
-        self.nloc_001 = location.downsample(0.001).code
-        self.nloc_01 = location.downsample(0.01).code
-        self.nloc_1 = location.downsample(0.1).code
-        self.nloc_0 = location.downsample(1.0).code
-        # self.nloc_10 = location.downsample(10.0).code
-
-        self.lat = location.lat
-        self.lon = location.lon
-        self.uniq_id = str(uuid.uuid4())
-        return self
-
-
-class HazardAggregation(LocationIndexedModel):
-    """Stores aggregate hazard curves."""
+class HazardAggregation(ModelCacheMixin, LocationIndexedModel):
+    """A pynamodb model for aggregate hazard curves."""
 
     class Meta:
         """DynamoDB Metadata."""
@@ -140,8 +99,8 @@ class HazardAggregation(LocationIndexedModel):
             host = "http://localhost:8000"  # pragma: no cover
 
     hazard_model_id = UnicodeAttribute()
-    imt = UnicodeAttribute()
-    agg = UnicodeAttribute()
+    imt = EnumConstrainedUnicodeAttribute(IntensityMeasureTypeEnum)
+    agg = EnumConstrainedUnicodeAttribute(AggregationEnum)
 
     values = ListAttribute(of=LevelValuePairAttribute)
 
@@ -222,7 +181,11 @@ class OpenquakeRealization(LocationIndexedModel):
         return self
 
 
-tables = [OpenquakeRealization, ToshiOpenquakeMeta, HazardAggregation]
+tables = [
+    OpenquakeRealization,
+    ToshiOpenquakeMeta,
+    HazardAggregation,
+]
 
 
 def migrate():
@@ -230,7 +193,6 @@ def migrate():
     for table in tables:
         if not table.exists():  # pragma: no cover
             table.create_table(wait=True)
-            print(f"Migrate created table: {table}")
             log.info(f"Migrate created table: {table}")
 
 

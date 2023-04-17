@@ -7,8 +7,6 @@ from click.testing import CliRunner
 
 from scripts import store_hazard_v3
 
-# from scripts import store_hazard
-
 
 @unittest.skip('module must be converted to use click')
 def test_store_hazard_script():

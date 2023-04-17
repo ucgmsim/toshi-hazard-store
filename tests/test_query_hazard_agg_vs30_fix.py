@@ -10,7 +10,7 @@ from toshi_hazard_store import model, query_v3
 HAZARD_MODEL_ID = 'MODEL_THE_FIRST'
 vs30s = [250, 500, 1000, 1500]
 imts = ['PGA']
-aggs = ['mean']
+aggs = [model.AggregationEnum.MEAN.value]
 locs = [CodedLocation(o['latitude'], o['longitude'], 0.001) for o in list(LOCATIONS_BY_ID.values())[:2]]
 
 

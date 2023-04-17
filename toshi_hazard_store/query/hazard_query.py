@@ -175,6 +175,7 @@ def get_hazard_curves(
     hazard_model_ids: Iterable[str] = [],  # hazard_model_ids
     imts: Iterable[str] = [],
     aggs: Iterable[str] = [],
+    local_cache: bool = False,
 ) -> Iterator[mHAG]:
     """Use mHAG.sort_key as much as possible.
 
@@ -239,7 +240,7 @@ def get_hazard_curves(
     # TODO: use https://pypi.org/project/InPynamoDB/
     for hash_location_code in get_hashes(locs):
 
-        log.debug('hash_key %s' % hash_location_code)
+        log.info('hash_key %s' % hash_location_code)
 
         hash_locs = list(filter(lambda loc: downsample_code(loc, 0.1) == hash_location_code, locs))
         sort_key_first_val = build_sort_key(hash_locs, vs30s, hazard_model_ids)
@@ -258,5 +259,9 @@ def get_hazard_curves(
             )
 
         log.debug("get_hazard_rlz_curves_v3: qry %s" % qry)
+        hits = 0
         for hit in qry:
+            hits += 1
             yield (hit)
+
+        log.info('hash_key %s has %s hits' % (hash_location_code, hits))

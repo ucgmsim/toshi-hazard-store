@@ -1,17 +1,16 @@
 """This module defines the pynamodb tables used to store THH."""
 
-import json
 import logging
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Union
 
-from nzshm_common.util import compress_string, decompress_string
-from pynamodb.attributes import Attribute, UnicodeAttribute, VersionAttribute
-from pynamodb.constants import STRING
+from pynamodb.attributes import UnicodeAttribute, VersionAttribute
 from pynamodb.models import Model
 from pynamodb_attributes import FloatAttribute, TimestampAttribute
 
 from toshi_hazard_store.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION  # we can share THS settings for model
+
+from .attributes import CompressedListAttribute, EnumConstrainedIntegerAttribute, EnumConstrainedUnicodeAttribute
+from .constraints import AggregationEnum, IntensityMeasureTypeEnum, VS30Enum
 
 
 def datetime_now():
@@ -19,33 +18,6 @@ def datetime_now():
 
 
 log = logging.getLogger(__name__)
-
-
-class CompressedJsonicAttribute(Attribute):
-    """
-    A compressed, json serialisable model attribute
-    """
-
-    attr_type = STRING
-
-    def serialize(self, value: Any) -> str:
-        return compress_string(json.dumps(value))  # could this be pickle??
-
-    def deserialize(self, value: str) -> Union[Dict, List]:
-        return json.loads(decompress_string(value))
-
-
-class CompressedListAttribute(CompressedJsonicAttribute):
-    """
-    A compressed list of floats attribute.
-    """
-
-    def serialize(self, value: List[float]) -> str:
-        if value is not None and not isinstance(value, list):
-            raise TypeError(
-                f"value has invalid type '{type(value)}'; List[float])expected",
-            )
-        return super().serialize(value)
 
 
 class GriddedHazard(Model):
@@ -69,9 +41,9 @@ class GriddedHazard(Model):
     hazard_model_id = UnicodeAttribute()
     location_grid_id = UnicodeAttribute()
 
-    vs30 = FloatAttribute()
-    imt = UnicodeAttribute()
-    agg = UnicodeAttribute()
+    vs30 = EnumConstrainedIntegerAttribute(VS30Enum)
+    imt = EnumConstrainedUnicodeAttribute(IntensityMeasureTypeEnum)
+    agg = EnumConstrainedUnicodeAttribute(AggregationEnum)
     poe = FloatAttribute()
 
     grid_poes = CompressedListAttribute()

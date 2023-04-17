@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.7.0] - 2023-04-17
+### Changed
+ - update openquake dependency 3.16
+ - update nzshm-common dependency 0.5.0
+ - fix SA(0.7) value
+
+### Added
+ - script ths_cache to prepopulate and test caching
+ - local caching feature
+ - more spectral periods in constraint enum
+ - new constraints to existing THS models
+ - fix enum validations and apply to model fields
+### Removed
+  - remove v2 type options from batch save
+
+## [0.6.0] - 2023-02-15
+### Changed
+ - refactor model package
+ - refactor model.attributes package
+ - more test coverage
+### Added
+ - two new models for DisaggAggregations
+ - validation via Enum for aggregation values
+ - new enumerations and constraints for probabilities, IMTS and VS30s
+
 ## [0.5.5] - 2022-10-06
 ### Changed
  - fix for queries with mixed length vs30 index keys

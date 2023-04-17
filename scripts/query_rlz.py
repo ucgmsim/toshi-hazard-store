@@ -30,9 +30,7 @@ def run_query(args):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description='store_hazard.py (store_hazard)  - extract oq hazard by calc_id and store it.'
-    )
+    parser = argparse.ArgumentParser(description='')
     parser.add_argument('locs', help='list of location IDs (csv-like \\-46.800~168.800"')
     parser.add_argument('--toshi_ids', help='list of toshi ids.')
     parser.add_argument('--vs30s', help='list of location IDs (comma-separated')
