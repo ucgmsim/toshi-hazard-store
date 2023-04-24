@@ -75,18 +75,8 @@ class PynamoTestMeta(unittest.TestCase):
     def test_save_one_meta_object(self):
         obj = get_one_meta()
 
-        print(f'obj: {obj} {obj.version}')
-        self.assertEqual(obj.version, None)
         obj.save()
-        self.assertEqual(obj.version, 1)
-
-    def test_save_duplicate_raises(self):
-        meta_a = get_one_meta()
-        meta_a.save()
-
-        meta_b = get_one_meta()
-        with self.assertRaises(pynamodb.exceptions.PutError):
-            meta_b.save()
+        self.assertEqual(obj.inv_time, 1.0)
 
 
 @mock_dynamodb

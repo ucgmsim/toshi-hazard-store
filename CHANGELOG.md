@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1] - 2023-4-24
+### Changed
+- update nzshm-common dependency 0.6.0
+- mock cache when testing hazard aggregation query
+
+### Removed
+- remove version control for ToshiOpenquakeMeta
 ## [0.7.0] - 2023-04-17
 ### Changed
  - update openquake dependency 3.16

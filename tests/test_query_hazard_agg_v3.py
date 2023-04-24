@@ -1,6 +1,8 @@
 import itertools
 import unittest
 
+from unittest.mock import patch
+
 from moto import mock_dynamodb
 from nzshm_common.location.code_location import CodedLocation
 from nzshm_common.location.location import LOCATIONS_BY_ID
@@ -29,6 +31,7 @@ def build_hazard_aggregation_models():
             ).set_location(loc)
 
 
+@patch("toshi_hazard_store.model.caching.cache_store.LOCAL_CACHE_FOLDER", None)
 @mock_dynamodb
 class QueryHazardAggregationV3Test(unittest.TestCase):
     def setUp(self):

@@ -4,6 +4,8 @@ import csv
 import io
 import unittest
 
+from unittest.mock import patch
+
 from moto import mock_dynamodb
 
 from toshi_hazard_store import model, query_v3
@@ -24,6 +26,7 @@ class QueryHazardAggregationV3Csv(unittest.TestCase):
         model.drop_tables()
         return super(QueryHazardAggregationV3Csv, self).tearDown()
 
+    @patch("toshi_hazard_store.model.caching.cache_store.LOCAL_CACHE_FOLDER", None)
     def test_query_and_serialise_csv(self):
         qlocs = [loc.downsample(0.001).code for loc in locs[:2]]
         res = list(query_v3.get_hazard_curves(qlocs, vs30s, [HAZARD_MODEL_ID], imts))

@@ -1,5 +1,6 @@
 import itertools
 import unittest
+from unittest.mock import patch
 
 from moto import mock_dynamodb
 from nzshm_common.location.code_location import CodedLocation
@@ -29,6 +30,7 @@ def build_hazard_aggregation_models():
             ).set_location(loc)
 
 
+@patch("toshi_hazard_store.model.caching.cache_store.LOCAL_CACHE_FOLDER", None)
 @mock_dynamodb
 class QueryHazardAggregationV3TestVS30(unittest.TestCase):
     def setUp(self):
@@ -42,6 +44,7 @@ class QueryHazardAggregationV3TestVS30(unittest.TestCase):
         model.drop_tables()
         return super(QueryHazardAggregationV3TestVS30, self).tearDown()
 
+    # @patch("toshi_hazard_store.model.caching.cache_store.LOCAL_CACHE_FOLDER", None)
     def test_query_hazard_aggr_with_vs30_mixed_A(self):
         vs30s = [250, 1500]
         qlocs = [loc.downsample(0.001).code for loc in locs]
@@ -50,6 +53,7 @@ class QueryHazardAggregationV3TestVS30(unittest.TestCase):
         print(res)
         self.assertEqual(len(res), len(imts) * len(aggs) * len(vs30s) * len(locs))
 
+    # @patch("toshi_hazard_store.model.caching.cache_store.LOCAL_CACHE_FOLDER", None)
     def test_query_hazard_aggr_with_vs30_mixed_B(self):
         vs30s = [500, 1000]
         qlocs = [loc.downsample(0.001).code for loc in locs]
@@ -58,24 +62,28 @@ class QueryHazardAggregationV3TestVS30(unittest.TestCase):
         print(res)
         self.assertEqual(len(res), len(imts) * len(aggs) * len(vs30s) * len(locs))
 
+    # @patch("toshi_hazard_store.model.caching.cache_store.LOCAL_CACHE_FOLDER", None)
     def test_query_hazard_aggr_with_vs30_one_long(self):
         vs30s = [1500]
         qlocs = [loc.downsample(0.001).code for loc in locs]
         res = list(query_v3.get_hazard_curves(qlocs, vs30s, [HAZARD_MODEL_ID], imts))
         self.assertEqual(len(res), len(imts) * len(aggs) * len(vs30s) * len(locs))
 
+    # @patch("toshi_hazard_store.model.caching.cache_store.LOCAL_CACHE_FOLDER", None)
     def test_query_hazard_aggr_with_vs30_two_long(self):
         vs30s = [1000, 1500]
         qlocs = [loc.downsample(0.001).code for loc in locs]
         res = list(query_v3.get_hazard_curves(qlocs, vs30s, [HAZARD_MODEL_ID], imts))
         self.assertEqual(len(res), len(imts) * len(aggs) * len(vs30s) * len(locs))
 
+    # @patch("toshi_hazard_store.model.caching.cache_store.LOCAL_CACHE_FOLDER", None)
     def test_query_hazard_aggr_with_vs30_one_short(self):
         vs30s = [500]
         qlocs = [loc.downsample(0.001).code for loc in locs]
         res = list(query_v3.get_hazard_curves(qlocs, vs30s, [HAZARD_MODEL_ID], imts))
         self.assertEqual(len(res), len(imts) * len(aggs) * len(vs30s) * len(locs))
 
+    # @patch("toshi_hazard_store.model.caching.cache_store.LOCAL_CACHE_FOLDER", None)
     def test_query_hazard_aggr_with_vs30_two_short(self):
         vs30s = [250, 500]
         qlocs = [loc.downsample(0.001).code for loc in locs]

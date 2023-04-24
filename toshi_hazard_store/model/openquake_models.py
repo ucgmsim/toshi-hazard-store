@@ -4,14 +4,7 @@ import logging
 from typing import Iterable, Iterator, Sequence, Union
 
 from nzshm_common.location.code_location import CodedLocation
-from pynamodb.attributes import (
-    JSONAttribute,
-    ListAttribute,
-    NumberAttribute,
-    UnicodeAttribute,
-    UnicodeSetAttribute,
-    VersionAttribute,
-)
+from pynamodb.attributes import JSONAttribute, ListAttribute, NumberAttribute, UnicodeAttribute, UnicodeSetAttribute
 from pynamodb.indexes import AllProjection, LocalSecondaryIndex
 from pynamodb.models import Model
 from pynamodb_attributes import IntegerAttribute, TimestampAttribute
@@ -41,7 +34,6 @@ class ToshiOpenquakeMeta(Model):
     partition_key = UnicodeAttribute(hash_key=True)  # a static value as we actually don't want to partition our data
     hazsol_vs30_rk = UnicodeAttribute(range_key=True)
 
-    version = VersionAttribute()
     created = TimestampAttribute(default=datetime_now)
 
     hazard_solution_id = UnicodeAttribute()
