@@ -1,6 +1,10 @@
 # Changelog
 
-## [0.7.1] - 2023-4-24
+## [0.7.2] - 2023-04-24
+### Changed
+- use poetry 1.4.2 for release build workflow
+
+## [0.7.1] - 2023-04-24
 ### Changed
 - update nzshm-common dependency 0.6.0
 - mock cache when testing hazard aggregation query
