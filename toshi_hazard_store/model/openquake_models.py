@@ -12,8 +12,8 @@ from pynamodb_attributes import IntegerAttribute, TimestampAttribute
 from toshi_hazard_store.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION
 from toshi_hazard_store.model.caching import ModelCacheMixin
 
-from .attributes import EnumConstrainedUnicodeAttribute, IMTValuesAttribute, LevelValuePairAttribute
-from .constraints import AggregationEnum, IntensityMeasureTypeEnum
+from .attributes import EnumAttribute, EnumConstrainedUnicodeAttribute, IMTValuesAttribute, LevelValuePairAttribute
+from .constraints import AggregationEnum, ComponentEnum, IntensityMeasureTypeEnum
 from .location_indexed_model import VS30_KEYLEN, LocationIndexedModel, datetime_now
 
 log = logging.getLogger(__name__)
@@ -93,6 +93,7 @@ class HazardAggregation(ModelCacheMixin, LocationIndexedModel):
     hazard_model_id = UnicodeAttribute()
     imt = EnumConstrainedUnicodeAttribute(IntensityMeasureTypeEnum)
     agg = EnumConstrainedUnicodeAttribute(AggregationEnum)
+    motion_comp = EnumAttribute(ComponentEnum, null=True)
 
     values = ListAttribute(of=LevelValuePairAttribute)
 
@@ -103,7 +104,14 @@ class HazardAggregation(ModelCacheMixin, LocationIndexedModel):
         # update the indices
         vs30s = str(self.vs30).zfill(VS30_KEYLEN)
         self.partition_key = self.nloc_1
-        self.sort_key = f'{self.nloc_001}:{vs30s}:{self.imt}:{self.agg}:{self.hazard_model_id}'
+        self.motion_comp = ComponentEnum.ROTD50 if not self.motion_comp else self.motion_comp
+        if self.motion_comp is ComponentEnum.ROTD50:
+            self.sort_key = f'{self.nloc_001}:{vs30s}:{self.imt}:{self.agg}:{self.hazard_model_id}'
+        else:
+            self.sort_key = (
+                f'{self.nloc_001}:{vs30s}:{self.imt}:{self.agg}:{self.hazard_model_id}:{self.motion_comp.name}'
+            )
+
         return self
 
     @staticmethod

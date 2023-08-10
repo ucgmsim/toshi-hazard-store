@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from toshi_hazard_store.model import AggregationEnum, ProbabilityEnum, VS30Enum
+from toshi_hazard_store.model import AggregationEnum, ProbabilityEnum, VS30Enum, ComponentEnum
 from toshi_hazard_store.model.attributes import (  # EnumConstrainedFloatAttribute,
     CompressedListAttribute,
     EnumAttribute,
@@ -204,6 +204,20 @@ def test_serialize_all_valid_probablities(valid_arg):
     test_value = ProbabilityEnum[valid_arg]
     print(test_value)
     assert attr.serialize(test_value) == ProbabilityEnum[valid_arg].name
+
+
+component_mapping = {
+    "ROTD50": "median horizontal component",
+    "LHC": "largest horizontal component",
+}
+
+
+@pytest.mark.parametrize('valid_arg', component_mapping.keys())
+def test_serialize_all_valid_components(valid_arg):
+    attr = EnumAttribute(ComponentEnum)
+    test_value = ComponentEnum[valid_arg]
+    print(test_value)
+    assert attr.serialize(test_value) == ComponentEnum[valid_arg].name
 
 
 # @pytest.mark.skip('how?')

@@ -38,7 +38,7 @@ class QueryHazardAggregationV3Csv(unittest.TestCase):
         csv_file.seek(0)
         header = next(csv_file)
         rows = list(itm for itm in csv_file)
-        self.assertTrue(header.startswith('agg,imt,lat,lon,vs30,poe-'))
+        self.assertTrue(header.startswith('agg,imt,lat,lon,motion_comp,vs30,poe-'))
         self.assertEqual(len(res), len(rows))
         self.assertTrue(
             [rv.val for rv in res[-1].values[-10:]], rows[-1].split(',')[-10:]

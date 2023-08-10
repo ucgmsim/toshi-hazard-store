@@ -109,3 +109,12 @@ class VS30Enum(Enum):
     _1050 = 1050
     _1100 = 1100
     _1500 = 1500
+
+
+class ComponentEnum(Enum):
+    """
+    Defines the available motion components
+    """
+
+    ROTD50 = "RotD50"
+    LHC = "LHC"

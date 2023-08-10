@@ -175,12 +175,13 @@ def get_hazard_curves(
     hazard_model_ids: Iterable[str] = [],  # hazard_model_ids
     imts: Iterable[str] = [],
     aggs: Iterable[str] = [],
+    motion_comps: Iterable[model.ComponentEnum] = [model.ComponentEnum.ROTD50],
     local_cache: bool = False,
 ) -> Iterator[mHAG]:
     """Use mHAG.sort_key as much as possible.
 
 
-    f'{nloc_001}:{vs30s}:{hazard_model_id}'
+    f'{nloc_001}:{vs30s}:{hazard_model_id}:{motion_comp}'
     """
 
     def build_condition_expr(locs, vs30s, hids):
@@ -212,6 +213,8 @@ def get_hazard_curves(
             condition_expr = condition_expr & mHAG.agg.is_in(*aggs)
         if hids:
             condition_expr = condition_expr & mHAG.hazard_model_id.is_in(*hids)
+        if motion_comps:
+            condition_expr = condition_expr & mHAG.motion_comp.is_in(*motion_comps)
 
         return condition_expr
 
@@ -234,6 +237,9 @@ def get_hazard_curves(
         if vs30s and imts and aggs and hids:
             first_hid = sorted(hids)[0]
             sort_key_first_val += f":{first_hid}"
+        if vs30s and imts and aggs and hids and motion_comps:
+            first_motion_comp = sorted([c.name for c in motion_comps])[0]
+            sort_key_first_val += f":{first_motion_comp}"
         return sort_key_first_val
 
     # print('hashes', get_hashes(locs))
