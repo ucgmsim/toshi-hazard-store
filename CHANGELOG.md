@@ -1,6 +1,9 @@
 # Changelog
 
-## [0.7.3] - 2023-08-11
+## [0.7.3] - 2023-08-15
+### Removed
+ - support for python 3.8
+
 ### Changed
  - faster queries for THS_HazardAggregation table
  - faster queries for THS_OpenquakeRealization table
@@ -8,10 +11,13 @@
  - query optimisation to disagg_querys
  - mypy 1.5.0
  - pynamodb 5.5.0
- 
+ - update mkdocs toolchain
+ - GHA scripts install with `--extra openquake`
+
 ### Added 
  - ths_testing script for evaluation of performance changes
-
+ - python 3.11
+  
 ## [0.7.2] - 2023-04-24
 ### Changed
 - use poetry 1.4.2 for release build workflow

@@ -289,8 +289,7 @@ def get_disagg_agg_curve(ctx, model_id, agg, vs30, imt, poe, location):
     print(loc, locs)
     pyconhandler.reset()
 
-    # results = query.get_hazard_curves(locs, vs30s=[vs30], [model_id], imts=[imt], aggs=[agg])
-    results = query.get_one_disagg_aggregation(
+    query.get_one_disagg_aggregation(
         model_id,
         model.AggregationEnum(agg),
         model.AggregationEnum(agg),
