@@ -3,7 +3,6 @@
 import csv
 import io
 import unittest
-
 from unittest.mock import patch
 
 from moto import mock_dynamodb

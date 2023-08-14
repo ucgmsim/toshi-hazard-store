@@ -9,7 +9,7 @@ import pathlib
 import sqlite3
 from datetime import datetime as dt
 from datetime import timezone
-from typing import Generator, Iterable, Type, TypeVar
+from typing import Generator, Iterable, Type, TypeVar, Union
 
 import pynamodb.models
 from pynamodb.expressions.condition import Condition
@@ -27,7 +27,10 @@ log = logging.getLogger(__name__)
 
 
 def get_model(
-    conn: sqlite3.Connection, model_class: Type[_T], range_key_condition: Condition, filter_condition: Condition = None
+    conn: sqlite3.Connection,
+    model_class: Type[_T],
+    range_key_condition: Condition,
+    filter_condition: Union[Condition, None] = None,
 ) -> Iterable[_T]:
     """query cache table and return any hits.
 

@@ -1,13 +1,15 @@
 """Queries for saving and retrieving openquake hazard results with convenience."""
 import decimal
+import itertools
 import logging
-from typing import Iterable, Iterator
+from typing import Iterable, Iterator, Union
 
 from nzshm_common.location.code_location import CodedLocation
 
 import toshi_hazard_store.model as model
 
 log = logging.getLogger(__name__)
+# log.setLevel(logging.DEBUG)
 
 mOQM = model.ToshiOpenquakeMeta
 mRLZ = model.OpenquakeRealization
@@ -15,8 +17,8 @@ mHAG = model.HazardAggregation
 
 
 def get_hazard_metadata_v3(
-    haz_sol_ids: Iterable[str] = None,
-    vs30_vals: Iterable[int] = None,
+    haz_sol_ids: Iterable[str],
+    vs30_vals: Iterable[int],
 ) -> Iterator[mOQM]:
     """Fetch ToshiOpenquakeHazardMeta based on criteria."""
 
@@ -72,196 +74,148 @@ def first_vs30_key(vs30s):
 
 
 def get_rlz_curves_v3(
-    locs: Iterable[str] = [],  # nloc_001
-    vs30s: Iterable[int] = [],  # vs30s
-    rlzs: Iterable[int] = [],  # rlzs
-    tids: Iterable[str] = [],  # toshi hazard_solution_ids
-    imts: Iterable[str] = [],
+    locs: Iterable[str],  # nloc_001
+    vs30s: Iterable[int],  # vs30s
+    rlzs: Iterable[int],  # rlzs
+    tids: Iterable[str],  # toshi hazard_solution_ids
+    imts: Iterable[str],
 ) -> Iterator[mRLZ]:
-    """Use mRLZ.sort_key as much as possible.
+    """Query THS_OpenquakeRealization Table.
 
+    :param locs: coded location codes e.g. ['-46.430~168.360']
+    :param vs30s: vs30 values eg [400, 500]
+    :param rlzs: realizations eg [0,1,2,3]
+    :param tids:  toshi_solution ids e.. ['XXZ']
+    :param imts: imt (IntensityMeasureType) values e.g ['PGA', 'SA(0.5)']
 
-    f'{nloc_001}:{vs30s}:{rlzs}:{self.hazard_solution_id}'
+    :yield: model objects
     """
 
-    def build_condition_expr(locs, vs30s, rlzs, tids):
-        """Build filter condition."""
-        ## TODO REFACTOR ME ... using the res of first loc is not ideal
-        grid_res = decimal.Decimal(str(list(locs)[0].split('~')[0]))
+    def build_condition_expr(loc, vs30, rlz, tid):
+        """Build the filter condition expression."""
+        grid_res = decimal.Decimal(str(loc.split('~')[0]))
         places = grid_res.as_tuple().exponent
 
-        # print()
-        # print(f'places {places} loc[0] {locs[0]}')
-
         res = float(decimal.Decimal(10) ** places)
-        locs = [downsample_code(loc, res) for loc in locs]
+        loc = downsample_code(loc, res)
 
-        condition_expr = None
+        expr = None
 
         if places == -1:
-            condition_expr = condition_expr & mRLZ.nloc_1.is_in(*locs)
-        if places == -2:
-            condition_expr = condition_expr & mRLZ.nloc_01.is_in(*locs)
-        if places == -3:
-            condition_expr = condition_expr & mRLZ.nloc_001.is_in(*locs)
+            expr = mRLZ.nloc_1 == loc
+        elif places == -2:
+            expr = mRLZ.nloc_01 == loc
+        elif places == -3:
+            expr = mRLZ.nloc_001 == loc
+        else:
+            assert 0
 
-        if vs30s:
-            condition_expr = condition_expr & mRLZ.vs30.is_in(*vs30s)
-        if rlzs:
-            condition_expr = condition_expr & mRLZ.rlz.is_in(*rlzs)
-        if tids:
-            condition_expr = condition_expr & mRLZ.hazard_solution_id.is_in(*tids)
+        return expr & (mRLZ.vs30 == vs30) & (mRLZ.rlz == rlz) & (mRLZ.hazard_solution_id == tid)
 
-        return condition_expr
-
-    def build_sort_key(locs, vs30s, rlzs, tids):
-        """Build sort_key."""
-        sort_key_first_val = ""
-        first_loc = sorted(locs)[0]  # these need to be formatted to match the sort key 0.001 ?
-        sort_key_first_val += f"{first_loc}"
-
-        if vs30s:
-            sort_key_first_val += f":{first_vs30_key(vs30s)}"
-            if have_mixed_length_vs30s(vs30s):  # we must stop the sort_key build here
-                return sort_key_first_val
-        if vs30s and rlzs:
-            first_rlz = str(sorted(rlzs)[0]).zfill(6)
-            sort_key_first_val += f":{first_rlz}"
-        if vs30s and rlzs and tids:
-            first_tid = sorted(tids)[0]
-            sort_key_first_val += f":{first_tid}"
-        return sort_key_first_val
-
-    # print('hashes', get_hashes(locs))
-    # TODO: use https://pypi.org/project/InPynamoDB/
+    total_hits = 0
     for hash_location_code in get_hashes(locs):
-
-        # print(f'hash_key {hash_location_code}')
-
+        partition_hits = 0
+        log.info('hash_key %s' % hash_location_code)
         hash_locs = list(filter(lambda loc: downsample_code(loc, 0.1) == hash_location_code, locs))
 
-        sort_key_first_val = build_sort_key(hash_locs, vs30s, rlzs, tids)
-        condition_expr = build_condition_expr(hash_locs, vs30s, rlzs, tids)
+        for (hloc, tid, vs30, rlz) in itertools.product(hash_locs, tids, vs30s, rlzs):
 
-        # print(f'sort_key_first_val: {sort_key_first_val}')
-        # print(f'condition_expr: {condition_expr}')
+            sort_key_first_val = f"{hloc}:{vs30}:{str(rlz).zfill(6)}:{tid}"
+            condition_expr = build_condition_expr(hloc, vs30, rlz, tid)
 
-        # expected_sort_key = '-41.300~174.780:750:000000:A_CRU'
-        # expected_hash_key = '-41.3~174.8'
+            log.debug('sort_key_first_val: %s' % sort_key_first_val)
+            log.debug('condition_expr: %s' % condition_expr)
 
-        # print()
-        # print(expected_hash_key, expected_sort_key)
-        # # assert 0
-
-        if sort_key_first_val:
-            qry = mRLZ.query(hash_location_code, mRLZ.sort_key >= sort_key_first_val, filter_condition=condition_expr)
-        else:
-            qry = mRLZ.query(
-                hash_location_code,
-                mRLZ.sort_key >= " ",  # lowest printable char in ascii table is SPACE. (NULL is first control)
-                filter_condition=condition_expr,
+            results = mRLZ.query(
+                hash_location_code, mRLZ.sort_key >= sort_key_first_val, filter_condition=condition_expr
             )
 
-        # print(f"get_hazard_rlz_curves_v3: qry {qry}")
-        for hit in qry:
-            if imts:
+            # print(f"get_hazard_rlz_curves_v3: qry {qry}")
+            log.debug("get_hazard_rlz_curves_v3: results %s" % results)
+            for hit in results:
+                partition_hits += 1
                 hit.values = list(filter(lambda x: x.imt in imts, hit.values))
-            yield (hit)
+                yield (hit)
+
+        total_hits += partition_hits
+        log.info('hash_key %s has %s hits' % (hash_location_code, partition_hits))
+
+    log.info('Total %s hits' % total_hits)
 
 
 def get_hazard_curves(
-    locs: Iterable[str] = [],  # nloc_001
-    vs30s: Iterable[int] = [],  # vs30s
-    hazard_model_ids: Iterable[str] = [],  # hazard_model_ids
-    imts: Iterable[str] = [],
-    aggs: Iterable[str] = [],
+    locs: Iterable[str],
+    vs30s: Iterable[int],
+    hazard_model_ids: Iterable[str],
+    imts: Iterable[str],
+    aggs: Union[Iterable[str], None] = None,
     local_cache: bool = False,
 ) -> Iterator[mHAG]:
-    """Use mHAG.sort_key as much as possible.
+    """Query HazardAggregation Table.
 
+    :param locs: coded location codes e.g. ['-46.430~168.360']
+    :param vs30s: vs30 values eg [400, 500]
+    :param hazard_model_ids:  hazard model ids e.. ['NSHM_V1.0.4']
+    :param imts: imt (IntensityMeasureType) values e.g ['PGA', 'SA(0.5)']
+    :param aggs: aggregation values e.g. ['mean']
 
-    f'{nloc_001}:{vs30s}:{hazard_model_id}'
+    :yield: model objects
     """
+    aggs = aggs or ["mean", "0.1"]
 
-    def build_condition_expr(locs, vs30s, hids):
-        """Build filter condition."""
-        ## TODO REFACTOR ME ... using the res of first loc is not ideal
-        grid_res = decimal.Decimal(str(list(locs)[0].split('~')[0]))
+    log.info("get_hazard_curves( %s" % locs)
+
+    def build_condition_expr(loc, vs30, hid, agg):
+        """Build the filter condition expression."""
+        grid_res = decimal.Decimal(str(loc.split('~')[0]))
         places = grid_res.as_tuple().exponent
 
-        # print()
-        # print(f'places {places} loc[0] {locs[0]}')
-
         res = float(decimal.Decimal(10) ** places)
-        locs = [downsample_code(loc, res) for loc in locs]
+        loc = downsample_code(loc, res)
 
-        condition_expr = None
+        expr = None
 
         if places == -1:
-            condition_expr = condition_expr & mHAG.nloc_1.is_in(*locs)
-        if places == -2:
-            condition_expr = condition_expr & mHAG.nloc_01.is_in(*locs)
-        if places == -3:
-            condition_expr = condition_expr & mHAG.nloc_001.is_in(*locs)
-
-        if vs30s:
-            condition_expr = condition_expr & mHAG.vs30.is_in(*vs30s)
-        if imts:
-            condition_expr = condition_expr & mHAG.imt.is_in(*imts)
-        if aggs:
-            condition_expr = condition_expr & mHAG.agg.is_in(*aggs)
-        if hids:
-            condition_expr = condition_expr & mHAG.hazard_model_id.is_in(*hids)
-
-        return condition_expr
-
-    def build_sort_key(locs, vs30s, hids):
-        """Build sort_key."""
-        sort_key_first_val = ""
-        first_loc = sorted(locs)[0]  # these need to be formatted to match the sort key 0.001 ?
-        sort_key_first_val += f"{first_loc}"
-
-        if vs30s:
-            sort_key_first_val += f":{first_vs30_key(vs30s)}"
-            if have_mixed_length_vs30s(vs30s):  # we must stop the sort_key build here
-                return sort_key_first_val
-        if vs30s and imts:
-            first_imt = sorted(imts)[0]
-            sort_key_first_val += f":{first_imt}"
-        if vs30s and imts and aggs:
-            first_agg = sorted(aggs)[0]
-            sort_key_first_val += f":{first_agg}"
-        if vs30s and imts and aggs and hids:
-            first_hid = sorted(hids)[0]
-            sort_key_first_val += f":{first_hid}"
-        return sort_key_first_val
-
-    # print('hashes', get_hashes(locs))
-    # TODO: use https://pypi.org/project/InPynamoDB/
-    for hash_location_code in get_hashes(locs):
-
-        log.info('hash_key %s' % hash_location_code)
-
-        hash_locs = list(filter(lambda loc: downsample_code(loc, 0.1) == hash_location_code, locs))
-        sort_key_first_val = build_sort_key(hash_locs, vs30s, hazard_model_ids)
-        condition_expr = build_condition_expr(hash_locs, vs30s, hazard_model_ids)
-
-        log.debug('sort_key_first_val: %s' % sort_key_first_val)
-        log.debug('condition_expr: %s' % condition_expr)
-
-        if sort_key_first_val:
-            qry = mHAG.query(hash_location_code, mHAG.sort_key >= sort_key_first_val, filter_condition=condition_expr)
+            expr = mHAG.nloc_1 == loc
+        elif places == -2:
+            expr = mHAG.nloc_01 == loc
+        elif places == -3:
+            expr = mHAG.nloc_001 == loc
         else:
-            qry = mHAG.query(
-                hash_location_code,
-                mHAG.sort_key >= " ",  # lowest printable char in ascii table is SPACE. (NULL is first control)
+            assert 0
+
+        return expr & (mHAG.vs30 == vs30) & (mHAG.imt == imt) & (mHAG.agg == agg) & (mHAG.hazard_model_id == hid)
+
+    # TODO: use https://pypi.org/project/InPynamoDB/
+    total_hits = 0
+    for hash_location_code in get_hashes(locs):
+        partition_hits = 0
+        log.info('hash_key %s' % hash_location_code)
+        hash_locs = list(filter(lambda loc: downsample_code(loc, 0.1) == hash_location_code, locs))
+
+        for (hloc, hid, vs30, imt, agg) in itertools.product(hash_locs, hazard_model_ids, vs30s, imts, aggs):
+
+            sort_key_first_val = f"{hloc}:{vs30}:{imt}:{agg}:{hid}"
+            condition_expr = build_condition_expr(hloc, vs30, hid, agg)
+
+            log.debug('sort_key_first_val: %s' % sort_key_first_val)
+            log.debug('condition_expr: %s' % condition_expr)
+
+            results = mHAG.query(
+                hash_key=hash_location_code,
+                range_key_condition=mHAG.sort_key == sort_key_first_val,
                 filter_condition=condition_expr,
+                # limit=10,
+                # rate_limit=None,
+                # last_evaluated_key=None
             )
 
-        log.debug("get_hazard_rlz_curves_v3: qry %s" % qry)
-        hits = 0
-        for hit in qry:
-            hits += 1
-            yield (hit)
+            log.debug("get_hazard_rlz_curves_v3: results %s" % results)
+            for hit in results:
+                partition_hits += 1
+                yield (hit)
 
-        log.info('hash_key %s has %s hits' % (hash_location_code, hits))
+        total_hits += partition_hits
+        log.info('hash_key %s has %s hits' % (hash_location_code, partition_hits))
+
+    log.info('Total %s hits' % total_hits)

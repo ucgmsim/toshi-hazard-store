@@ -36,7 +36,7 @@ jobs:
 
       - name: Get Changelog Entry
         id: changelog_reader
-        uses: mindsers/changelog-reader-action@v2
+        uses: GNS-Science/changelog-reader-action@master
         with:
           validation_depth: 10
           version: ${{ steps.tag_name.outputs.current_version }}
@@ -47,9 +47,8 @@ jobs:
           python-version: ${{ matrix.python-versions }}
 
       - name: Install and configure Poetry
-        uses: snok/install-poetry@v1
+        uses: GNS-Science/install-poetry@main
         with:
-          version: 1.4.2
           virtualenvs-create: true
           virtualenvs-in-project: true
           installer-parallel: true
@@ -58,13 +57,12 @@ jobs:
         run: |
           poetry install -E doc
           poetry run mkdocs build
-
-      - name: publish documentation
-        uses: peaceiris/actions-gh-pages@v3
+          
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
         with:
-          personal_token: ${{ secrets.PERSONAL_TOKEN }}
-          publish_dir: ./site
-
+          path: ./site        
+  
       - name: Build wheels and source tarball
         run: >-
           poetry build
@@ -75,7 +73,7 @@ jobs:
 
       - name: create github release
         id: create_release
-        uses: softprops/action-gh-release@v1
+        uses: GNS-Science/action-gh-release@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -83,10 +81,15 @@ jobs:
           files: dist/*.whl
           draft: false
           prerelease: false
-
-      - name: publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
-          skip_existing: true
+ 
+  # Deployment job
+  deploy:
+    environment:
+        name: github-pages
+        url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2

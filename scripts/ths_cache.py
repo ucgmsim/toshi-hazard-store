@@ -2,34 +2,52 @@
 # noqa
 import logging
 import os
-import sys
 import pathlib
-import click
+import sys
 import time
+
+import click
 import pandas as pd
-
+from nzshm_common.grids import RegionGrid, load_grid
 from nzshm_common.location.code_location import CodedLocation
-from nzshm_common.location.location import location_by_id, LOCATIONS, LOCATION_LISTS
-from nzshm_common.grids import load_grid, RegionGrid
+from nzshm_common.location.location import LOCATION_LISTS, LOCATIONS, location_by_id
 
-
-from toshi_hazard_store.config import LOCAL_CACHE_FOLDER, REGION, DEPLOYMENT_STAGE
 from toshi_hazard_store import model, query
+from toshi_hazard_store.config import DEPLOYMENT_STAGE, LOCAL_CACHE_FOLDER, REGION
 
 NZ_01_GRID = 'NZ_0_1_NB_1_1'
 
 ALL_AGG_VALS = [e.value for e in model.AggregationEnum]
 ALL_IMT_VALS = [e.value for e in model.IntensityMeasureTypeEnum]
-ALL_VS30_VALS = [e.value for e in model.VS30Enum][1:] # drop the 0 value!
+ALL_VS30_VALS = [e.value for e in model.VS30Enum][1:]  # drop the 0 value!
 ALL_CITY_LOCS = [CodedLocation(o['latitude'], o['longitude'], 0.001) for o in LOCATIONS]
 
 
-log = logging.getLogger()
-logging.basicConfig(level=logging.INFO)
-logging.getLogger('pynamodb').setLevel(logging.WARN)
-logging.getLogger('toshi_hazard_store').setLevel(logging.WARN)
+class PyanamodbConsumedHandler(logging.Handler):
+    def __init__(self, level=0) -> None:
+        super().__init__(level)
+        self.consumed = 0
 
-formatter = logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+    def reset(self):
+        self.consumed = 0
+
+    def emit(self, record):
+        if "pynamodb/connection/base.py" in record.pathname and record.msg == "%s %s consumed %s units":
+            self.consumed += record.args[2]
+            # print("CONSUMED:",  self.consumed)
+
+
+log = logging.getLogger()
+
+pyconhandler = PyanamodbConsumedHandler(logging.DEBUG)
+log.addHandler(pyconhandler)
+
+# logging.basicConfig(level=logging.)
+logging.getLogger('pynamodb').setLevel(logging.DEBUG)
+# logging.getLogger('botocore').setLevel(logging.DEBUG)
+# logging.getLogger('toshi_hazard_store').setLevel(logging.DEBUG)
+
+formatter = logging.Formatter(fmt='%(asctime)s %(name)s %(levelname)-8s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 screen_handler = logging.StreamHandler(stream=sys.stdout)
 screen_handler.setFormatter(formatter)
 log.addHandler(screen_handler)
@@ -88,7 +106,7 @@ def cache_info(ctx):
     '--model_id',
     '-M',
     default='NSHM_1.0.2',
-    type=click.Choice(['SLT_v8_gmm_v2_FINAL', 'SLT_v5_gmm_v0_SRWG', 'NSHM_1.0.0']),
+    type=click.Choice(['SLT_v8_gmm_v2_FINAL', 'SLT_v5_gmm_v0_SRWG', 'NSHM_1.0.0', 'NSHM_v1.0.4']),
 )
 @click.pass_context
 def get_hazard_curves(ctx, model_id, num_aggs, num_vs30s, num_imts, num_locations, timing):
@@ -101,9 +119,61 @@ def get_hazard_curves(ctx, model_id, num_aggs, num_vs30s, num_imts, num_location
     aggs = ALL_AGG_VALS[:num_aggs]
     locs = [loc.code for loc in ALL_CITY_LOCS[:num_locations]]
 
+    pyconhandler.reset()
     results = query.get_hazard_curves(locs, vs30s, [model_id], imts, aggs)
-
     pts_summary_data = pd.DataFrame.from_dict(columns_from_results(results))
+    click.echo("get_hazard_curves Query consumed: %s units" % pyconhandler.consumed)
+    click.echo()
+    # for r in res:
+    #     print(r)
+    click.echo(pts_summary_data.info())
+    click.echo()
+    click.echo(pts_summary_data.columns)
+    click.echo()
+    click.echo(pts_summary_data)
+    click.echo()
+    # print(pts_summary_data['apoe'][0])
+    # print(pts_summary_data['imtl'][0])
+
+    # print(r.values)
+
+
+@cli.command()
+@click.option('--timing', '-T', is_flag=True, show_default=True, default=False, help="print timing information")
+@click.option('--location', '-L', type=str, default='MRO')
+@click.option('--imt', '-I', type=str, default='PGA')
+@click.option('--vs30', '-V', type=int, default=400)
+@click.option('--agg', '-A', type=str, default='mean')
+@click.option(
+    '--model_id',
+    '-M',
+    default='NSHM_v1.0.4',
+    type=click.Choice(['SLT_v8_gmm_v2_FINAL', 'SLT_v5_gmm_v0_SRWG', 'NSHM_1.0.0', 'NSHM_v1.0.4']),
+)
+@click.pass_context
+def get_hazard_curve(ctx, model_id, agg, vs30, imt, location, timing):
+
+    mHAG = model.HazardAggregation
+    mHAG.create_table(wait=True)
+
+    vs30s = [
+        vs30,
+    ]
+    imts = [
+        imt,
+    ]
+    aggs = [agg]
+    loc = location_by_id(location)
+    locs = [
+        CodedLocation(loc['latitude'], loc['longitude'], 0.001).code,
+    ]
+    print(loc, locs)
+
+    pyconhandler.reset()
+    results = query.get_hazard_curves(locs, vs30s, [model_id], imts, aggs)
+    pts_summary_data = pd.DataFrame.from_dict(columns_from_results(results))
+    click.echo("get_hazard_curve Query consumed: %s units" % pyconhandler.consumed)
+    click.echo()
 
     # for r in res:
     #     print(r)
@@ -227,7 +297,8 @@ def srwg_grid_curves(ctx, model_id, num_vs30s, num_imts, num_locations):
         'SA(4.0)',
         'SA(5.0)',
         'SA(6.0)',
-        'SA(10.0)'][:num_imts]
+        'SA(10.0)',
+    ][:num_imts]
     """,
      # 'SA(0.15)',
     'SA(0.25)',
@@ -258,19 +329,24 @@ def srwg_grid_curves(ctx, model_id, num_vs30s, num_imts, num_locations):
 def add_site_vs30_col(ctx):
 
     from toshi_hazard_store import model
-    from toshi_hazard_store.model.caching import get_connection, execute_sql, safe_table_name
+    from toshi_hazard_store.model.caching import execute_sql, get_connection, safe_table_name
 
     mHAG = model.HazardAggregation
-   #mRLZ = model.OpenquakeRealization
+    # mRLZ = model.OpenquakeRealization
 
-    for model in [mHAG,]: #  mRLZ]:
+    for model in [
+        mHAG,
+    ]:  #  mRLZ]:
         sql = """ALTER TABLE %s
-            ADD COLUMN site_vs30 numeric;""" % safe_table_name(model)
+            ADD COLUMN site_vs30 numeric;""" % safe_table_name(
+            model
+        )
         print(sql)
 
         conn = get_connection(model)
         res = execute_sql(conn, model, sql)
-        print( res )
+        print(res)
+
 
 if __name__ == "__main__":
     cli()  # pragma: no cover

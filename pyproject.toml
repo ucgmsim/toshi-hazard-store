@@ -1,7 +1,7 @@
 [tool]
 [tool.poetry]
 name = "toshi-hazard-store"
-version = "0.7.2"
+version = "0.7.3"
 homepage = "https://github.com/GNS-Science/toshi-hazard-store"
 description = "Library for saving and retrieving NZHSM openquake hazard results with convenience (uses AWS Dynamodb)."
 authors = ["GNS Science <chrisbc@artisan.co.nz>"]
@@ -29,15 +29,20 @@ store_hazard_v3 = 'scripts.store_hazard_v3:main'
 get_hazard = 'scripts.get_hazard:main'
 query_meta = 'scripts.query_meta:main'
 ths_cache = 'scripts.ths_cache:cli'
+ths_testing = 'scripts.ths_testing:cli'
 
 [tool.poetry.dependencies]
-numpy = "^1.23.1"
+# numpy = "^1.23.1"
 openquake-engine = {version = "^3.16", optional = true}
 pandas = "^1.4.3"
-pynamodb = "^5.2.1"
 pynamodb-attributes = "^0.3.2"
 python = ">=3.8,<4.0"
 nzshm-common = "^0.6.0"
+
+# see https://github.com/orgs/python-poetry/discussions/7937
+urllib3 = "<2" 
+# geopandas = "^0.13.2"
+numpy = "<1.25"
 
 [tool.poetry.group.dev.dependencies]
 black  = { version = "^22.3"}
@@ -56,7 +61,6 @@ mkdocs-pymdownx-material-extras = "^2.0.3"
 mkdocstrings  = { version = "^0.18.0"}
 mkdocstrings-python = {version = "^0.6.5"}
 moto = "^3.1.10"
-mypy = {version = "^0.900"}
 pre-commit = "^3.0.4"
 pymdown-extensions = {version = "^9.4"}
 pytest = { version = "^6.2.4"}
@@ -66,6 +70,7 @@ tox = "^4.4.5"
 twine  = { version = "^3.3.0"}
 types-python-dateutil = "^2.8.16"
 virtualenv  = { version = "^20.2.2", optional = true}
+mypy = "^1.5.0"
 
 [tool.poetry.extras]
 test = [
