@@ -1,12 +1,15 @@
 # Changelog
 
+## [0.7.4] - 2023-08-17
+### Changed
+ - faster queries for THS_OpenquakeRealization table
+
 ## [0.7.3] - 2023-08-15
 ### Removed
  - support for python 3.8
 
 ### Changed
  - faster queries for THS_HazardAggregation table
- - faster queries for THS_OpenquakeRealization table
  - query optimisation to gridded_hazard_query
  - query optimisation to disagg_querys
  - mypy 1.5.0
