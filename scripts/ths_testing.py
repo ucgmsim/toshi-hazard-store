@@ -23,6 +23,12 @@ ALL_CITY_LOCS = [CodedLocation(o['latitude'], o['longitude'], 0.001) for o in LO
 
 
 class PyanamodbConsumedHandler(logging.Handler):
+    """
+    This custom log handler works with PynamoDB and DEBUG level logging.
+
+    Use it to count the cost of AWS queries.
+    """
+
     def __init__(self, level=0) -> None:
         super().__init__(level)
         self.consumed = 0
@@ -33,13 +39,12 @@ class PyanamodbConsumedHandler(logging.Handler):
     def emit(self, record):
         if "pynamodb/connection/base.py" in record.pathname and record.msg == "%s %s consumed %s units":
             self.consumed += record.args[2]
-            # print("CONSUMED:",  self.consumed)
 
 
 log = logging.getLogger()
 
-pyconhandler = PyanamodbConsumedHandler(logging.DEBUG)
-log.addHandler(pyconhandler)
+count_cost_handler = PyanamodbConsumedHandler(logging.DEBUG)
+log.addHandler(count_cost_handler)
 
 # logging.basicConfig(level=logging.)
 logging.getLogger('pynamodb').setLevel(logging.DEBUG)
@@ -73,9 +78,8 @@ def cli():
 
 
 @cli.command()
-@click.pass_context
-def cache_info(ctx):
-    """Get statistcics about the local cache"""
+def cache_info():
+    """Get statistics about the local cache"""
     click.echo("Config settings from ENVIRONMENT")
     click.echo("--------------------------------")
     click.echo(f'LOCAL_CACHE_FOLDER: {LOCAL_CACHE_FOLDER}')
@@ -96,7 +100,6 @@ def cache_info(ctx):
 
 
 @cli.command()
-@click.option('--timing', '-T', is_flag=True, show_default=True, default=False, help="print timing information")
 @click.option('--num_locations', '-L', type=int, default=1)
 @click.option('--num_imts', '-I', type=int, default=1)
 @click.option('--num_vs30s', '-V', type=int, default=1)
@@ -107,8 +110,7 @@ def cache_info(ctx):
     default='NSHM_v1.0.4',
     type=click.Choice(['SLT_v8_gmm_v2_FINAL', 'SLT_v5_gmm_v0_SRWG', 'NSHM_1.0.0', 'NSHM_v1.0.4']),
 )
-@click.pass_context
-def get_hazard_curves(ctx, model_id, num_aggs, num_vs30s, num_imts, num_locations, timing):
+def get_hazard_curves(model_id, num_aggs, num_vs30s, num_imts, num_locations):
 
     mHAG = model.HazardAggregation
     mHAG.create_table(wait=True)
@@ -118,10 +120,10 @@ def get_hazard_curves(ctx, model_id, num_aggs, num_vs30s, num_imts, num_location
     aggs = ALL_AGG_VALS[:num_aggs]
     locs = [loc.code for loc in ALL_CITY_LOCS[:num_locations]]
 
-    pyconhandler.reset()
+    count_cost_handler.reset()
     results = query.get_hazard_curves(locs, vs30s, [model_id], imts, aggs)
     pts_summary_data = pd.DataFrame.from_dict(columns_from_results(results))
-    click.echo("get_hazard_curves Query consumed: %s units" % pyconhandler.consumed)
+    click.echo("get_hazard_curves Query consumed: %s units" % count_cost_handler.consumed)
     click.echo()
 
     click.echo(pts_summary_data.info())
@@ -146,7 +148,6 @@ def get_hazard_curves(ctx, model_id, num_aggs, num_vs30s, num_imts, num_location
 
 
 @cli.command()
-@click.option('--timing', '-T', is_flag=True, show_default=True, default=False, help="print timing information")
 @click.option('--location', '-L', type=str, default='MRO')
 @click.option('--imt', '-I', type=str, default='PGA')
 @click.option('--vs30', '-V', type=int, default=400)
@@ -157,8 +158,7 @@ def get_hazard_curves(ctx, model_id, num_aggs, num_vs30s, num_imts, num_location
     default='NSHM_v1.0.4',
     type=click.Choice(['SLT_v8_gmm_v2_FINAL', 'SLT_v5_gmm_v0_SRWG', 'NSHM_1.0.0', 'NSHM_v1.0.4']),
 )
-@click.pass_context
-def get_hazard_curve(ctx, model_id, agg, vs30, imt, location, timing):
+def get_hazard_curve(model_id, agg, vs30, imt, location):
 
     mHAG = model.HazardAggregation
     mHAG.create_table(wait=True)
@@ -176,10 +176,10 @@ def get_hazard_curve(ctx, model_id, agg, vs30, imt, location, timing):
     ]
     print(loc, locs)
 
-    pyconhandler.reset()
+    count_cost_handler.reset()
     results = query.get_hazard_curves(locs, vs30s, [model_id], imts, aggs)
     pts_summary_data = pd.DataFrame.from_dict(columns_from_results(results))
-    click.echo("get_hazard_curve Query consumed: %s units" % pyconhandler.consumed)
+    click.echo("get_hazard_curve Query consumed: %s units" % count_cost_handler.consumed)
     click.echo()
 
     click.echo(pts_summary_data.info())
@@ -217,9 +217,8 @@ def get_hazard_curve(ctx, model_id, agg, vs30, imt, location, timing):
     default='NSHM_v1.0.4',
     type=click.Choice(['SLT_v8_gmm_v2_FINAL', 'SLT_v5_gmm_v0_SRWG', 'NSHM_1.0.0', 'NSHM_v1.0.4']),
 )
-@click.pass_context
-def get_gridded(ctx, many_query, model_id, grid_id, agg, vs30, imt, poe):
-    pyconhandler.reset()
+def get_gridded(many_query, model_id, grid_id, agg, vs30, imt, poe):
+    count_cost_handler.reset()
     if not many_query:
         results = list(
             query.get_one_gridded_hazard(
@@ -249,7 +248,7 @@ def get_gridded(ctx, many_query, model_id, grid_id, agg, vs30, imt, poe):
             )
         )
 
-    click.echo("get_gridded_hazard Query consumed: %s units" % pyconhandler.consumed)
+    click.echo("get_gridded_hazard Query consumed: %s units" % count_cost_handler.consumed)
     click.echo("Query returned: %s items" % len(results))
 
     """
@@ -279,15 +278,14 @@ def get_gridded(ctx, many_query, model_id, grid_id, agg, vs30, imt, poe):
     type=click.Choice(['SLT_v8_gmm_v2_FINAL', 'SLT_v5_gmm_v0_SRWG', 'NSHM_1.0.0', 'NSHM_v1.0.4']),
 )
 # @click.option('--many-query', '-Q', is_flag=True, show_default=True, default=False, help="use many query version")
-@click.pass_context
-def get_disagg_agg_curve(ctx, model_id, agg, vs30, imt, poe, location):
+def get_disagg_agg_curve(model_id, agg, vs30, imt, poe, location):
 
     loc = location_by_id(location)
     locs = [
         CodedLocation(loc['latitude'], loc['longitude'], 0.001).code,
     ]
     print(loc, locs)
-    pyconhandler.reset()
+    count_cost_handler.reset()
 
     query.get_one_disagg_aggregation(
         model_id,
@@ -298,7 +296,7 @@ def get_disagg_agg_curve(ctx, model_id, agg, vs30, imt, poe, location):
         imt,
         model.ProbabilityEnum._2_PCT_IN_50YRS,
     )
-    click.echo("get_one_disagg_aggregation Query consumed: %s units" % pyconhandler.consumed)
+    click.echo("get_one_disagg_aggregation Query consumed: %s units" % count_cost_handler.consumed)
 
     """
     get_one_disagg_aggregation Query consumed: 1.5 units
@@ -317,15 +315,14 @@ def get_disagg_agg_curve(ctx, model_id, agg, vs30, imt, poe, location):
     default='NSHM_v1.0.4',
     type=click.Choice(['SLT_v8_gmm_v2_FINAL', 'SLT_v5_gmm_v0_SRWG', 'NSHM_1.0.0', 'NSHM_v1.0.4']),
 )
-@click.pass_context
-def get_disagg_agg_curves(ctx, model_id, num_aggs, num_vs30s, num_imts, num_locations):
+def get_disagg_agg_curves(model_id, num_aggs, num_vs30s, num_imts, num_locations):
 
     vs30s = ALL_VS30_VALS[:num_vs30s]
     imts = ALL_IMT_VALS[:num_imts]
     aggs = ALL_AGG_VALS[:num_aggs]
     locs = [loc.code for loc in ALL_CITY_LOCS[:num_locations]]
 
-    pyconhandler.reset()
+    count_cost_handler.reset()
     results = query.get_hazard_curves(locs, vs30s, [model_id], imts, aggs)
 
     results = list(
@@ -339,7 +336,7 @@ def get_disagg_agg_curves(ctx, model_id, num_aggs, num_vs30s, num_imts, num_loca
             [model.ProbabilityEnum._10_PCT_IN_50YRS],
         )
     )
-    click.echo("get_disagg_agg_curves Query consumed: %s units" % pyconhandler.consumed)
+    click.echo("get_disagg_agg_curves Query consumed: %s units" % count_cost_handler.consumed)
     click.echo("Query returned: %s items" % len(results))
 
     """
@@ -353,6 +350,87 @@ def get_disagg_agg_curves(ctx, model_id, num_aggs, num_vs30s, num_imts, num_loca
 
     ## speed / cost gains
     speed 1.67/1.9 = 0.88, cost 286/0.5 = 572
+    """
+
+
+@cli.command()
+@click.option('--num_locations', '-L', type=int, default=1)
+def get_haz_api(num_locations):
+    """Run Query typical of Kororaa Hazard curves view"""
+
+    locs = [loc.code for loc in ALL_CITY_LOCS[:num_locations]]
+
+    model_id = 'NSHM_v1.0.4'
+    imts = ['PGA']
+    # , 'SA(0.1)', 'SA(0.2)', 'SA(0.3)', 'SA(0.4)', 'SA(0.5)', 'SA(0.7)', 'SA(1.0)', 'SA(1.5)', 'SA(2.0)', 'SA(3.0)',
+    #    'SA(4.0)', 'SA(5.0)', 'SA(6.0)', 'SA(7.5)', 'SA(10.0)']
+    # locs = ['-38.14~176.25']
+    aggs = ['mean', '0.05', '0.95', '0.1', '0.9']
+    vs30s = [1500]
+
+    count_cost_handler.reset()
+    results = list(query.get_hazard_curves(locs, vs30s, [model_id], imts, aggs))
+
+    click.echo("get_hazard_curves Query consumed: %s units" % count_cost_handler.consumed)
+    click.echo("Query returned: %s items" % len(results))
+    """
+    BEFORE: v0.7.2
+    get_hazard_curves Query consumed: 9645.0 units
+    real    0m9.023s
+
+    AFTER: v0.7.3
+    get_hazard_curves Query consumed: 40.0 units
+    real    0m5.614s
+
+    HACK:
+    get_hazard_curves Query consumed: 153317.0 units
+    real    1m46.624s
+    """
+
+
+@cli.command()
+@click.option('--num_locations', '-L', type=int, default=1)
+@click.option('--num_imts', '-I', type=int, default=1)
+@click.option('--num_vs30s', '-V', type=int, default=1)
+@click.option('--num_rlzs', '-R', type=int, default=1)
+def get_rlzs(num_vs30s, num_imts, num_locations, num_rlzs):
+    """Run Realizations query typical of Toshi Hazard Post"""
+    vs30s = ALL_VS30_VALS[:num_vs30s]
+    imts = ALL_IMT_VALS[:num_imts]
+    # aggs = ALL_AGG_VALS[:num_aggs]
+    rlzs = [n for n in range(6)][:num_rlzs]
+    locs = [loc.code for loc in ALL_CITY_LOCS[:num_locations]]
+
+    toshi_ids = ['T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTA2ODMzNg==']
+    # toshi_ids = ['T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTA2ODU2NQ==']
+    count_cost_handler.reset()
+    results = list(
+        query.get_rlz_curves_v3(
+            locs,
+            vs30s,
+            rlzs,
+            toshi_ids,
+            imts,
+        )
+    )
+    # pts_summary_data = pd.DataFrame.from_dict(columns_from_results(results))
+
+    click.echo(results[-1])
+    click.echo("get_rlzs Query consumed: %s units" % count_cost_handler.consumed)
+    click.echo("Query returned: %s items" % len(results))
+
+    """
+    BEFORE: v0.7.2
+    get_rlzs Query consumed: 177412.5 units
+    Query returned: 1 items
+
+    real    2m9.078s
+
+    AFTER: v0.7.3
+    get_rlzs Query consumed: 1.5 units
+    Query returned: 1 items
+
+    real    0m1.647s
     """
 
 

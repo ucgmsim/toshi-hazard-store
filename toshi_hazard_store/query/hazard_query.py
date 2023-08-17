@@ -74,10 +74,10 @@ def first_vs30_key(vs30s):
 
 
 def get_rlz_curves_v3(
-    locs: Iterable[str],  # nloc_001
-    vs30s: Iterable[int],  # vs30s
-    rlzs: Iterable[int],  # rlzs
-    tids: Iterable[str],  # toshi hazard_solution_ids
+    locs: Iterable[str],
+    vs30s: Iterable[int],
+    rlzs: Iterable[int],
+    tids: Iterable[str],
     imts: Iterable[str],
 ) -> Iterator[mRLZ]:
     """Query THS_OpenquakeRealization Table.
@@ -85,7 +85,7 @@ def get_rlz_curves_v3(
     :param locs: coded location codes e.g. ['-46.430~168.360']
     :param vs30s: vs30 values eg [400, 500]
     :param rlzs: realizations eg [0,1,2,3]
-    :param tids:  toshi_solution ids e.. ['XXZ']
+    :param tids:  toshi hazard_solution_ids e.. ['XXZ']
     :param imts: imt (IntensityMeasureType) values e.g ['PGA', 'SA(0.5)']
 
     :yield: model objects
@@ -127,7 +127,7 @@ def get_rlz_curves_v3(
             log.debug('condition_expr: %s' % condition_expr)
 
             results = mRLZ.query(
-                hash_location_code, mRLZ.sort_key >= sort_key_first_val, filter_condition=condition_expr
+                hash_location_code, mRLZ.sort_key == sort_key_first_val, filter_condition=condition_expr
             )
 
             # print(f"get_hazard_rlz_curves_v3: qry {qry}")
