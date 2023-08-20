@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.7.5] - 2023-08-21
+### Changed
+ - faster queries for THS_OpenquakeMeta table
+
 ## [0.7.4] - 2023-08-17
 ### Changed
  - faster queries for THS_OpenquakeRealization table

@@ -22,16 +22,19 @@ def get_hazard_metadata_v3(
 ) -> Iterator[mOQM]:
     """Fetch ToshiOpenquakeHazardMeta based on criteria."""
 
-    condition_expr = None
-    if haz_sol_ids:
-        condition_expr = condition_expr & mOQM.hazard_solution_id.is_in(*haz_sol_ids)
-    if vs30_vals:
-        condition_expr = condition_expr & mOQM.vs30.is_in(*vs30_vals)
+    total_hits = 0
+    for (tid, vs30) in itertools.product(haz_sol_ids, vs30_vals):
+        sort_key_val = f"{tid}:{vs30}"
+        log.debug('sort_key_val: %s' % sort_key_val)
 
-    for hit in mOQM.query(
-        "ToshiOpenquakeMeta", filter_condition=condition_expr  # NB the partition key is the table name!
-    ):
-        yield (hit)
+        for hit in mOQM.query(
+            "ToshiOpenquakeMeta",  # NB the partition key is the table name!
+            range_key_condition=(mOQM.hazsol_vs30_rk == sort_key_val),
+        ):
+            total_hits += 1
+            yield (hit)
+
+    log.info('Total %s hits' % total_hits)
 
 
 def downsample_code(loc_code, res):
@@ -47,30 +50,6 @@ def get_hashes(locs: Iterable[str]):
         assert len(lt) == 2
         hashes.add(downsample_code(loc, 0.1))
     return sorted(list(hashes))
-
-
-def have_mixed_length_vs30s(vs30s):
-    """Does the list of vs30s require mixed length index keys."""
-    max_vs30 = max(vs30s)
-    min_vs30 = min(vs30s)
-    if max_vs30 >= 1000:
-        if min_vs30 < 1000:
-            return True
-    else:
-        return False
-
-
-def first_vs30_key(vs30s):
-    """This function handles vs30 index keys with variable length (3 or 4), which occur since the addition
-    of vs30 values 1000 & 1500.
-
-    DynamoDB sort key is not mutable, so we must handle this in our query instead, which is slighlty less
-    efficient. Leave this in place unldess the table can be rewritten with a new vs30 key length of 4 characters.
-    """
-    if have_mixed_length_vs30s(vs30s):
-        vsLong = filter(lambda x: x >= 1000, vs30s)
-        return str(int(min(vsLong) / 10)).zfill(model.VS30_KEYLEN)
-    return str(min(vs30s)).zfill(model.VS30_KEYLEN)
 
 
 def get_rlz_curves_v3(

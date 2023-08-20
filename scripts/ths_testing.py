@@ -8,7 +8,7 @@ import pandas as pd
 from nzshm_common.location.code_location import CodedLocation
 from nzshm_common.location.location import LOCATIONS, location_by_id
 
-from toshi_hazard_store import model, query
+from toshi_hazard_store import model, query, query_v3
 from toshi_hazard_store.config import DEPLOYMENT_STAGE, LOCAL_CACHE_FOLDER, REGION
 
 # from nzshm_common.grids import load_grid, RegionGrid
@@ -431,6 +431,118 @@ def get_rlzs(num_vs30s, num_imts, num_locations, num_rlzs):
     Query returned: 1 items
 
     real    0m1.647s
+    """
+
+
+@cli.command()
+@click.option('--num_vs30s', '-V', type=int, default=1)
+def get_meta(num_vs30s):
+    """Run Meta query typical of Toshi Hazard Post"""
+    vs30s = ALL_VS30_VALS[:num_vs30s]
+    toshi_ids = ['T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTA2ODMzNg==']
+    # toshi_ids = ['T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTA2ODU2NQ==']
+
+    count_cost_handler.reset()
+    results = list(query_v3.get_hazard_metadata_v3(toshi_ids, vs30s))
+    # pts_summary_data = pd.DataFrame.from_dict(columns_from_results(results))
+
+    click.echo(results[-1])
+    click.echo("get_rlzs Query consumed: %s units" % count_cost_handler.consumed)
+    click.echo("Query returned: %s items" % len(results))
+
+    """
+    BEFORE: v0.7.4
+    get_hazard_metadata_v3 Query consumed: 1229604.0 units
+    Query returned: 1 items
+
+    real    11m11.774s
+
+    AFTER:
+    THS_WIP_OpenquakeMeta-PROD<ToshiOpenquakeMeta, T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTA2ODMzNg==:150>
+    get_hazard_metadata_v3 Query consumed: 1.0 units
+    Query returned: 1 items
+
+    real    0m1.512s
+    """
+
+
+@cli.command()
+def get_meta_38():
+    """Run Meta query from THS issue #38"""
+    # ref https://github.com/GNS-Science/toshi-hazard-store/issues/38
+    vs30s = [225]
+    toshi_ids = [
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTYxMw==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTU1MA==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTMyMg==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTU1MQ==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTYwNA==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTM3OA==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTU0Mg==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTYxOQ==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTU5Nw==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTYxMA==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTUyOA==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTU0OQ==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTM2MA==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTMyMw==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTYwMQ==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTM3Mw==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTQ2NQ==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTMyMQ==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTM2MQ==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTM2Nw==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTU5NA==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTM3MQ==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTM2OA==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTY0Mw==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTYwNw==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTU0NQ==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTYxMQ==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTYwMA==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTM2Mg==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTYwNg==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTYxMg==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTU5NQ==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTQ2Nw==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTU0OA==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTU5Ng==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTU0NA==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTU0MQ==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTYwOQ==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTUyOQ==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTU0MA==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTQ3MQ==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTM3Mg==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTYwOA==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTUxOA==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTYxNg==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTUzMA==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTQ3Ng==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTQ2Ng==',
+        'T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyOTYwNQ==',
+    ]
+
+    count_cost_handler.reset()
+    results = list(query_v3.get_hazard_metadata_v3(toshi_ids, vs30s))
+    # pts_summary_data = pd.DataFrame.from_dict(columns_from_results(results))
+
+    click.echo(results[-1])
+    click.echo("get_hazard_metadata_v3 Query consumed: %s units" % count_cost_handler.consumed)
+    click.echo("Query returned: %s items" % len(results))
+
+    """
+    BEFORE: 0.7.4
+    get_hazard_metadata_v3 Query consumed: 1229577.5 units
+    Query returned: 49 items
+
+    real    11m27.622s
+
+    AFTER:
+    get_rlzs Query consumed: 48.5 units
+    Query returned: 49 items
+
+    real    0m4.140s
     """
 
 
