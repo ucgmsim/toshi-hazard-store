@@ -97,7 +97,6 @@ def export_rlzs_v3(extractor, oqmeta: OpenquakeMeta, return_rlz = False):
             for i_rlz, rlz in enumerate(rlz_keys):
 
                 values = []
-                # for i_imt in range(n_imts):
                 for i_imt, imt in enumerate(imtls.keys()):
                     values.append(
                         model.IMTValuesAttribute(
