@@ -36,24 +36,6 @@ def export_meta_v3(extractor, toshi_hazard_id, toshi_gt_id, locations_id, source
     if math.isnan(vs30):
         vs30 = 0
 
-    meta_dict = dict(
-        partition_key="ToshiOpenquakeMeta",
-        hazard_solution_id=toshi_hazard_id,
-        general_task_id=toshi_gt_id,
-        hazsol_vs30_rk=f"{toshi_hazard_id}:{str(int(vs30)).zfill(3)}",
-        # updated=dt.datetime.now(tzutc()),
-        # known at configuration
-        vs30=int(vs30),  # vs30 value
-        imts=list(oq['hazard_imtls'].keys()),  # list of IMTs
-        locations_id=locations_id,  # Location code or list ID
-        source_tags=source_tags,
-        source_ids=source_ids,
-        inv_time=oq['investigation_time'],
-        src_lt=source_lt.to_json(),  # sources meta as DataFrame JSON
-        gsim_lt=gsim_lt.to_json(),  # gmpe meta as DataFrame JSON
-        rlz_lt=rlz_lt.to_json(),  # realization meta as DataFrame JSON
-    )
-    
     obj = model.ToshiOpenquakeMeta(
         partition_key="ToshiOpenquakeMeta",
         hazard_solution_id=toshi_hazard_id,
@@ -75,7 +57,7 @@ def export_meta_v3(extractor, toshi_hazard_id, toshi_gt_id, locations_id, source
     return OpenquakeMeta(source_lt, gsim_lt, rlz_lt, obj)
 
 
-def export_rlzs_v3(extractor, oqmeta: OpenquakeMeta, return_rlz = False):
+def export_rlzs_v3(extractor, oqmeta: OpenquakeMeta, return_rlz=False):
     oq = json.loads(extractor.get('oqparam').json)
     sites = extractor.get('sitecol').to_dframe()
     rlzs = extractor.get('hcurves?kind=rlzs', asdict=True)
