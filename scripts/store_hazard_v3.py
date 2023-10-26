@@ -5,7 +5,6 @@ import datetime as dt
 from pathlib import Path
 
 try:
-    # from openquake.commonlib import datastore
     from openquake.calculators.extract import Extractor
 
     from toshi_hazard_store.oq_import import export_meta_v3, export_rlzs_v3
@@ -22,11 +21,9 @@ def extract_and_save(args):
     hdf5_path = Path(args.calc_id)
     if hdf5_path.exists():
         # we have a file path to work with
-        # dstore = datastore.DataStore(str(hdf5_path))
         extractor = Extractor(str(hdf5_path))
     else:
         calc_id = int(args.calc_id)
-        # dstore = datastore.read(calc_id)
         extractor = Extractor(calc_id)
 
     # Save metadata record
