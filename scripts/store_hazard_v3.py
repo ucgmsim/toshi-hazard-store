@@ -5,7 +5,7 @@ import datetime as dt
 from pathlib import Path
 
 try:
-    from openquake.commonlib import datastore
+    from openquake.calculators.extract import Extractor
 
     from toshi_hazard_store.oq_import import export_meta_v3, export_rlzs_v3
 except (ModuleNotFoundError, ImportError):
@@ -21,10 +21,10 @@ def extract_and_save(args):
     hdf5_path = Path(args.calc_id)
     if hdf5_path.exists():
         # we have a file path to work with
-        dstore = datastore.DataStore(str(hdf5_path))
+        extractor = Extractor(str(hdf5_path))
     else:
         calc_id = int(args.calc_id)
-        dstore = datastore.read(calc_id)
+        extractor = Extractor(calc_id)
 
     # Save metadata record
     t0 = dt.datetime.utcnow()
@@ -36,7 +36,7 @@ def extract_and_save(args):
 
     print(tags, srcs)
 
-    meta = export_meta_v3(dstore, args.toshi_hazard_id, args.toshi_gt_id, args.locations_id, tags, srcs)
+    meta = export_meta_v3(extractor, args.toshi_hazard_id, args.toshi_gt_id, args.locations_id, tags, srcs)
 
     if args.verbose:
         print("Done saving meta, took %s secs" % (dt.datetime.utcnow() - t0).total_seconds())
@@ -47,15 +47,13 @@ def extract_and_save(args):
         if args.verbose:
             print('Begin saving realisations (V3)')
         export_rlzs_v3(
-            dstore,
+            extractor,
             meta,
         )
 
         if args.verbose:
             t1 = dt.datetime.utcnow()
             print("Done saving realisations, took %s secs" % (t1 - t0).total_seconds())
-
-    dstore.close()
 
 
 def parse_args():
