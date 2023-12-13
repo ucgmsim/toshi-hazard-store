@@ -1,7 +1,7 @@
 [tool]
 [tool.poetry]
 name = "toshi-hazard-store"
-version = "0.7.5"
+version = "0.7.6"
 homepage = "https://github.com/GNS-Science/toshi-hazard-store"
 description = "Library for saving and retrieving NZHSM openquake hazard results with convenience (uses AWS Dynamodb)."
 authors = ["GNS Science <chrisbc@artisan.co.nz>"]
@@ -34,7 +34,6 @@ ths_testing = 'scripts.ths_testing:cli'
 [tool.poetry.dependencies]
 python = ">=3.9,<3.13"
 openquake-engine = {version = "^3.16", optional = true}
-pandas = "^1.4.3"
 pynamodb-attributes = "^0.3.2"
 nzshm-common = "^0.6.0"
 
@@ -42,6 +41,7 @@ nzshm-common = "^0.6.0"
 urllib3 = "<2" 
 numpy = "<1.25"
 pynamodb = "^5.5.0"
+pandas = "~2.0.3"
 
 [tool.poetry.group.dev.dependencies]
 black  = { version = "^22.3"}

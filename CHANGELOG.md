@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.7.6] - 2023-12-07
+### Changed
+ - update pandas dependency to ~2.0.3
+
 ## [0.7.5] - 2023-08-21
 ### Changed
  - faster queries for THS_OpenquakeMeta table
