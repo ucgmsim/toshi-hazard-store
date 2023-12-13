@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.7.7] - 2023-12-13
+### Changed 
+ - fix publication workflow
+ 
 ## [0.7.6] - 2023-12-07
 ### Changed
  - update pandas dependency to ~2.0.3
