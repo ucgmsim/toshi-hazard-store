@@ -30,7 +30,7 @@ def build_hazard_aggregation_models():
             ).set_location(loc)
 
 
-@patch("toshi_hazard_store.model.caching.cache_store.LOCAL_CACHE_FOLDER", None)
+@patch("toshi_hazard_store.v2.db_adapter.sqlite.sqlite_store.LOCAL_CACHE_FOLDER", None)
 @mock_dynamodb
 class QueryHazardAggregationV3TestVS30(unittest.TestCase):
     def setUp(self):

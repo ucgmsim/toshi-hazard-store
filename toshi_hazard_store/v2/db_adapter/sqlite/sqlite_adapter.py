@@ -8,15 +8,8 @@ from typing import TYPE_CHECKING, Any, Iterable, Type, TypeVar, Union
 
 from pynamodb.expressions.condition import Condition
 
-from toshi_hazard_store.model.caching.cache_store import (
-    check_exists,
-    drop_table,
-    ensure_table_exists,
-    get_model,
-    put_model,
-)
-
-from .pynamodb_adapter_interface import PynamodbAdapterInterface
+from ..pynamodb_adapter_interface import PynamodbAdapterInterface
+from .sqlite_store import check_exists, drop_table, ensure_table_exists, get_model, put_model, safe_table_name
 
 if TYPE_CHECKING:
     import pynamodb.models.Model
@@ -31,8 +24,8 @@ log = logging.getLogger(__name__)
 
 
 class SqliteAdapter(PynamodbAdapterInterface):
-    def get_connection(self) -> sqlite3.Connection:
-        dbpath = pathlib.Path(str(LOCAL_STORAGE_FOLDER), DEPLOYMENT_STAGE, 'model.db')
+    def get_connection(self, model_class: Type[_T]) -> sqlite3.Connection:
+        dbpath = pathlib.Path(LOCAL_STORAGE_FOLDER) / DEPLOYMENT_STAGE / f"{safe_table_name(model_class)}.db"
         assert dbpath.parent.exists()
         log.info(f"get sqlite3 connection at {dbpath}")
         return sqlite3.connect(dbpath)

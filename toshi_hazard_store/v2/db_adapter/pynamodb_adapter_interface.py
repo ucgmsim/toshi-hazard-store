@@ -19,7 +19,7 @@ class PynamodbAdapterInterface(ABC):
     """
 
     @abstractmethod
-    def get_connection(self):
+    def get_connection(self, model_class: Type[_T]):
         """get a connector to the storage engine"""
         pass
 

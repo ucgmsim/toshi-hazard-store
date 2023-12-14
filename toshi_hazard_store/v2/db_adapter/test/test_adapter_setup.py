@@ -3,9 +3,10 @@
 import pytest
 from pynamodb.attributes import UnicodeAttribute
 
-from toshi_hazard_store.v2.db_adapter import ModelAdapterMixin, sqlite_adapter
+from toshi_hazard_store.v2.db_adapter import ModelAdapterMixin
+from toshi_hazard_store.v2.db_adapter.sqlite import SqliteAdapter
 
-MYADAPTER = sqlite_adapter.SqliteAdapter()
+MYADAPTER = SqliteAdapter()
 
 
 class MyAdapterTable(ModelAdapterMixin):
@@ -29,7 +30,7 @@ def get_one_meta():
 
 
 def test_model_key_attribues(sqlite_adapter_test_table):
-    from toshi_hazard_store.model.caching.cache_store import get_hash_key
+    from toshi_hazard_store.v2.db_adapter.sqlite.sqlite_store import get_hash_key
 
     assert get_hash_key(sqlite_adapter_test_table) == 'my_hash_key'
 

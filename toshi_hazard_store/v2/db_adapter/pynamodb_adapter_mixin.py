@@ -21,11 +21,11 @@ _KeyType = Any
 
 
 class ModelAdapterMixin(pynamodb.models.Model):
-    """extends pynamodb.models.Model with a pluggable model."""
+    """extends pynamodb.models.Model with a pluggable storage layer."""
 
     def save(self):
         adapter = self.AdapterMeta.adapter  # type: ignore
-        conn = adapter.get_connection()
+        conn = adapter.get_connection(self)
         return adapter.save(conn, self)
 
     @classmethod
@@ -33,7 +33,7 @@ class ModelAdapterMixin(pynamodb.models.Model):
         cls: Type[_T],
     ):
         adapter = cls.AdapterMeta.adapter  # type: ignore
-        conn = adapter.get_connection()
+        conn = adapter.get_connection(cls)
         return adapter.exists(conn, cls)
         raise NotImplementedError()
 
@@ -54,7 +54,7 @@ class ModelAdapterMixin(pynamodb.models.Model):
         settings: OperationSettings = OperationSettings.default,
     ) -> pynamodb.models.ResultIterator[_T]:  #
         adapter = cls.AdapterMeta.adapter  # type: ignore
-        conn = adapter.get_connection()
+        conn = adapter.get_connection(cls)
         return adapter.query(conn, cls, hash_key, range_key_condition, filter_condition)
 
     @classmethod
@@ -70,7 +70,7 @@ class ModelAdapterMixin(pynamodb.models.Model):
         extends create_table to manage the local_cache table.
         """
         adapter = cls.AdapterMeta.adapter  # type: ignore
-        conn = adapter.get_connection()
+        conn = adapter.get_connection(cls)
         return adapter.create_table(
             conn,
             cls,
@@ -88,5 +88,5 @@ class ModelAdapterMixin(pynamodb.models.Model):
         """
         log.info('drop the table ')
         adapter = cls.AdapterMeta.adapter  # type: ignore
-        conn = adapter.get_connection()
+        conn = adapter.get_connection(cls)
         return adapter.delete_table(conn, cls)

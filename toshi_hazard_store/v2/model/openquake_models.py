@@ -12,7 +12,8 @@ from pynamodb.attributes import NumberAttribute, UnicodeAttribute, UnicodeSetAtt
 from pynamodb_attributes import TimestampAttribute
 
 from toshi_hazard_store.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION
-from toshi_hazard_store.v2.db_adapter import ModelAdapterMixin, sqlite_adapter
+from toshi_hazard_store.v2.db_adapter import ModelAdapterMixin
+from toshi_hazard_store.v2.db_adapter.sqlite import sqlite_adapter
 
 from ...model.location_indexed_model import datetime_now
 
