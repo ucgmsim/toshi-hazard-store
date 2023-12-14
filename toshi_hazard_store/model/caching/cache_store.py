@@ -167,6 +167,33 @@ def safe_table_name(model_class: Type[_T]):
     return model_class.Meta.table_name.replace('-', '_')
 
 
+def check_exists(conn: sqlite3.Connection, model_class: Type[_T]) -> bool:
+    table_name = safe_table_name(model_class)
+    sql = f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table_name}';"
+
+    log.info(f"check_exists sql: {sql}")
+    try:
+        res = conn.execute(sql)
+        table_found = next(res)[0] == table_name
+    except StopIteration:
+        table_found = False
+    except Exception as e:
+        log.error(str(e))
+    return table_found
+
+
+def drop_table(conn: sqlite3.Connection, model_class: Type[_T]) -> bool:
+    table_name = safe_table_name(model_class)
+    sql = f"DROP TABLE '{table_name}';"
+    log.debug(f"drop table sql: {sql}")
+    try:
+        conn.execute(sql)
+        return True
+    except Exception as e:
+        log.error(str(e))
+        return False
+
+
 def ensure_table_exists(conn: sqlite3.Connection, model_class: Type[_T]):
     """create if needed a cache table for the model_class
     :param conn: Connection object

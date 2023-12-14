@@ -85,5 +85,6 @@ class ModelAdapterMixin(pynamodb.models.Model):
         extends delete_table to manage the local_cache table.
         """
         log.info('drop the table ')
-        raise NotImplementedError()
-        return super().delete_table()  # type: ignore
+        adapter = cls.AdapterMeta.adapter  # type: ignore
+        conn = adapter.get_connection()
+        return adapter.delete_table(conn, cls)

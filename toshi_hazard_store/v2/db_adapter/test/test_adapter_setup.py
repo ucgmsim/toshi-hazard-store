@@ -10,7 +10,7 @@ MYADAPTER = sqlite_adapter.SqliteAdapter()
 
 class MyAdapterTable(ModelAdapterMixin):
     class Meta:
-        table_name = "MydapterTable"
+        table_name = "MyFkAdapterTable"
 
     class AdapterMeta:
         adapter = MYADAPTER
@@ -34,10 +34,13 @@ def test_model_key_attribues(sqlite_adapter_test_table):
     assert get_hash_key(sqlite_adapter_test_table) == 'my_hash_key'
 
 
-@pytest.mark.skip('TODO: implement exists')
 def test_table_creation(sqlite_adapter_test_table):
     sqlite_adapter_test_table.create_table()
-    # hash_key = 'CompusoryHashOrPartionKey'
-    # items = list(sqlite_adapter_test_table.query(, None))  # get all
-    # assert len(items) == 0
     assert sqlite_adapter_test_table.exists()
+
+
+def test_table_create_drop(sqlite_adapter_test_table):
+    sqlite_adapter_test_table.create_table()
+    assert sqlite_adapter_test_table.exists()
+    sqlite_adapter_test_table.delete_table()
+    assert not sqlite_adapter_test_table.exists()

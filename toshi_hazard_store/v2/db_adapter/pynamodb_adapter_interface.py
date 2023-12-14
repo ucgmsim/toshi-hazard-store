@@ -30,7 +30,7 @@ class PynamodbAdapterInterface(ABC):
 
     @staticmethod
     @abstractmethod
-    def drop_table(connection: Any, model_class: Type[_T]):
+    def delete_table(connection: Any, model_class: Type[_T]):
         pass
 
     @staticmethod
