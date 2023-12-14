@@ -118,12 +118,17 @@ class TestCacheStore(unittest.TestCase):
         cache_store.put_model(conn, self.m)
 
         # now query
+        hash_key = '-43.2~177.3'
         range_condition = model.HazardAggregation.sort_key >= '-43.200~177.270:700:PGA'
         filter_condition = mHAG.vs30.is_in(700) & mHAG.imt.is_in('PGA') & mHAG.hazard_model_id.is_in('HAZ_MODEL_ONE')
 
         m2 = next(
             cache_store.get_model(
-                conn, model_class=mHAG, range_key_condition=range_condition, filter_condition=filter_condition
+                conn,
+                model_class=mHAG,
+                hash_key=hash_key,
+                range_key_condition=range_condition,
+                filter_condition=filter_condition,
             )
         )
 
@@ -173,12 +178,17 @@ class TestCacheStoreWithOptionalAttribute(unittest.TestCase):
         cache_store.put_model(conn, self.m)
 
         # now query
+        hash_key = '-43.2~177.3'
         range_condition = model.HazardAggregation.sort_key >= '-43.200~177.270:000:PGA'
         filter_condition = mHAG.vs30.is_in(0) & mHAG.imt.is_in('PGA') & mHAG.hazard_model_id.is_in('HAZ_MODEL_ONE')
 
         m2 = next(
             cache_store.get_model(
-                conn, model_class=mHAG, range_key_condition=range_condition, filter_condition=filter_condition
+                conn,
+                model_class=mHAG,
+                hash_key=hash_key,
+                range_key_condition=range_condition,
+                filter_condition=filter_condition,
             )
         )
 

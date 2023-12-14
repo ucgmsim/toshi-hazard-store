@@ -1,23 +1,26 @@
 """
 defines the pynamodb tables used to store openquake data.
 
-Version 2  
+Version 2
 """
 
 import logging
-from typing import Iterable, Iterator, Sequence, Union
 
-from pynamodb.attributes import JSONAttribute, ListAttribute, NumberAttribute, UnicodeAttribute, UnicodeSetAttribute
-from pynamodb.indexes import AllProjection, LocalSecondaryIndex
-from pynamodb_attributes import IntegerAttribute, TimestampAttribute
+from pynamodb.attributes import NumberAttribute, UnicodeAttribute, UnicodeSetAttribute  # noqa
+
+# from pynamodb.indexes import AllProjection, LocalSecondaryIndex
+from pynamodb_attributes import TimestampAttribute
 
 from toshi_hazard_store.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION
-
-from toshi_hazard_store.v2.db_adapter import ModelAdapterMixin, sqllite_adapter
+from toshi_hazard_store.v2.db_adapter import ModelAdapterMixin, sqlite_adapter
 
 from ...model.location_indexed_model import datetime_now
 
+# from typing import Iterable, Iterator, Sequence, Union
+
+
 log = logging.getLogger(__name__)
+
 
 class ToshiV2DemoTable(ModelAdapterMixin):
     """Stores metadata from the job configuration and the oq HDF5."""
@@ -32,7 +35,7 @@ class ToshiV2DemoTable(ModelAdapterMixin):
             host = "http://localhost:8000"  # pragma: no cover
 
     class AdapterMeta:
-       adapter = sqllite_adapter  # the database adapter implementation
+        adapter = sqlite_adapter.SqliteAdapter  # the database adapter implementation
 
     hash_key = UnicodeAttribute(hash_key=True)
     range_rk = UnicodeAttribute(range_key=True)
@@ -46,7 +49,6 @@ class ToshiV2DemoTable(ModelAdapterMixin):
     imts = UnicodeSetAttribute()  # list of IMTs
 
 
-
 tables = [
     ToshiV2DemoTable,
 ]
@@ -58,6 +60,7 @@ def migrate():
         if not table.exists():  # pragma: no cover
             table.create_table(wait=True)
             log.info(f"Migrate created table: {table}")
+
 
 def drop_tables():
     """Drop the tables, if they exist."""

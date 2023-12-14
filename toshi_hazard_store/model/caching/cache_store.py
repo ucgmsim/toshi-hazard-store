@@ -26,9 +26,14 @@ _T = TypeVar('_T', bound='pynamodb.models.Model')
 log = logging.getLogger(__name__)
 
 
+def get_hash_key(model_class):
+    return model_class._hash_key_attribute().attr_name
+
+
 def get_model(
     conn: sqlite3.Connection,
     model_class: Type[_T],
+    hash_key: str,
     range_key_condition: Condition,
     filter_condition: Union[Condition, None] = None,
 ) -> Iterable[_T]:
@@ -40,7 +45,7 @@ def get_model(
     """
     _sql = "SELECT * FROM %s \n" % safe_table_name(model_class)
 
-    # add the compulsary range key
+    # add the compulsory hash key
     _sql += "\tWHERE " + next(sql_from_pynamodb_condition(range_key_condition))
 
     # add the optional filter expression
@@ -173,19 +178,26 @@ def ensure_table_exists(conn: sqlite3.Connection, model_class: Type[_T]):
         # TEXT, NUMERIC, INTEGER, REAL, BLOB
         # print(name, _type, _type.attr_type)
         # print(dir(_type))
-        type_map = {"S": "string", "N": "numeric", "L": "string"}
+        type_map = {"S": "string", "N": "numeric", "L": "string", "SS": "string"}
         _sql: str = "CREATE TABLE IF NOT EXISTS %s (\n" % safe_table_name(model_class)
 
         for name, attr in model_class.get_attributes().items():
-            _sql += f'\t"{name}" {type_map[attr.attr_type]}'
-            if name == model_class._range_key_attribute().attr_name:
-                # primary kaye
-                _sql += " PRIMARY KEY,\n"
-            else:
-                _sql += ",\n"
+            if attr.attr_type not in type_map.keys():
+                raise ValueError(f"Unupported type: {attr.attr_type} for attribute {attr.attr_name}")
+            _sql += f'\t"{name}" {type_map[attr.attr_type]},\n'
 
-        return f'{_sql[:-2]}\n);'
+        # now add the primary key
+        if model_class._range_key_attribute() and model_class._hash_key_attribute():
+            return (
+                _sql
+                + f"\tPRIMARY KEY ({model_class._hash_key_attribute().attr_name}, "
+                + f"{model_class._range_key_attribute().attr_name})\n)"
+            )
+        if model_class._hash_key_attribute():
+            return _sql + f"\tPRIMARY KEY {model_class._hash_key_attribute().attr_name}\n)"
+        raise ValueError()
 
+    print('model_class', model_class)
     create_sql = create_table_sql(model_class)
 
     print(create_sql)

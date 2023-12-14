@@ -8,7 +8,6 @@ they can be supplied via a suitable adapter implementaion
 
 """
 import logging
-from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterable, Optional, Type, TypeVar
 
 import pynamodb.models
@@ -21,45 +20,23 @@ _T = TypeVar('_T', bound='pynamodb.models.Model')
 _KeyType = Any
 
 
-class PynamodbAdapterInterface(ABC):
-    """
-    Defines methods to be provided by a adapter class implementation.
-    """
-
-    @abstractmethod
-    def get_table_connector(model_class: Type[_T]):
-        """get a connector to the storage table"""
-        pass
-    
-    def drop_table(model_class: Type[_T]):
-        pass
-
-    def get_model(connection, range_key_condition, filter_condition):
-        """Get iterator for given conditions"""
-        pass
-    
-    def put_model(conn, item):
-        """Put an item to the store"""
-        pass
-
-    def drop_model(conn, item):
-        """Put and item to the store"""
-        pass
-
-    def drop_model(conn, res):
-        """Put and item to the store"""
-        pass
-
-    def count_hits(filter_condition):
-        """Count minimum"""
-        pass
-
-
 class ModelAdapterMixin(pynamodb.models.Model):
     """extends pynamodb.models.Model with a pluggable model."""
 
+    def save(self):
+        raise NotImplementedError()
+
     @classmethod
-    def query(  # type: ignore
+    def exists(
+        cls: Type[_T],
+    ):
+        adapter = cls.AdapterMeta.adapter  # type: ignore
+        conn = adapter.get_connection()
+        return adapter.exists(conn, cls)
+        raise NotImplementedError()
+
+    @classmethod
+    def query(
         cls: Type[_T],
         hash_key: _KeyType,
         range_key_condition: Optional[Condition] = None,
@@ -74,59 +51,9 @@ class ModelAdapterMixin(pynamodb.models.Model):
         rate_limit: Optional[float] = None,
         settings: OperationSettings = OperationSettings.default,
     ) -> pynamodb.models.ResultIterator[_T]:  #
-        """
-        Proxy query function which trys to use the local_cache before hitting AWS via Pynamodb
-        """
-
-        # CBC TODO support optional filter condition if supplied range_condition operand is "="
-        if (not cache_store.cache_enabled()) and (filter_condition is not None):
-            log.warning("Not using the cache")
-            return super().query(  # type: ignore
-                hash_key,
-                range_key_condition,
-                filter_condition,
-                consistent_read,
-                index_name,
-                scan_index_forward,
-                limit,
-                last_evaluated_key,
-                attributes_to_get,
-                page_size,
-                rate_limit,
-                settings,
-            )
-
-        log.info('Try the local_cache first')
-
-        if isinstance(filter_condition, Condition):
-            conn = cache_store.get_connection(model_class=cls)
-            cached_rows = list(cache_store.get_model(conn, cls, range_key_condition, filter_condition))  # type: ignore
-
-            minimum_expected_hits = cache_store.count_permutations(filter_condition)
-            log.info('permutations: %s cached_rows: %s' % (minimum_expected_hits, len(cached_rows)))
-
-            if len(cached_rows) >= minimum_expected_hits:
-                return cached_rows  # type: ignore
-            if len(cached_rows) < minimum_expected_hits:
-                log.warn('permutations: %s cached_rows: %s' % (minimum_expected_hits, len(cached_rows)))
-                result = []
-                for res in super().query(  # type: ignore
-                    hash_key,
-                    range_key_condition,
-                    filter_condition,
-                    consistent_read,
-                    index_name,
-                    scan_index_forward,
-                    limit,
-                    last_evaluated_key,
-                    attributes_to_get,
-                    page_size,
-                    rate_limit,
-                    settings,
-                ):
-                    cache_store.put_model(conn, res)
-                    result.append(res)
-                return result  # type: ignore
+        adapter = cls.AdapterMeta.adapter  # type: ignore
+        conn = adapter.get_connection()
+        return adapter.get_model(conn, cls, hash_key, range_key_condition, filter_condition)
 
     @classmethod
     def create_table(
@@ -140,14 +67,11 @@ class ModelAdapterMixin(pynamodb.models.Model):
         """
         extends create_table to manage the local_cache table.
         """
-        cache_store = cls.AdapterMeta.adapter
-        
-        if cache_store.cache_enabled():
-            log.info("setup local cache")
-            conn = cache_store.get_connection(model_class=cls)
-            cache_store.ensure_table_exists(conn, model_class=cls)
-
-        return super().create_table(  # type: ignore
+        adapter = cls.AdapterMeta.adapter  # type: ignore
+        conn = adapter.get_connection()
+        return adapter.create_table(
+            conn,
+            cls,
             wait,
             read_capacity_units,
             write_capacity_units,
@@ -161,4 +85,5 @@ class ModelAdapterMixin(pynamodb.models.Model):
         extends delete_table to manage the local_cache table.
         """
         log.info('drop the table ')
+        raise NotImplementedError()
         return super().delete_table()  # type: ignore
