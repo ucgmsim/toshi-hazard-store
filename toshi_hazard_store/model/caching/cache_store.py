@@ -90,7 +90,6 @@ def get_model(
 
 def put_model(
     conn: sqlite3.Connection,
-    # model_class: Type[_T],
     model_instance: _T,
 ):
     """write model instance to query cache table.
@@ -131,6 +130,7 @@ def put_model(
         cursor = conn.cursor()
         cursor.execute(_sql)
         conn.commit()
+        log.debug(f'cursor: {cursor}')
         log.info("Last row id: %s" % cursor.lastrowid)
         # cursor.close()
         # conn.execute(_sql)

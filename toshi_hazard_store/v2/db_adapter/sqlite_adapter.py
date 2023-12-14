@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Iterable, Type, TypeVar, Union
 
 from pynamodb.expressions.condition import Condition
 
-from toshi_hazard_store.model.caching.cache_store import check_exists, drop_table, ensure_table_exists
+from toshi_hazard_store.model.caching.cache_store import check_exists, drop_table, ensure_table_exists, put_model
 
 from .pynamodb_adapter_interface import PynamodbAdapterInterface
 
@@ -30,6 +30,10 @@ class SqliteAdapter(PynamodbAdapterInterface):
         assert dbpath.parent.exists()
         log.info(f"get sqlite3 connection at {dbpath}")
         return sqlite3.connect(dbpath)
+
+    @staticmethod
+    def save(connection: Any, model_instance: Any) -> None:  # sqlite3.Connection
+        return put_model(connection, model_instance)
 
     @staticmethod
     def exists(connection: Any, model_class: Type[_T]):
@@ -65,16 +69,6 @@ class SqliteAdapter(PynamodbAdapterInterface):
         """
         raise NotImplementedError()
         # return get_model(connection, model_class, range_key_condition, filter_condition)
-
-    @staticmethod
-    def put_model(connection, item):
-        """Put an item to the store"""
-        raise NotImplementedError()
-
-    @staticmethod
-    def drop_model(connection, res):
-        """Put and item to the store"""
-        raise NotImplementedError()
 
     @staticmethod
     def count_hits(filter_condition):

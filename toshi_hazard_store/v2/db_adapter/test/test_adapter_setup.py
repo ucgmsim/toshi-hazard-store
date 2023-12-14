@@ -44,3 +44,9 @@ def test_table_create_drop(sqlite_adapter_test_table):
     assert sqlite_adapter_test_table.exists()
     sqlite_adapter_test_table.delete_table()
     assert not sqlite_adapter_test_table.exists()
+
+
+def test_table_save(sqlite_adapter_test_table):
+    sqlite_adapter_test_table.create_table()
+    obj = MyAdapterTable(my_hash_key="ABD123", my_range_key="qwerty123")
+    obj.save()

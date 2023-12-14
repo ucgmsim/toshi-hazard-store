@@ -39,7 +39,9 @@ class PynamodbAdapterInterface(ABC):
         """Get iterator for given conditions"""
         pass
 
-    def put_model(connection, item):
+    @staticmethod
+    @abstractmethod
+    def save(connection: Any, model_instance: _T) -> None:
         """Put an item to the store"""
         pass
 

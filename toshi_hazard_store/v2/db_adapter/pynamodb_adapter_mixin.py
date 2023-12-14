@@ -24,7 +24,9 @@ class ModelAdapterMixin(pynamodb.models.Model):
     """extends pynamodb.models.Model with a pluggable model."""
 
     def save(self):
-        raise NotImplementedError()
+        adapter = self.AdapterMeta.adapter  # type: ignore
+        conn = adapter.get_connection()
+        return adapter.save(conn, self)
 
     @classmethod
     def exists(
