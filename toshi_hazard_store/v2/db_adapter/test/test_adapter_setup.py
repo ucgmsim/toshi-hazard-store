@@ -6,15 +6,15 @@ from pynamodb.attributes import UnicodeAttribute
 from toshi_hazard_store.v2.db_adapter import ModelAdapterMixin
 from toshi_hazard_store.v2.db_adapter.sqlite import SqliteAdapter
 
-MYADAPTER = SqliteAdapter()
+SQLITE_ADAPTER = SqliteAdapter()
 
 
-class MyAdapterTable(ModelAdapterMixin):
+class MyModel(ModelAdapterMixin):
     class Meta:
-        table_name = "MyFkAdapterTable"
+        table_name = "MyModel"
 
     class AdapterMeta:
-        adapter = MYADAPTER
+        adapter = SQLITE_ADAPTER
 
     my_hash_key = UnicodeAttribute(hash_key=True)
     my_range_key = UnicodeAttribute(range_key=True)
@@ -22,7 +22,7 @@ class MyAdapterTable(ModelAdapterMixin):
 
 @pytest.fixture(scope="module")
 def sqlite_adapter_test_table():
-    yield MyAdapterTable
+    yield MyModel
 
 
 def get_one_meta():
@@ -49,20 +49,18 @@ def test_table_create_drop(sqlite_adapter_test_table):
 
 def test_table_save(sqlite_adapter_test_table):
     sqlite_adapter_test_table.create_table()
-    obj = MyAdapterTable(my_hash_key="ABD123", my_range_key="qwerty123")
+    obj = MyModel(my_hash_key="ABD123", my_range_key="qwerty123")
     obj.save()
 
 
 def test_table_save_and_query(sqlite_adapter_test_table):
     sqlite_adapter_test_table.create_table()
-    MyAdapterTable(my_hash_key="ABD123", my_range_key="qwerty123").save()
-    res = sqlite_adapter_test_table.query(
-        hash_key="ABD123", range_key_condition=MyAdapterTable.my_range_key == "qwerty123"
-    )
+    MyModel(my_hash_key="ABD123", my_range_key="qwerty123").save()
+    res = sqlite_adapter_test_table.query(hash_key="ABD123", range_key_condition=MyModel.my_range_key == "qwerty123")
 
     result = list(res)
     assert len(result) == 1
-    assert isinstance(result[0], MyAdapterTable)
+    assert isinstance(result[0], MyModel)
     assert result[0].my_hash_key == "ABD123"
     assert result[0].my_range_key == "qwerty123"
 
@@ -73,7 +71,7 @@ def test_table_save_and_query_many(sqlite_adapter_test_table):
     assert sqlite_adapter_test_table.exists()
 
     for rk in range(10):
-        MyAdapterTable(my_hash_key="ABD123", my_range_key=f"qwerty123-{rk}").save()
+        MyModel(my_hash_key="ABD123", my_range_key=f"qwerty123-{rk}").save()
 
     res = sqlite_adapter_test_table.query(
         hash_key="ABD123",
@@ -82,7 +80,7 @@ def test_table_save_and_query_many(sqlite_adapter_test_table):
     result = list(res)
     assert len(result) == 10
     print(result)
-    assert isinstance(result[0], MyAdapterTable)
+    assert isinstance(result[0], MyModel)
     assert result[0].my_hash_key == "ABD123"
     assert result[0].my_range_key == "qwerty123-0"
     assert result[9].my_range_key == "qwerty123-9"
