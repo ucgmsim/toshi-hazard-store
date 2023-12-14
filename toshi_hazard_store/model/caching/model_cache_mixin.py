@@ -60,7 +60,7 @@ class ModelCacheMixin(pynamodb.models.Model):
 
         if isinstance(filter_condition, Condition):
             conn = cache_store.get_connection(model_class=cls)
-            cached_rows = list(cache_store.get_model(conn, cls, range_key_condition, filter_condition))  # type: ignore
+            cached_rows = list(cache_store.get_model(conn, cls, hash_key, range_key_condition, filter_condition))
 
             minimum_expected_hits = cache_store.count_permutations(filter_condition)
             log.info('permutations: %s cached_rows: %s' % (minimum_expected_hits, len(cached_rows)))

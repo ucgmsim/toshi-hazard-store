@@ -35,7 +35,7 @@ class PynamodbAdapterInterface(ABC):
 
     @staticmethod
     @abstractmethod
-    def get_model(connection: Any, model_class: Type[_T], hash_key: str, range_key_condition, filter_condition):
+    def query(connection: Any, model_class: Type[_T], hash_key: str, range_key_condition, filter_condition):
         """Get iterator for given conditions"""
         pass
 

@@ -34,7 +34,7 @@ def get_model(
     conn: sqlite3.Connection,
     model_class: Type[_T],
     hash_key: str,
-    range_key_condition: Condition,
+    range_key_condition: Union[Condition, None] = None,
     filter_condition: Union[Condition, None] = None,
 ) -> Iterable[_T]:
     """query cache table and return any hits.
@@ -45,15 +45,22 @@ def get_model(
     """
     _sql = "SELECT * FROM %s \n" % safe_table_name(model_class)
 
-    # add the compulsory hash key
-    _sql += "\tWHERE " + next(sql_from_pynamodb_condition(range_key_condition))
+    # first, the compulsory hash key
+    _sql += f"\tWHERE {get_hash_key(model_class)}='{hash_key}'"
+
+    # add the optional range_key_condition
+    if range_key_condition is not None:
+        _sql += "\n"
+        for expr in sql_from_pynamodb_condition(range_key_condition):
+            _sql += f"\tAND {expr}\n"
 
     # add the optional filter expression
     if filter_condition is not None:
         _sql += "\n"
         for expr in sql_from_pynamodb_condition(filter_condition):
             _sql += f"\tAND {expr}\n"
-    # print(_sql)
+
+    log.debug(f"SQL: {_sql}")
     try:
         conn.row_factory = sqlite3.Row
         for row in conn.execute(_sql):

@@ -55,7 +55,7 @@ class ModelAdapterMixin(pynamodb.models.Model):
     ) -> pynamodb.models.ResultIterator[_T]:  #
         adapter = cls.AdapterMeta.adapter  # type: ignore
         conn = adapter.get_connection()
-        return adapter.get_model(conn, cls, hash_key, range_key_condition, filter_condition)
+        return adapter.query(conn, cls, hash_key, range_key_condition, filter_condition)
 
     @classmethod
     def create_table(

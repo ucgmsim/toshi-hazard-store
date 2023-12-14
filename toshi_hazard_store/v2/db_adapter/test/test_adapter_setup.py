@@ -19,7 +19,7 @@ class MyAdapterTable(ModelAdapterMixin):
     my_range_key = UnicodeAttribute(range_key=True)
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def sqlite_adapter_test_table():
     yield MyAdapterTable
 
@@ -50,3 +50,38 @@ def test_table_save(sqlite_adapter_test_table):
     sqlite_adapter_test_table.create_table()
     obj = MyAdapterTable(my_hash_key="ABD123", my_range_key="qwerty123")
     obj.save()
+
+
+def test_table_save_and_query(sqlite_adapter_test_table):
+    sqlite_adapter_test_table.create_table()
+    MyAdapterTable(my_hash_key="ABD123", my_range_key="qwerty123").save()
+    res = sqlite_adapter_test_table.query(
+        hash_key="ABD123", range_key_condition=MyAdapterTable.my_range_key == "qwerty123"
+    )
+
+    result = list(res)
+    assert len(result) == 1
+    assert isinstance(result[0], MyAdapterTable)
+    assert result[0].my_hash_key == "ABD123"
+    assert result[0].my_range_key == "qwerty123"
+
+
+def test_table_save_and_query_many(sqlite_adapter_test_table):
+    sqlite_adapter_test_table.delete_table()
+    sqlite_adapter_test_table.create_table()
+    assert sqlite_adapter_test_table.exists()
+
+    for rk in range(10):
+        MyAdapterTable(my_hash_key="ABD123", my_range_key=f"qwerty123-{rk}").save()
+
+    res = sqlite_adapter_test_table.query(
+        hash_key="ABD123",
+    )
+
+    result = list(res)
+    assert len(result) == 10
+    print(result)
+    assert isinstance(result[0], MyAdapterTable)
+    assert result[0].my_hash_key == "ABD123"
+    assert result[0].my_range_key == "qwerty123-0"
+    assert result[9].my_range_key == "qwerty123-9"
