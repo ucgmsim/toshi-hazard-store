@@ -24,10 +24,12 @@ log = logging.getLogger(__name__)
 
 
 class SqliteAdapter(PynamodbAdapterInterface):
-    def get_connection(self, model_class: Type[_T]) -> sqlite3.Connection:
+
+    @staticmethod
+    def get_connection(model_class: Type[_T]) -> sqlite3.Connection:
         dbpath = pathlib.Path(LOCAL_STORAGE_FOLDER) / DEPLOYMENT_STAGE / f"{safe_table_name(model_class)}.db"
         assert dbpath.parent.exists()
-        log.info(f"get sqlite3 connection at {dbpath}")
+        log.debug(f"get sqlite3 connection at {dbpath}")
         return sqlite3.connect(dbpath)
 
     @staticmethod

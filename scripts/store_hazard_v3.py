@@ -2,6 +2,7 @@
 
 import argparse
 import datetime as dt
+import logging
 from pathlib import Path
 
 try:
@@ -12,7 +13,21 @@ except (ModuleNotFoundError, ImportError):
     print("WARNING: the transform module uses the optional openquake dependencies - h5py, pandas and openquake.")
 
 
-from toshi_hazard_store import model
+log = logging.getLogger()
+logging.basicConfig(level=logging.INFO)
+logging.getLogger('nshm_toshi_client.toshi_client_base').setLevel(logging.INFO)
+logging.getLogger('urllib3').setLevel(logging.INFO)
+logging.getLogger('botocore').setLevel(logging.INFO)
+logging.getLogger('gql.transport.requests').setLevel(logging.WARN)
+
+formatter = logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+root_handler = log.handlers[0]
+root_handler.setFormatter(formatter)
+
+log.debug('DEBUG message')
+log.info('INFO message')
+
+from toshi_hazard_store.v2 import model
 
 
 def extract_and_save(args):

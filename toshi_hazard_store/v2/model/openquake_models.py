@@ -24,7 +24,7 @@ from toshi_hazard_store.v2.db_adapter.sqlite import sqlite_adapter
 
 from ...model.attributes import EnumConstrainedUnicodeAttribute, IMTValuesAttribute, LevelValuePairAttribute
 from ...model.constraints import AggregationEnum, IntensityMeasureTypeEnum
-from ...model.location_indexed_model import VS30_KEYLEN, LocationIndexedModel, datetime_now
+from .location_indexed_model import VS30_KEYLEN, LocationIndexedModel, datetime_now
 
 log = logging.getLogger(__name__)
 
@@ -67,6 +67,9 @@ class ToshiOpenquakeMeta(ModelAdapterMixin):
         region = REGION
         if IS_OFFLINE:
             host = "http://localhost:8000"  # pragma: no cover
+
+    class AdapterMeta:
+        adapter = sqlite_adapter.SqliteAdapter  # the database adapter implementation
 
     partition_key = UnicodeAttribute(hash_key=True)  # a static value as we actually don't want to partition our data
     hazsol_vs30_rk = UnicodeAttribute(range_key=True)
@@ -115,7 +118,7 @@ class vs30_nloc001_gt_rlz_index(LocalSecondaryIndex):
     index2_rk = UnicodeAttribute(range_key=True)
 
 
-class HazardAggregation(ModelAdapterMixin, LocationIndexedModel):
+class HazardAggregation(LocationIndexedModel):
     """A pynamodb model for aggregate hazard curves."""
 
     class Meta:
@@ -126,6 +129,9 @@ class HazardAggregation(ModelAdapterMixin, LocationIndexedModel):
         region = REGION
         if IS_OFFLINE:
             host = "http://localhost:8000"  # pragma: no cover
+
+    class AdapterMeta:
+        adapter = sqlite_adapter.SqliteAdapter  # the database adapter implementation
 
     hazard_model_id = UnicodeAttribute()
     imt = EnumConstrainedUnicodeAttribute(IntensityMeasureTypeEnum)
@@ -173,7 +179,7 @@ class HazardAggregation(ModelAdapterMixin, LocationIndexedModel):
             n_models += 1
 
 
-class OpenquakeRealization(ModelAdapterMixin, LocationIndexedModel):
+class OpenquakeRealization(LocationIndexedModel):
     """Stores the individual hazard realisation curves."""
 
     class Meta:
@@ -185,6 +191,9 @@ class OpenquakeRealization(ModelAdapterMixin, LocationIndexedModel):
         if IS_OFFLINE:
             host = "http://localhost:8000"  # pragma: no cover
 
+    class AdapterMeta:
+        adapter = sqlite_adapter.SqliteAdapter  # the database adapter implementation
+        
     hazard_solution_id = UnicodeAttribute()
     source_tags = UnicodeSetAttribute()
     source_ids = UnicodeSetAttribute()

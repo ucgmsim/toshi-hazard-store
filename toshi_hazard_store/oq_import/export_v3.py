@@ -4,13 +4,13 @@ from dataclasses import dataclass
 
 import pandas as pd
 
-from toshi_hazard_store import model
+from toshi_hazard_store.v2 import model
 from toshi_hazard_store.config import NUM_BATCH_WORKERS
 from toshi_hazard_store.multi_batch import save_parallel
 from toshi_hazard_store.transform import parse_logic_tree_branches
 from toshi_hazard_store.utils import normalise_site_code
 
-
+NUM_BATCH_WORKERS = 1
 @dataclass
 class OpenquakeMeta:
     source_lt: pd.DataFrame
@@ -100,8 +100,14 @@ def export_rlzs_v3(extractor, oqmeta: OpenquakeMeta, return_rlz=False):
                 oq_realization.set_location(loc)
                 yield oq_realization
 
-    save_parallel("", generate_models(), model.OpenquakeRealization, NUM_BATCH_WORKERS)
+    #    save_parallel("", generate_models(), model.OpenquakeRealization, NUM_BATCH_WORKERS)
+    count = 0
+    for obj in generate_models():
+        obj.save()
+        count +=1 
+        if count % 10 == 0:
+            print(count, )
 
-    # used for testing
-    if return_rlz:
-        return list(generate_models())
+    # # used for testing
+    # if return_rlz:
+    #     return list(generate_models())

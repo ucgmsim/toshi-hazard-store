@@ -122,11 +122,26 @@ def put_model(
         if field is None:  # optional fields may not have been set, save `Null` instead
             _sql += '\tNull,\n'
             continue
-        if field.get('S'):
-            _sql += f'\t"{field["S"]}",\n'
+
+        # log.debug(f'handle field: {field.keys()}')
+
+        if field.get('SS'):  # SET
+            b64_bytes = json.dumps(field["SS"]).encode('ascii')
+            _sql += f'\t"{base64.b64encode(b64_bytes).decode("ascii")}",\n'
+        if field.get('S'):  # String ir JSONstring 
+            try:
+                # could be JSONString, let's check
+                jsondata = json.loads(field["S"])
+                log.debug("I think json?")
+                b64_bytes = json.dumps(field["S"]).encode('ascii')
+                _sql += f'\t"{base64.b64encode(b64_bytes).decode("ascii")}",\n' 
+            except Exception:
+                # not json
+                _sql += f'\t"{field["S"]}",\n'
+
         if field.get('N'):
             _sql += f'\t{float(field["N"])},\n'
-        if field.get('L'):
+        if field.get('L'): # LIST 
             b64_bytes = json.dumps(field["L"]).encode('ascii')
             _sql += f'\t"{base64.b64encode(b64_bytes).decode("ascii")}",\n'
     _sql = _sql[:-2] + ");\n"
@@ -138,13 +153,13 @@ def put_model(
         cursor.execute(_sql)
         conn.commit()
         log.debug(f'cursor: {cursor}')
-        log.info("Last row id: %s" % cursor.lastrowid)
+        log.debug("Last row id: %s" % cursor.lastrowid)
         # cursor.close()
         # conn.execute(_sql)
     except (sqlite3.IntegrityError) as e:
         msg = str(e)
         if 'UNIQUE constraint failed' in msg:
-            log.debug('attempt to insert a duplicate key failed: ')
+            log.info('attempt to insert a duplicate key failed: ')
     except Exception as e:
         log.error(e)
         raise
