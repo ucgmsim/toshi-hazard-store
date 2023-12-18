@@ -5,6 +5,8 @@ import datetime as dt
 import logging
 from pathlib import Path
 
+from toshi_hazard_store.v2 import model
+
 try:
     from openquake.calculators.extract import Extractor
 
@@ -14,7 +16,7 @@ except (ModuleNotFoundError, ImportError):
 
 
 log = logging.getLogger()
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logging.getLogger('nshm_toshi_client.toshi_client_base').setLevel(logging.INFO)
 logging.getLogger('urllib3').setLevel(logging.INFO)
 logging.getLogger('botocore').setLevel(logging.INFO)
@@ -26,8 +28,6 @@ root_handler.setFormatter(formatter)
 
 log.debug('DEBUG message')
 log.info('INFO message')
-
-from toshi_hazard_store.v2 import model
 
 
 def extract_and_save(args):

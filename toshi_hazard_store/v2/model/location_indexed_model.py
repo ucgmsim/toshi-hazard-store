@@ -3,9 +3,10 @@ from datetime import datetime, timezone
 
 from nzshm_common.location.code_location import CodedLocation
 from pynamodb.attributes import UnicodeAttribute, VersionAttribute
+from pynamodb_attributes import FloatAttribute, TimestampAttribute
+
 # from pynamodb.models import Model
 from toshi_hazard_store.v2.db_adapter import ModelAdapterMixin
-from pynamodb_attributes import FloatAttribute, TimestampAttribute
 
 from ...model.attributes import EnumConstrainedIntegerAttribute
 from ...model.constraints import VS30Enum

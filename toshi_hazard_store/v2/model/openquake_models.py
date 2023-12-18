@@ -22,7 +22,12 @@ from toshi_hazard_store.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION
 from toshi_hazard_store.v2.db_adapter import ModelAdapterMixin
 from toshi_hazard_store.v2.db_adapter.sqlite import sqlite_adapter
 
-from ...model.attributes import EnumConstrainedUnicodeAttribute, IMTValuesAttribute, LevelValuePairAttribute
+from ...model.attributes import (
+    CompressedJsonicAttribute,
+    EnumConstrainedUnicodeAttribute,
+    IMTValuesAttribute,
+    LevelValuePairAttribute,
+)
 from ...model.constraints import AggregationEnum, IntensityMeasureTypeEnum
 from .location_indexed_model import VS30_KEYLEN, LocationIndexedModel, datetime_now
 
@@ -87,9 +92,9 @@ class ToshiOpenquakeMeta(ModelAdapterMixin):
     inv_time = NumberAttribute()  # Invesigation time in years
 
     # extracted from the OQ HDF5
-    src_lt = JSONAttribute()  # sources meta as DataFrame JSON
-    gsim_lt = JSONAttribute()  # gmpe meta as DataFrame JSON
-    rlz_lt = JSONAttribute()  # realization meta as DataFrame JSON
+    src_lt = CompressedJsonicAttribute()  # sources meta as DataFrame JSON
+    gsim_lt = CompressedJsonicAttribute()  # gmpe meta as DataFrame JSON
+    rlz_lt = CompressedJsonicAttribute()  # realization meta as DataFrame JSON
 
 
 class vs30_nloc1_gt_rlz_index(LocalSecondaryIndex):
@@ -193,7 +198,7 @@ class OpenquakeRealization(LocationIndexedModel):
 
     class AdapterMeta:
         adapter = sqlite_adapter.SqliteAdapter  # the database adapter implementation
-        
+
     hazard_solution_id = UnicodeAttribute()
     source_tags = UnicodeSetAttribute()
     source_ids = UnicodeSetAttribute()

@@ -24,7 +24,6 @@ log = logging.getLogger(__name__)
 
 
 class SqliteAdapter(PynamodbAdapterInterface):
-
     @staticmethod
     def get_connection(model_class: Type[_T]) -> sqlite3.Connection:
         dbpath = pathlib.Path(LOCAL_STORAGE_FOLDER) / DEPLOYMENT_STAGE / f"{safe_table_name(model_class)}.db"

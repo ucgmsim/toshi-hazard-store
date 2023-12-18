@@ -9,17 +9,19 @@ import pathlib
 import sqlite3
 from datetime import datetime as dt
 from datetime import timezone
-from typing import Generator, Iterable, Type, TypeVar, Union
+from typing import Generator, Iterable, List, Type, TypeVar, Union
 
 import pynamodb.models
+from pynamodb.attributes import JSONAttribute, ListAttribute
 from pynamodb.expressions.condition import Condition
-from pynamodb_attributes.timestamp import TimestampAttribute
+from pynamodb_attributes import TimestampAttribute
 
 from toshi_hazard_store.config import DEPLOYMENT_STAGE, LOCAL_CACHE_FOLDER
-from toshi_hazard_store.model.attributes import LevelValuePairAttribute
+from toshi_hazard_store.model.attributes import IMTValuesAttribute, LevelValuePairAttribute
 
 # from pynamodb.attributes import ListAttribute, MapAttribute
 
+TYPE_MAP = {"S": "string", "N": "numeric", "L": "string", "SS": "string"}
 
 _T = TypeVar('_T', bound='pynamodb.models.Model')
 
@@ -76,10 +78,24 @@ def get_model(
                     val = base64.b64decode(str(d[name])).decode('ascii')
                     d[name] = json.loads(val)
                     # TODO: this is only good for THS_HAZARDAGGREGATION
-                    vals = list()
+                    vals: List[Union[IMTValuesAttribute, LevelValuePairAttribute]] = list()
                     for itm in d[name]:
                         # print(itm)
-                        vals.append(LevelValuePairAttribute(lvl=itm['M']['lvl']['N'], val=itm['M']['val']['N']))
+                        log.debug(f"itm: {itm}")
+                        if itm.get('M'):
+                            m_itm = itm.get('M').get('imt')
+                            if m_itm:
+                                vals.append(
+                                    IMTValuesAttribute(
+                                        imt=m_itm.get('imt'),
+                                        lvls=ListAttribute(m_itm.get('lvls')),
+                                        vals=ListAttribute(m_itm.get('values')),
+                                    )
+                                )
+                            else:
+                                vals.append(LevelValuePairAttribute(lvl=itm['M']['lvl']['N'], val=itm['M']['val']['N']))
+                        else:
+                            raise ValueError("HUH")
                     d[name] = vals
 
                     # print('LIST:', name)
@@ -109,8 +125,7 @@ def put_model(
 
     _sql = "INSERT INTO %s \n" % safe_table_name(model_instance.__class__)  # model_class)
     _sql += "\t("
-
-    # attribute names
+    # add attribute names
     for name in model_instance.get_attributes().keys():
         _sql += f'"{name}", '
     _sql = _sql[:-2] + ")\nVALUES (\n"
@@ -118,32 +133,31 @@ def put_model(
     # attrbute values
     for name, attr in model_instance.get_attributes().items():
         field = model_args.get(name)
+        log.debug(f'attr {attr} {field}')
 
         if field is None:  # optional fields may not have been set, save `Null` instead
             _sql += '\tNull,\n'
             continue
 
-        # log.debug(f'handle field: {field.keys()}')
-
+        if isinstance(attr, JSONAttribute):
+            b64_bytes = json.dumps(field["S"]).encode('ascii')
+            _sql += f'\t"{base64.b64encode(b64_bytes).decode("ascii")}",\n'
+            continue
         if field.get('SS'):  # SET
             b64_bytes = json.dumps(field["SS"]).encode('ascii')
             _sql += f'\t"{base64.b64encode(b64_bytes).decode("ascii")}",\n'
-        if field.get('S'):  # String ir JSONstring 
-            try:
-                # could be JSONString, let's check
-                jsondata = json.loads(field["S"])
-                log.debug("I think json?")
-                b64_bytes = json.dumps(field["S"]).encode('ascii')
-                _sql += f'\t"{base64.b64encode(b64_bytes).decode("ascii")}",\n' 
-            except Exception:
-                # not json
-                _sql += f'\t"{field["S"]}",\n'
-
+            continue
+        if field.get('S'):  # String ir JSONstring
+            _sql += f'\t"{field["S"]}",\n'
+            continue
         if field.get('N'):
             _sql += f'\t{float(field["N"])},\n'
-        if field.get('L'): # LIST 
+            continue
+        if field.get('L'):  # LIST
             b64_bytes = json.dumps(field["L"]).encode('ascii')
             _sql += f'\t"{base64.b64encode(b64_bytes).decode("ascii")}",\n'
+            continue
+        raise ValueError("we should never get here....")
     _sql = _sql[:-2] + ");\n"
 
     log.debug('SQL: %s' % _sql)
@@ -224,16 +238,16 @@ def ensure_table_exists(conn: sqlite3.Connection, model_class: Type[_T]):
     """
 
     def create_table_sql(model_class: Type[_T]) -> str:
+
         # TEXT, NUMERIC, INTEGER, REAL, BLOB
         # print(name, _type, _type.attr_type)
         # print(dir(_type))
-        type_map = {"S": "string", "N": "numeric", "L": "string", "SS": "string"}
         _sql: str = "CREATE TABLE IF NOT EXISTS %s (\n" % safe_table_name(model_class)
 
         for name, attr in model_class.get_attributes().items():
-            if attr.attr_type not in type_map.keys():
+            if attr.attr_type not in TYPE_MAP.keys():
                 raise ValueError(f"Unupported type: {attr.attr_type} for attribute {attr.attr_name}")
-            _sql += f'\t"{name}" {type_map[attr.attr_type]},\n'
+            _sql += f'\t"{name}" {TYPE_MAP[attr.attr_type]},\n'
 
         # now add the primary key
         if model_class._range_key_attribute() and model_class._hash_key_attribute():
