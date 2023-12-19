@@ -121,6 +121,7 @@ def put_model(
     :param model_instance: an instance the model_class
     :return: None
     """
+    log.debug(f"model: {model_instance}")
     model_args = model_instance.get_save_kwargs_from_instance()['Item']
 
     _sql = "INSERT INTO %s \n" % safe_table_name(model_instance.__class__)  # model_class)

@@ -6,7 +6,7 @@ from pynamodb.attributes import UnicodeAttribute, VersionAttribute
 from pynamodb_attributes import FloatAttribute, TimestampAttribute
 
 # from pynamodb.models import Model
-from toshi_hazard_store.v2.db_adapter import ModelAdapterMixin
+from toshi_hazard_store.v2.db_adapter.sqlite import SqliteAdapter
 
 from ...model.attributes import EnumConstrainedIntegerAttribute
 from ...model.constraints import VS30Enum
@@ -18,7 +18,7 @@ def datetime_now():
     return datetime.now(tz=timezone.utc)
 
 
-class LocationIndexedModel(ModelAdapterMixin):
+class LocationIndexedModel(SqliteAdapter):
     """Model base class."""
 
     partition_key = UnicodeAttribute(hash_key=True)  # For this we will use a downsampled location to 1.0 degree

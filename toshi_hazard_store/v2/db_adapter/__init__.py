@@ -1,2 +1,3 @@
 from .pynamodb_adapter_interface import PynamodbAdapterInterface
-from .pynamodb_adapter_mixin import ModelAdapterMixin
+
+# from .pynamodb_adapter_mixin import ModelAdapterMixin

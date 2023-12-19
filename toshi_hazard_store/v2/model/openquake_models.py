@@ -1,7 +1,7 @@
 """
 defines the pynamodb tables used to store openquake data.
 
-Version 2 using ModelAdapterMixin
+Version 2 using SqliteAdapter
 """
 
 import logging
@@ -19,8 +19,7 @@ from pynamodb.indexes import AllProjection, LocalSecondaryIndex
 from pynamodb_attributes import IntegerAttribute, TimestampAttribute
 
 from toshi_hazard_store.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION
-from toshi_hazard_store.v2.db_adapter import ModelAdapterMixin
-from toshi_hazard_store.v2.db_adapter.sqlite import sqlite_adapter
+from toshi_hazard_store.v2.db_adapter.sqlite import SqliteAdapter
 
 from ...model.attributes import (
     CompressedJsonicAttribute,
@@ -34,7 +33,7 @@ from .location_indexed_model import VS30_KEYLEN, LocationIndexedModel, datetime_
 log = logging.getLogger(__name__)
 
 
-class ToshiV2DemoTable(ModelAdapterMixin):
+class ToshiV2DemoTable(SqliteAdapter):
     """Stores metadata from the job configuration and the oq HDF5."""
 
     class Meta:
@@ -45,9 +44,6 @@ class ToshiV2DemoTable(ModelAdapterMixin):
         region = REGION
         if IS_OFFLINE:
             host = "http://localhost:8000"  # pragma: no cover
-
-    class AdapterMeta:
-        adapter = sqlite_adapter.SqliteAdapter  # the database adapter implementation
 
     hash_key = UnicodeAttribute(hash_key=True)
     range_rk = UnicodeAttribute(range_key=True)
@@ -61,7 +57,7 @@ class ToshiV2DemoTable(ModelAdapterMixin):
     imts = UnicodeSetAttribute()  # list of IMTs
 
 
-class ToshiOpenquakeMeta(ModelAdapterMixin):
+class ToshiOpenquakeMeta(SqliteAdapter):
     """Stores metadata from the job configuration and the oq HDF5."""
 
     class Meta:
@@ -72,9 +68,6 @@ class ToshiOpenquakeMeta(ModelAdapterMixin):
         region = REGION
         if IS_OFFLINE:
             host = "http://localhost:8000"  # pragma: no cover
-
-    class AdapterMeta:
-        adapter = sqlite_adapter.SqliteAdapter  # the database adapter implementation
 
     partition_key = UnicodeAttribute(hash_key=True)  # a static value as we actually don't want to partition our data
     hazsol_vs30_rk = UnicodeAttribute(range_key=True)
@@ -135,9 +128,6 @@ class HazardAggregation(LocationIndexedModel):
         if IS_OFFLINE:
             host = "http://localhost:8000"  # pragma: no cover
 
-    class AdapterMeta:
-        adapter = sqlite_adapter.SqliteAdapter  # the database adapter implementation
-
     hazard_model_id = UnicodeAttribute()
     imt = EnumConstrainedUnicodeAttribute(IntensityMeasureTypeEnum)
     agg = EnumConstrainedUnicodeAttribute(AggregationEnum)
@@ -195,9 +185,6 @@ class OpenquakeRealization(LocationIndexedModel):
         region = REGION
         if IS_OFFLINE:
             host = "http://localhost:8000"  # pragma: no cover
-
-    class AdapterMeta:
-        adapter = sqlite_adapter.SqliteAdapter  # the database adapter implementation
 
     hazard_solution_id = UnicodeAttribute()
     source_tags = UnicodeSetAttribute()
