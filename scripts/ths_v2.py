@@ -8,10 +8,14 @@ import pandas as pd
 from nzshm_common.location.code_location import CodedLocation
 from nzshm_common.location.location import LOCATIONS, location_by_id
 
+# Monkey-patch temporary
+import toshi_hazard_store.query.hazard_query
 from toshi_hazard_store import model as model_old
 from toshi_hazard_store import query
 from toshi_hazard_store.v2 import model
-from toshi_hazard_store.v2.db_adapter.sqlite import SqliteAdapter
+
+toshi_hazard_store.query.hazard_query.model = model
+toshi_hazard_store.query.hazard_query.mRLZ = model.OpenquakeRealization
 
 NZ_01_GRID = 'NZ_0_1_NB_1_1'
 
@@ -98,7 +102,7 @@ def get_hazard_curve(ctx, model_id, agg, vs30, imt, location, timing):
     print(loc, locs)
 
     count_cost_handler.reset()
-    results = query.get_hazard_curves(locs, vs30s, [model_id], imts, aggs)
+    results = toshi_hazard_store.query.get_hazard_curves(locs, vs30s, [model_id], imts, aggs)
     pts_summary_data = pd.DataFrame.from_dict(columns_from_results(results))
     click.echo("get_hazard_curve Query consumed: %s units" % count_cost_handler.consumed)
     click.echo()
@@ -120,6 +124,7 @@ def get_hazard_curve(ctx, model_id, agg, vs30, imt, location, timing):
 @click.option('--num_rlzs', '-R', type=int, default=1)
 def get_rlzs(num_vs30s, num_imts, num_locations, num_rlzs):
     """Run Realizations query typical of Toshi Hazard Post"""
+
     # vs30s = ALL_VS30_VALS[:num_vs30s]
     vs30s = [400]
     imts = ALL_IMT_VALS[:num_imts]
@@ -146,7 +151,8 @@ def get_rlzs(num_vs30s, num_imts, num_locations, num_rlzs):
     )
     # pts_summary_data = pd.DataFrame.from_dict(columns_from_results(results))
 
-    click.echo(results[-1])
+    for r in results:
+        click.echo(r)
     click.echo("get_rlzs Query consumed: %s units" % count_cost_handler.consumed)
     click.echo("Query returned: %s items" % len(results))
 
@@ -154,8 +160,6 @@ def get_rlzs(num_vs30s, num_imts, num_locations, num_rlzs):
 @cli.command()
 def get_adapter():
     mHAG = model.OpenquakeRealization
-    # mHAG.create_table(wait=True)
-    conn = SqliteAdapter.get_connection(model_class=mHAG)
 
     # now query
     o = location_by_id('IVC')
@@ -166,9 +170,7 @@ def get_adapter():
     # filter_condition = mHAG.vs30.is_in(0) & mHAG.imt.is_in('PGA') & mHAG.hazard_model_id.is_in('HAZ_MODEL_ONE')
 
     m2 = next(
-        SqliteAdapter.query(
-            conn,
-            model_class=mHAG,
+        mHAG.query(
             hash_key=hash_key,
             range_key_condition=model.OpenquakeRealization.sort_key
             >= "-46.400~168.400:400:000000:T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODcwMQ==",

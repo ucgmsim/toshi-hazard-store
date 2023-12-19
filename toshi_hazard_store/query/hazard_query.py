@@ -59,6 +59,7 @@ def get_rlz_curves_v3(
     rlzs: Iterable[int],
     tids: Iterable[str],
     imts: Iterable[str],
+    model=model,
 ) -> Iterator[mRLZ]:
     """Query THS_OpenquakeRealization Table.
 

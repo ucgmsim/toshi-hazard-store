@@ -13,6 +13,7 @@ _T = TypeVar(
 _KeyType = Any
 
 
+# cant' use this yet, see https://stackoverflow.com/questions/11276037/resolving-metaclass-conflicts/61350480#61350480
 class PynamodbAdapterInterface(ABC):
     """
     Defines methods to be provided by a adapter class implementation.
