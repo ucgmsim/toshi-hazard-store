@@ -4,14 +4,23 @@ Implement db adapter for slqlite
 import logging
 import pathlib
 import sqlite3
-from typing import TYPE_CHECKING, Any, Dict, Iterable, Optional, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Dict, Generic, Iterable, List, Optional, Type, TypeVar
 
 import pynamodb.models
 from pynamodb.connection.base import OperationSettings
+from pynamodb.constants import DELETE, PUT
 from pynamodb.expressions.condition import Condition
 
 from ..pynamodb_adapter_interface import PynamodbAdapterInterface  # noqa
-from .sqlite_store import check_exists, drop_table, ensure_table_exists, get_model, put_model, safe_table_name
+from .sqlite_store import (
+    check_exists,
+    drop_table,
+    ensure_table_exists,
+    get_model,
+    put_model,
+    put_models,
+    safe_table_name,
+)
 
 if TYPE_CHECKING:
     import pynamodb.models.Model
@@ -21,6 +30,7 @@ _KeyType = Any
 
 LOCAL_STORAGE_FOLDER = "/GNSDATA/API/toshi-hazard-store/LOCALSTORAGE"
 DEPLOYMENT_STAGE = "DEV"
+BATCH_WRITE_PAGE_LIMIT = 250
 
 log = logging.getLogger(__name__)
 
@@ -32,10 +42,49 @@ def get_connection(model_class: Type[_T]) -> sqlite3.Connection:
     return sqlite3.connect(dbpath)
 
 
+class SqliteBatchWrite(pynamodb.models.BatchWrite, Generic[_T]):
+    def __init__(self, model: Type[_T], auto_commit: bool = True):
+        super().__init__(model, auto_commit)
+        self.max_operations = BATCH_WRITE_PAGE_LIMIT
+
+    def commit(self) -> None:
+        """
+        Writes all of the changes that are pending
+        """
+        log.debug("%s committing batch operation", self.model)
+        put_items: List[_T] = []
+        delete_items: List[_T] = []
+        for item in self.pending_operations:
+            if item['action'] == PUT:
+                put_items.append(item['item'])
+            elif item['action'] == DELETE:
+                raise NotImplementedError("Batch delete not implemented")
+                delete_items.append(item['item']._get_keys())
+        self.pending_operations = []
+
+        if not len(put_items) and not len(delete_items):
+            return
+
+        return put_models(
+            get_connection(self.model),
+            put_items=put_items,
+            # delete_items=delete_items
+        )
+
+
 # see https://stackoverflow.com/questions/11276037/resolving-metaclass-conflicts/61350480#61350480
 class SqliteAdapter(pynamodb.models.Model):  # PynamodbAdapterInterface):
 
     adapted_model = sqlite3
+
+    @classmethod
+    def batch_write(
+        cls: Type[_T], auto_commit: bool = True, settings: OperationSettings = OperationSettings.default
+    ) -> SqliteBatchWrite[_T]:
+        """
+        Returns a BatchWrite context manager for a batch operation.
+        """
+        return SqliteBatchWrite(cls, auto_commit=auto_commit)
 
     def save(
         self: _T,
@@ -44,9 +93,6 @@ class SqliteAdapter(pynamodb.models.Model):  # PynamodbAdapterInterface):
         add_version_condition: bool = False,
     ) -> dict[str, Any]:
         return put_model(get_connection(type(self)), self)
-
-    # def save(self: _T) -> None:
-    #     return put_model(get_connection(type(self)), self)
 
     @classmethod
     def exists(cls: Type[_T]) -> bool:

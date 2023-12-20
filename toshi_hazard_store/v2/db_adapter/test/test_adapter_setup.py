@@ -2,53 +2,7 @@
 # from nzshm_common.location.code_location import CodedLocation
 import pytest
 from moto import mock_dynamodb
-from pynamodb.attributes import UnicodeAttribute
-from pynamodb.models import Model
 from pytest_lazyfixture import lazy_fixture
-
-from toshi_hazard_store.v2.db_adapter.sqlite import SqliteAdapter
-
-SQLITE_ADAPTER = SqliteAdapter
-NO_ADAPTER = Model
-
-
-class MySqlModel(SQLITE_ADAPTER):
-    class Meta:
-        table_name = "MySQLITEModel"
-
-    my_hash_key = UnicodeAttribute(hash_key=True)
-    my_range_key = UnicodeAttribute(range_key=True)
-
-
-class MyPynamodbModel(NO_ADAPTER):
-    # class AdapterMeta:
-    #     adapter = PynamodbAdapter()
-    class Meta:
-        table_name = "MyPynamodbModel"
-
-    my_hash_key = UnicodeAttribute(hash_key=True)
-    my_range_key = UnicodeAttribute(range_key=True)
-
-
-@pytest.fixture(scope="module")
-def sqlite_adapter_test_table():
-    yield MySqlModel
-
-
-@pytest.fixture(scope="module")
-def pynamodb_adapter_test_table():
-    yield MyPynamodbModel
-
-
-# def get_one_meta():
-#     return dict(hash_key="XYZ", range_key="AMCDEF:350")
-
-
-@pytest.mark.skip('')
-def test_model_key_attribues(sqlite_adapter_test_table):
-    from toshi_hazard_store.v2.db_adapter.sqlite.sqlite_store import get_hash_key
-
-    assert get_hash_key(sqlite_adapter_test_table) == 'my_hash_key'
 
 
 @pytest.mark.parametrize(

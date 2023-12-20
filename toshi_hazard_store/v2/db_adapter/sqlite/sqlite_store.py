@@ -111,6 +111,77 @@ def get_model(
         raise
 
 
+def _attribute_values(model_instance: _T) -> str:
+    model_args = model_instance.get_save_kwargs_from_instance()['Item']
+    _sql = ""
+    # attrbute values
+    for name, attr in model_instance.get_attributes().items():
+        field = model_args.get(name)
+        log.debug(f'attr {attr} {field}')
+        if field is None:  # optional fields may not have been set, save `Null` instead
+            _sql += 'Null, '
+            continue
+        if isinstance(attr, JSONAttribute):
+            b64_bytes = json.dumps(field["S"]).encode('ascii')
+            _sql += f'"{base64.b64encode(b64_bytes).decode("ascii")}", '
+            continue
+        if field.get('SS'):  # SET
+            b64_bytes = json.dumps(field["SS"]).encode('ascii')
+            _sql += f'"{base64.b64encode(b64_bytes).decode("ascii")}", '
+            continue
+        if field.get('S'):  # String ir JSONstring
+            _sql += f'"{field["S"]}", '
+            continue
+        if field.get('N'):
+            _sql += f'{float(field["N"])}, '
+            continue
+        if field.get('L'):  # LIST
+            b64_bytes = json.dumps(field["L"]).encode('ascii')
+            _sql += f'"{base64.b64encode(b64_bytes).decode("ascii")}", '
+            continue
+        raise ValueError("we should never get here....")
+    return _sql[:-2]
+
+
+def put_models(
+    conn: sqlite3.Connection,
+    put_items: List[_T],
+):
+    log.debug("put_models")
+
+    _sql = "INSERT INTO %s \n" % safe_table_name(put_items[0].__class__)  # model_class)
+    _sql += "("
+
+    # add attribute names, taking first model
+    for name in put_items[0].get_attributes().keys():
+        _sql += f'"{name}", '
+    _sql = _sql[:-2]
+    _sql += ")\nVALUES \n"
+
+    for item in put_items:
+        _sql += "\t(" + _attribute_values(item) + "),\n"
+
+    _sql = _sql[:-2] + ";"
+
+    log.debug('SQL: %s' % _sql)
+
+    try:
+        cursor = conn.cursor()
+        cursor.execute(_sql)
+        conn.commit()
+        log.debug(f'cursor: {cursor}')
+        log.debug("Last row id: %s" % cursor.lastrowid)
+        # cursor.close()
+        # conn.execute(_sql)
+    except (sqlite3.IntegrityError) as e:
+        msg = str(e)
+        if 'UNIQUE constraint failed' in msg:
+            log.info('attempt to insert a duplicate key failed: ')
+    except Exception as e:
+        log.error(e)
+        raise
+
+
 def put_model(
     conn: sqlite3.Connection,
     model_instance: _T,
@@ -122,44 +193,15 @@ def put_model(
     :return: None
     """
     log.debug(f"model: {model_instance}")
-    model_args = model_instance.get_save_kwargs_from_instance()['Item']
 
     _sql = "INSERT INTO %s \n" % safe_table_name(model_instance.__class__)  # model_class)
     _sql += "\t("
     # add attribute names
     for name in model_instance.get_attributes().keys():
         _sql += f'"{name}", '
-    _sql = _sql[:-2] + ")\nVALUES (\n"
+    _sql = _sql[:-2] + ")\nVALUES ("
 
-    # attrbute values
-    for name, attr in model_instance.get_attributes().items():
-        field = model_args.get(name)
-        log.debug(f'attr {attr} {field}')
-
-        if field is None:  # optional fields may not have been set, save `Null` instead
-            _sql += '\tNull,\n'
-            continue
-
-        if isinstance(attr, JSONAttribute):
-            b64_bytes = json.dumps(field["S"]).encode('ascii')
-            _sql += f'\t"{base64.b64encode(b64_bytes).decode("ascii")}",\n'
-            continue
-        if field.get('SS'):  # SET
-            b64_bytes = json.dumps(field["SS"]).encode('ascii')
-            _sql += f'\t"{base64.b64encode(b64_bytes).decode("ascii")}",\n'
-            continue
-        if field.get('S'):  # String ir JSONstring
-            _sql += f'\t"{field["S"]}",\n'
-            continue
-        if field.get('N'):
-            _sql += f'\t{float(field["N"])},\n'
-            continue
-        if field.get('L'):  # LIST
-            b64_bytes = json.dumps(field["L"]).encode('ascii')
-            _sql += f'\t"{base64.b64encode(b64_bytes).decode("ascii")}",\n'
-            continue
-        raise ValueError("we should never get here....")
-    _sql = _sql[:-2] + ");\n"
+    _sql += _attribute_values(model_instance) + ");\n"
 
     log.debug('SQL: %s' % _sql)
 

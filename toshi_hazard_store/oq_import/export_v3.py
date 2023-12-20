@@ -4,12 +4,11 @@ from dataclasses import dataclass
 
 import pandas as pd
 
-from toshi_hazard_store import model
-
 # from toshi_hazard_store.config import NUM_BATCH_WORKERS
-# from toshi_hazard_store.multi_batch import save_parallel
+from toshi_hazard_store.multi_batch import save_parallel
 from toshi_hazard_store.transform import parse_logic_tree_branches
 from toshi_hazard_store.utils import normalise_site_code
+from toshi_hazard_store.v2 import model
 
 NUM_BATCH_WORKERS = 1
 
@@ -107,12 +106,15 @@ def export_rlzs_v3(extractor, oqmeta: OpenquakeMeta, return_rlz=False):
     if return_rlz:
         return list(generate_models())
 
-    #    save_parallel("", generate_models(), model.OpenquakeRealization, NUM_BATCH_WORKERS)
-    count = 0
-    for obj in generate_models():
-        obj.save()
-        count += 1
-        if count % 10 == 0:
-            print(
-                count,
-            )
+    # FOR SQLITE
+    NUM_BATCH_WORKERS = 1
+    batch_size = 1000  # random.randint(15, 50)
+    save_parallel("", generate_models(), model.OpenquakeRealization, NUM_BATCH_WORKERS, batch_size)
+    # count = 0
+    # for obj in generate_models():
+    #     obj.save()
+    #     count += 1
+    #     if count % 10 == 0:
+    #         print(
+    #             count,
+    #         )

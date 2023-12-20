@@ -1,5 +1,4 @@
 import multiprocessing
-import random
 
 from toshi_hazard_store.v2 import model
 
@@ -10,13 +9,13 @@ class DynamoBatchWorker(multiprocessing.Process):
     based on https://pymotw.com/2/multiprocessing/communication.html example 2.
     """
 
-    def __init__(self, task_queue, toshi_id, model):
+    def __init__(self, task_queue, toshi_id, model, batch_size):
         multiprocessing.Process.__init__(self)
         self.task_queue = task_queue
         # self.result_queue = result_queue
         self.toshi_id = toshi_id
         self.model = model
-        self.batch_size = random.randint(15, 50)
+        self.batch_size = batch_size
 
     def run(self):
         print(f"worker {self.name} running with batch size: {self.batch_size}")
@@ -59,11 +58,11 @@ class DynamoBatchWorker(multiprocessing.Process):
             raise ValueError("WHATT!")
 
 
-def save_parallel(toshi_id: str, model_generator, model, num_workers):
+def save_parallel(toshi_id: str, model_generator, model, num_workers, batch_size=50):
     tasks: multiprocessing.JoinableQueue = multiprocessing.JoinableQueue()
 
     print('Creating %d workers' % num_workers)
-    workers = [DynamoBatchWorker(tasks, toshi_id, model) for i in range(num_workers)]
+    workers = [DynamoBatchWorker(tasks, toshi_id, model, batch_size) for i in range(num_workers)]
     for w in workers:
         w.start()
 
