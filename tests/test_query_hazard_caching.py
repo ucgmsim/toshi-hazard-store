@@ -156,7 +156,7 @@ class TestCacheStoreWithOptionalAttribute(unittest.TestCase):
         self.m = model.HazardAggregation(
             values=lvps,
             vs30=0,
-            site_vs30=random.randint(200, 300),
+            site_vs30=random.randint(200, 299),
             agg='mean',
             imt='PGA',
             hazard_model_id="HAZ_MODEL_ONE",

@@ -6,7 +6,6 @@ from typing import Iterable, Iterator, Union
 
 from nzshm_common.location.code_location import CodedLocation
 
-# import toshi_hazard_store.v2.model as model
 import toshi_hazard_store.model as model
 
 log = logging.getLogger(__name__)
