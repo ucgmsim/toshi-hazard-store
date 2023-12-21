@@ -9,8 +9,10 @@ from pynamodb.expressions.condition import Condition
 from toshi_hazard_store.config import DEPLOYMENT_STAGE, LOCAL_CACHE_FOLDER
 from toshi_hazard_store.v2.db_adapter.sqlite.sqlite_store import (  # noqa
     ensure_table_exists,
+    execute_sql,
     get_model,
     put_model,
+    safe_table_name,
     sql_from_pynamodb_condition,
 )
 
