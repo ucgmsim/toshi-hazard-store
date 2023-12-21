@@ -10,7 +10,7 @@ from nzshm_common.location.code_location import CodedLocation
 from nzshm_common.location.location import LOCATIONS_BY_ID
 
 from toshi_hazard_store import model, query
-from toshi_hazard_store.v2.db_adapter.sqlite import sqlite_store
+from toshi_hazard_store.model.caching import cache_store
 
 HAZARD_MODEL_ID = 'MODEL_THE_FIRST'
 vs30s = [250, 350, 450]
@@ -44,8 +44,8 @@ def build_hazard_aggregation_models():
 @mock_dynamodb
 class TestGetHazardCurvesCached(unittest.TestCase):
     @patch("toshi_hazard_store.model.openquake_models.DEPLOYMENT_STAGE", "MOCK")
-    @patch("toshi_hazard_store.v2.db_adapter.sqlite.sqlite_store.DEPLOYMENT_STAGE", "MOCK")
-    @patch("toshi_hazard_store.v2.db_adapter.sqlite.sqlite_store.LOCAL_CACHE_FOLDER", str(folder.name))
+    @patch("toshi_hazard_store.model.caching.cache_store.DEPLOYMENT_STAGE", "MOCK")
+    @patch("toshi_hazard_store.model.caching.cache_store.LOCAL_CACHE_FOLDER", str(folder.name))
     def setUp(self):
         model.migrate()
         assert pathlib.Path(folder.name).exists()
@@ -55,15 +55,15 @@ class TestGetHazardCurvesCached(unittest.TestCase):
         super(TestGetHazardCurvesCached, self).setUp()
 
     @patch("toshi_hazard_store.model.openquake_models.DEPLOYMENT_STAGE", "MOCK")
-    @patch("toshi_hazard_store.v2.db_adapter.sqlite.sqlite_store.DEPLOYMENT_STAGE", "MOCK")
-    @patch("toshi_hazard_store.v2.db_adapter.sqlite.sqlite_store.LOCAL_CACHE_FOLDER", str(folder.name))
+    @patch("toshi_hazard_store.model.caching.cache_store.DEPLOYMENT_STAGE", "MOCK")
+    @patch("toshi_hazard_store.model.caching.cache_store.LOCAL_CACHE_FOLDER", str(folder.name))
     def tearDown(self):
         model.drop_tables()
         return super(TestGetHazardCurvesCached, self).tearDown()
 
     @patch("toshi_hazard_store.model.openquake_models.DEPLOYMENT_STAGE", "MOCK")
-    @patch("toshi_hazard_store.v2.db_adapter.sqlite.sqlite_store.DEPLOYMENT_STAGE", "MOCK")
-    @patch("toshi_hazard_store.v2.db_adapter.sqlite.sqlite_store.LOCAL_CACHE_FOLDER", str(folder.name))
+    @patch("toshi_hazard_store.model.caching.cache_store.DEPLOYMENT_STAGE", "MOCK")
+    @patch("toshi_hazard_store.model.caching.cache_store.LOCAL_CACHE_FOLDER", str(folder.name))
     def test_query_hazard_curves_cache_population(self):
         qlocs = [loc.downsample(0.001).code for loc in locs[:2]]
         print(f'qlocs {qlocs}')
@@ -87,8 +87,8 @@ class TestGetHazardCurvesCached(unittest.TestCase):
 @mock_dynamodb
 class TestCacheStore(unittest.TestCase):
     @patch("toshi_hazard_store.model.openquake_models.DEPLOYMENT_STAGE", "MOCK")
-    @patch("toshi_hazard_store.v2.db_adapter.sqlite.sqlite_store.DEPLOYMENT_STAGE", "MOCK")
-    @patch("toshi_hazard_store.v2.db_adapter.sqlite.sqlite_store.LOCAL_CACHE_FOLDER", str(folder.name))
+    @patch("toshi_hazard_store.model.caching.cache_store.DEPLOYMENT_STAGE", "MOCK")
+    @patch("toshi_hazard_store.model.caching.cache_store.LOCAL_CACHE_FOLDER", str(folder.name))
     def setUp(self):
         model.migrate()  # we do this so we get a cache table
         n_lvls = 29
@@ -109,13 +109,13 @@ class TestCacheStore(unittest.TestCase):
     #     return super(TestCacheStore, self).tearDown()
 
     @patch("toshi_hazard_store.model.openquake_models.DEPLOYMENT_STAGE", "MOCK")
-    @patch("toshi_hazard_store.v2.db_adapter.sqlite.sqlite_store.DEPLOYMENT_STAGE", "MOCK")
-    @patch("toshi_hazard_store.v2.db_adapter.sqlite.sqlite_store.LOCAL_CACHE_FOLDER", str(folder.name))
+    @patch("toshi_hazard_store.model.caching.cache_store.DEPLOYMENT_STAGE", "MOCK")
+    @patch("toshi_hazard_store.model.caching.cache_store.LOCAL_CACHE_FOLDER", str(folder.name))
     def test_cache_put(self):
         mHAG = model.HazardAggregation
         mHAG.create_table(wait=True)
-        conn = sqlite_store.get_connection(model_class=mHAG)
-        sqlite_store.put_model(conn, self.m)
+        conn = cache_store.get_connection(model_class=mHAG)
+        cache_store.put_model(conn, self.m)
 
         # now query
         hash_key = '-43.2~177.3'
@@ -123,7 +123,7 @@ class TestCacheStore(unittest.TestCase):
         filter_condition = mHAG.vs30.is_in(700) & mHAG.imt.is_in('PGA') & mHAG.hazard_model_id.is_in('HAZ_MODEL_ONE')
 
         m2 = next(
-            sqlite_store.get_model(
+            cache_store.get_model(
                 conn,
                 model_class=mHAG,
                 hash_key=hash_key,
@@ -146,8 +146,8 @@ class TestCacheStore(unittest.TestCase):
 @mock_dynamodb
 class TestCacheStoreWithOptionalAttribute(unittest.TestCase):
     @patch("toshi_hazard_store.model.openquake_models.DEPLOYMENT_STAGE", "MOCK")
-    @patch("toshi_hazard_store.v2.db_adapter.sqlite.sqlite_store.DEPLOYMENT_STAGE", "MOCK")
-    @patch("toshi_hazard_store.v2.db_adapter.sqlite.sqlite_store.LOCAL_CACHE_FOLDER", str(folder.name))
+    @patch("toshi_hazard_store.model.caching.cache_store.DEPLOYMENT_STAGE", "MOCK")
+    @patch("toshi_hazard_store.model.caching.cache_store.LOCAL_CACHE_FOLDER", str(folder.name))
     def setUp(self):
         model.migrate()  # we do this so we get a cache table
         n_lvls = 29
@@ -169,13 +169,13 @@ class TestCacheStoreWithOptionalAttribute(unittest.TestCase):
     #     return super(TestCacheStore, self).tearDown()
 
     @patch("toshi_hazard_store.model.openquake_models.DEPLOYMENT_STAGE", "MOCK")
-    @patch("toshi_hazard_store.v2.db_adapter.sqlite.sqlite_store.DEPLOYMENT_STAGE", "MOCK")
-    @patch("toshi_hazard_store.v2.db_adapter.sqlite.sqlite_store.LOCAL_CACHE_FOLDER", str(folder.name))
+    @patch("toshi_hazard_store.model.caching.cache_store.DEPLOYMENT_STAGE", "MOCK")
+    @patch("toshi_hazard_store.model.caching.cache_store.LOCAL_CACHE_FOLDER", str(folder.name))
     def test_cache_put(self):
         mHAG = model.HazardAggregation
         mHAG.create_table(wait=True)
-        conn = sqlite_store.get_connection(model_class=mHAG)
-        sqlite_store.put_model(conn, self.m)
+        conn = cache_store.get_connection(model_class=mHAG)
+        cache_store.put_model(conn, self.m)
 
         # now query
         hash_key = '-43.2~177.3'
@@ -183,7 +183,7 @@ class TestCacheStoreWithOptionalAttribute(unittest.TestCase):
         filter_condition = mHAG.vs30.is_in(0) & mHAG.imt.is_in('PGA') & mHAG.hazard_model_id.is_in('HAZ_MODEL_ONE')
 
         m2 = next(
-            sqlite_store.get_model(
+            cache_store.get_model(
                 conn,
                 model_class=mHAG,
                 hash_key=hash_key,
@@ -203,8 +203,8 @@ class TestCacheStoreWithOptionalAttribute(unittest.TestCase):
         assert 200 <= m2.site_vs30 < 300
 
     # @patch("toshi_hazard_store.model.openquake_models.DEPLOYMENT_STAGE", "MOCK")
-    # @patch("toshi_hazard_store.v2.db_adapter.sqlite.sqlite_store.DEPLOYMENT_STAGE", "MOCK")
-    # @patch("toshi_hazard_store.v2.db_adapter.sqlite.sqlite_store.LOCAL_CACHE_FOLDER", str(folder.name))
+    # @patch("toshi_hazard_store.model.caching.cache_store.DEPLOYMENT_STAGE", "MOCK")
+    # @patch("toshi_hazard_store.model.caching.cache_store.LOCAL_CACHE_FOLDER", str(folder.name))
     # def test_cache_auto_population(self):
     #     # 2nd pass of same query should use the cache
 
@@ -213,13 +213,13 @@ class TestCacheStoreWithOptionalAttribute(unittest.TestCase):
     #     res = list(query_v3.get_hazard_curves(qlocs, vs30s, [HAZARD_MODEL_ID], imts))
 
     #     m1 = next(
-    #         sqlite_store.get_model(
+    #         cache_store.get_model(
     #             conn, model_class=mHAG, range_key_condition=range_condition, filter_condition=filter_condition
     #         )
     #     )
 
     #     m2 = next(
-    #         sqlite_store.get_model(
+    #         cache_store.get_model(
     #             conn, model_class=mHAG, range_key_condition=range_condition, filter_condition=filter_condition
     #         )
     #     )

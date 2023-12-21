@@ -7,7 +7,7 @@ import pynamodb.models
 from pynamodb.connection.base import OperationSettings
 from pynamodb.expressions.condition import Condition
 
-from toshi_hazard_store.v2.db_adapter.sqlite import sqlite_store as cache_store
+from toshi_hazard_store.model.caching import cache_store
 
 log = logging.getLogger(__name__)
 

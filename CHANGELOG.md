@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.8.0] - 2023-12-21
+### Added
+ - db_adapter architecture
+
 ## [0.7.7] - 2023-12-13
 ### Changed 
  - fix publication workflow

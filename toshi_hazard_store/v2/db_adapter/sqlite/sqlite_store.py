@@ -4,7 +4,6 @@ sqlite helpers to manage caching tables
 import base64
 import json
 import logging
-import math
 import pathlib
 import sqlite3
 from datetime import datetime as dt
@@ -222,22 +221,7 @@ def put_model(
         raise
 
 
-def cache_enabled() -> bool:
-    """return Ture if the cache is correctly configured."""
-    if LOCAL_CACHE_FOLDER is not None:
-        if pathlib.Path(LOCAL_CACHE_FOLDER).exists():
-            return True
-        else:
-            log.warning(f"Configured cache folder {LOCAL_CACHE_FOLDER} does not exist. Caching is disabled")
-            return False
-    else:
-        log.warning("Local caching is disabled, please check config settings")
-        return False
-
-
 def get_connection(model_class: Type[_T]) -> sqlite3.Connection:
-    if not cache_enabled():
-        raise RuntimeError("cannot create connection ")
     log.info(f"get connection for {model_class}")
     return sqlite3.connect(pathlib.Path(str(LOCAL_CACHE_FOLDER), DEPLOYMENT_STAGE))
 
@@ -370,30 +354,3 @@ def sql_from_pynamodb_condition(condition: Condition) -> Generator:
                 yield expr
     else:
         yield _unpack_pynamodb_condition(condition)
-
-
-def _unpack_pynamodb_condition_count(condition: Condition) -> int:
-    expression = condition.values[1:]
-    operator = condition.operator
-    if operator == 'IN':
-        return len(expression)
-    else:
-        return 1
-
-
-def _gen_count_permutations(condition: Condition) -> Iterable[int]:
-    # return the number of hits expected, based on the filter conditin expression
-
-    operator = condition.operator
-    # handle nested
-    count = 0
-    if operator == 'AND':
-        for cond in condition.values:
-            for _count in _gen_count_permutations(cond):
-                yield _count
-    else:
-        yield count + _unpack_pynamodb_condition_count(condition)
-
-
-def count_permutations(condition: Condition) -> int:
-    return math.prod(_gen_count_permutations(condition))
