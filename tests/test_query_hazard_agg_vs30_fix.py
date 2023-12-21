@@ -8,8 +8,6 @@ from nzshm_common.location.location import LOCATIONS_BY_ID
 
 from toshi_hazard_store import model, query_v3
 
-# import toshi_hazard_store.model.caching.cache_store
-
 HAZARD_MODEL_ID = 'MODEL_THE_FIRST'
 vs30s = [250, 500, 1000, 1500]
 imts = ['PGA']
