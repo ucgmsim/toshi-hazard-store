@@ -25,7 +25,7 @@ class QueryHazardAggregationV3Csv(unittest.TestCase):
         model.drop_tables()
         return super(QueryHazardAggregationV3Csv, self).tearDown()
 
-    @patch("toshi_hazard_store.v2.db_adapter.sqlite.sqlite_store.LOCAL_CACHE_FOLDER", None)
+    @patch("toshi_hazard_store.model.caching.cache_store.LOCAL_CACHE_FOLDER", None)
     def test_query_and_serialise_csv(self):
         qlocs = [loc.downsample(0.001).code for loc in locs[:2]]
         res = list(query_v3.get_hazard_curves(qlocs, vs30s, [HAZARD_MODEL_ID], imts))

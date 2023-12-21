@@ -1,16 +1,21 @@
 import json
 import math
+import random
 from dataclasses import dataclass
+from typing import Union
 
 import pandas as pd
 
-# from toshi_hazard_store.config import NUM_BATCH_WORKERS
+from toshi_hazard_store import model as v1_model
+from toshi_hazard_store.config import NUM_BATCH_WORKERS, USE_SQLITE_ADAPTER
 from toshi_hazard_store.multi_batch import save_parallel
 from toshi_hazard_store.transform import parse_logic_tree_branches
 from toshi_hazard_store.utils import normalise_site_code
-from toshi_hazard_store.v2 import model
+from toshi_hazard_store.v2 import model as v2_model
 
-NUM_BATCH_WORKERS = 1
+NUM_BATCH_WORKERS = 1 if USE_SQLITE_ADAPTER else NUM_BATCH_WORKERS
+BATCH_SIZE = 1000 if USE_SQLITE_ADAPTER else random.randint(15, 50)
+model = v2_model if USE_SQLITE_ADAPTER else v1_model
 
 
 @dataclass
@@ -18,7 +23,7 @@ class OpenquakeMeta:
     source_lt: pd.DataFrame
     gsim_lt: pd.DataFrame
     rlz_lt: pd.DataFrame
-    model: model.ToshiOpenquakeMeta
+    model: Union[v1_model.ToshiOpenquakeMeta, v1_model.ToshiOpenquakeMeta]
 
 
 def export_meta_v3(extractor, toshi_hazard_id, toshi_gt_id, locations_id, source_tags, source_ids):
@@ -106,15 +111,4 @@ def export_rlzs_v3(extractor, oqmeta: OpenquakeMeta, return_rlz=False):
     if return_rlz:
         return list(generate_models())
 
-    # FOR SQLITE
-    NUM_BATCH_WORKERS = 1
-    batch_size = 1000  # random.randint(15, 50)
-    save_parallel("", generate_models(), model.OpenquakeRealization, NUM_BATCH_WORKERS, batch_size)
-    # count = 0
-    # for obj in generate_models():
-    #     obj.save()
-    #     count += 1
-    #     if count % 10 == 0:
-    #         print(
-    #             count,
-    #         )
+    save_parallel("", generate_models(), model.OpenquakeRealization, NUM_BATCH_WORKERS, BATCH_SIZE)

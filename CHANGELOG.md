@@ -3,6 +3,7 @@
 ## [0.8.0] - 2023-12-21
 ### Added
  - db_adapter architecture
+ - sqlite3 as db_adapter for localstorage option
 
 ## [0.7.7] - 2023-12-13
 ### Changed 
