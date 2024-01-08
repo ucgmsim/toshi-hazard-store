@@ -1,4 +1,3 @@
-import json
 import unittest
 
 import pynamodb.exceptions
@@ -6,6 +5,7 @@ from moto import mock_dynamodb
 from nzshm_common.location.code_location import CodedLocation
 
 from toshi_hazard_store import model
+
 
 def get_one_rlz():
     imtvs = []
@@ -35,13 +35,11 @@ def get_one_hazard_aggregate():
     ).set_location(location)
 
 
-
 # MAKE this test both pynamo and sqlite
 class TestPynamoMeta(object):
-
     def test_table_exists(self, adapter_model):
-        assert adapter_model.OpenquakeRealization.exists() == True
-        assert adapter_model.ToshiOpenquakeMeta.exists() == True
+        assert adapter_model.OpenquakeRealization.exists()
+        assert adapter_model.ToshiOpenquakeMeta.exists()
 
     def test_save_one_meta_object(self, get_one_meta):
         obj = get_one_meta

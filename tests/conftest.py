@@ -3,6 +3,7 @@ import json
 from unittest import mock
 
 import pytest
+
 # from pynamodb.attributes import UnicodeAttribute
 # from pynamodb.models import Model
 
@@ -11,13 +12,11 @@ import pytest
 from moto import mock_dynamodb
 from toshi_hazard_store import model
 
-# @pytest.fixture(autouse=True)
+
+@pytest.fixture()
 def setenvvar(tmp_path):
     # ref https://adamj.eu/tech/2020/10/13/how-to-mock-environment-variables-with-pytest/
-    envvars = {
-        "THS_SQLITE_FOLDER": str(tmp_path),
-        "THS_USE_SQLITE_ADAPTER": "TRUE"
-    }
+    envvars = {"THS_SQLITE_FOLDER": str(tmp_path), "THS_USE_SQLITE_ADAPTER": "TRUE"}
     with mock.patch.dict(os.environ, envvars, clear=True):
         yield  # This is the magical bit which restore the environment after
 
@@ -28,6 +27,7 @@ def adapter_model():
         model.migrate()
         yield model
         model.drop_tables()
+
 
 @pytest.fixture()
 def get_one_meta():
