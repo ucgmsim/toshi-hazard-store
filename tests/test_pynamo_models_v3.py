@@ -7,7 +7,6 @@ from nzshm_common.location.code_location import CodedLocation
 
 from toshi_hazard_store import model
 
-
 def get_one_rlz():
     imtvs = []
     for t in ['PGA', 'SA(0.5)', 'SA(1.0)']:
@@ -36,47 +35,18 @@ def get_one_hazard_aggregate():
     ).set_location(location)
 
 
-def get_one_meta():
-    return model.ToshiOpenquakeMeta(
-        partition_key="ToshiOpenquakeMeta",
-        hazard_solution_id="AMCDEF",
-        general_task_id="GBBSGG",
-        hazsol_vs30_rk="AMCDEF:350",
-        # updated=dt.datetime.now(tzutc()),
-        # known at configuration
-        vs30=350,  # vs30 value
-        imts=['PGA', 'SA(0.5)'],  # list of IMTs
-        locations_id='AKL',  # Location code or list ID
-        source_tags=["hiktlck", "b0.979", "C3.9", "s0.78"],
-        source_ids=["SW52ZXJzaW9uU29sdXRpb25Ocm1sOjEwODA3NQ==", "RmlsZToxMDY1MjU="],
-        inv_time=1.0,
-        # extracted from the OQ HDF5
-        src_lt=json.dumps(dict(sources=[1, 2])),  # sources meta as DataFrame JSON
-        gsim_lt=json.dumps(dict(gsims=[1, 2])),  # gmpe meta as DataFrame JSON
-        rlz_lt=json.dumps(dict(rlzs=[1, 2])),  # realization meta as DataFrame JSON
-    )
 
+# MAKE this test both pynamo and sqlite
+class TestPynamoMeta(object):
 
-@mock_dynamodb
-class PynamoTestMeta(unittest.TestCase):
-    def setUp(self):
+    def test_table_exists(self, adapter_model):
+        assert adapter_model.OpenquakeRealization.exists() == True
+        assert adapter_model.ToshiOpenquakeMeta.exists() == True
 
-        model.migrate()
-        super(PynamoTestMeta, self).setUp()
-
-    def tearDown(self):
-        model.drop_tables()
-        return super(PynamoTestMeta, self).tearDown()
-
-    def test_table_exists(self):
-        self.assertEqual(model.OpenquakeRealization.exists(), True)
-        self.assertEqual(model.ToshiOpenquakeMeta.exists(), True)
-
-    def test_save_one_meta_object(self):
-        obj = get_one_meta()
-
+    def test_save_one_meta_object(self, get_one_meta):
+        obj = get_one_meta
         obj.save()
-        self.assertEqual(obj.inv_time, 1.0)
+        assert obj.inv_time == 1.0
 
 
 @mock_dynamodb
