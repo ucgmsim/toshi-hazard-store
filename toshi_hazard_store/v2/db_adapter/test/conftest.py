@@ -1,3 +1,6 @@
+import os
+from unittest import mock
+
 import pytest
 from pynamodb.attributes import UnicodeAttribute
 from pynamodb.models import Model
@@ -6,6 +9,16 @@ from toshi_hazard_store.v2.db_adapter.sqlite import SqliteAdapter
 
 SQLITE_ADAPTER = SqliteAdapter
 NO_ADAPTER = Model
+
+
+@pytest.fixture(autouse=True)
+def setenvvar(tmp_path):
+    # ref https://adamj.eu/tech/2020/10/13/how-to-mock-environment-variables-with-pytest/
+    envvars = {
+        "THS_SQLITE_FOLDER": str(tmp_path),
+    }
+    with mock.patch.dict(os.environ, envvars, clear=True):
+        yield  # This is the magical bit which restore the environment after
 
 
 class MySqlModel(SQLITE_ADAPTER):

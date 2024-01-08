@@ -1,4 +1,4 @@
-"""Queries for saving and retrieving openquake hazard results with convenience."""
+"""Queries for retriving openquake hazard objects."""
 import decimal
 import itertools
 import logging
@@ -16,11 +16,16 @@ mRLZ = model.OpenquakeRealization
 mHAG = model.HazardAggregation
 
 
-def get_hazard_metadata_v3(
-    haz_sol_ids: Iterable[str],
-    vs30_vals: Iterable[int],
-) -> Iterator[mOQM]:
-    """Fetch ToshiOpenquakeHazardMeta based on criteria."""
+def get_hazard_metadata_v3(haz_sol_ids: Iterable[str], vs30_vals: Iterable[int]) -> Iterator[mOQM]:
+    """Query the ToshiOpenquakeMeta table
+
+    Parameters:
+        haz_sol_ids: list of solution ids to fetch
+        vs30_vals: vs30 values eg [400, 500]
+
+    Yields:
+        ToshiOpenquakeMeta objects
+    """
 
     total_hits = 0
     for (tid, vs30) in itertools.product(haz_sol_ids, vs30_vals):
@@ -60,15 +65,17 @@ def get_rlz_curves_v3(
     imts: Iterable[str],
     model=model,
 ) -> Iterator[mRLZ]:
-    """Query THS_OpenquakeRealization Table.
+    """Query the OpenquakeRealization table.
 
-    :param locs: coded location codes e.g. ['-46.430~168.360']
-    :param vs30s: vs30 values eg [400, 500]
-    :param rlzs: realizations eg [0,1,2,3]
-    :param tids:  toshi hazard_solution_ids e.. ['XXZ']
-    :param imts: imt (IntensityMeasureType) values e.g ['PGA', 'SA(0.5)']
+    Parameters:
+        locs: coded location codes e.g. ['-46.430~168.360']
+        vs30s: vs30 values eg [400, 500]
+        rlzs: realizations eg [0,1,2,3]
+        tids: toshi hazard_solution_ids e.. ['XXZ']
+        imts: imt (IntensityMeasureType) values e.g ['PGA', 'SA(0.5)']
 
-    :yield: model objects
+    Yields:
+        HazardRealization models
     """
 
     def build_condition_expr(loc, vs30, rlz, tid):
@@ -131,15 +138,17 @@ def get_hazard_curves(
     aggs: Union[Iterable[str], None] = None,
     local_cache: bool = False,
 ) -> Iterator[mHAG]:
-    """Query HazardAggregation Table.
+    """Query the HazardAggregation table.
 
-    :param locs: coded location codes e.g. ['-46.430~168.360']
-    :param vs30s: vs30 values eg [400, 500]
-    :param hazard_model_ids:  hazard model ids e.. ['NSHM_V1.0.4']
-    :param imts: imt (IntensityMeasureType) values e.g ['PGA', 'SA(0.5)']
-    :param aggs: aggregation values e.g. ['mean']
+    Parameters:
+        locs: coded location codes e.g. ['-46.430~168.360']
+        vs30s: vs30 values eg [400, 500]
+        hazard_model_ids:  hazard model ids e.. ['NSHM_V1.0.4']
+        imts: imt (IntensityMeasureType) values e.g ['PGA', 'SA(0.5)']
+        aggs: aggregation values e.g. ['mean']
 
-    :yield: model objects
+    Yields:
+        HazardAggregation models
     """
     aggs = aggs or ["mean", "0.1"]
 

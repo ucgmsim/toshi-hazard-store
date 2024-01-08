@@ -11,6 +11,8 @@ from pynamodb.connection.base import OperationSettings
 from pynamodb.constants import DELETE, PUT
 from pynamodb.expressions.condition import Condition
 
+from toshi_hazard_store.config import DEPLOYMENT_STAGE, SQLITE_ADAPTER_FOLDER
+
 from ..pynamodb_adapter_interface import PynamodbAdapterInterface  # noqa
 from .sqlite_store import (
     check_exists,
@@ -28,16 +30,17 @@ if TYPE_CHECKING:
 _T = TypeVar('_T', bound='pynamodb.models.Model')
 _KeyType = Any
 
-LOCAL_STORAGE_FOLDER = "/GNSDATA/API/toshi-hazard-store/LOCALSTORAGE"
-DEPLOYMENT_STAGE = "DEV"
+# LOCAL_STORAGE_FOLDER = "./LOCALSTORAGE"
+# DEPLOYMENT_STAGE = "DEV"
 BATCH_WRITE_PAGE_LIMIT = 250
 
 log = logging.getLogger(__name__)
 
 
 def get_connection(model_class: Type[_T]) -> sqlite3.Connection:
-    dbpath = pathlib.Path(LOCAL_STORAGE_FOLDER) / DEPLOYMENT_STAGE / f"{safe_table_name(model_class)}.db"
-    assert dbpath.parent.exists()
+    dbpath = pathlib.Path(SQLITE_ADAPTER_FOLDER) / f"{ DEPLOYMENT_STAGE}_{safe_table_name(model_class)}.db"
+    if not dbpath.parent.exists():
+        raise RuntimeError(f'The sqlite storage folder "{dbpath.parent.absolute()}" was not found.')
     log.debug(f"get sqlite3 connection at {dbpath}")
     return sqlite3.connect(dbpath)
 

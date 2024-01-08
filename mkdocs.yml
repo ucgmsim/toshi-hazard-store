@@ -7,7 +7,13 @@ nav:
   - Home: index.md
   - Installation: installation.md
   - Usage: usage.md
-  - Modules: api.md
+  - SQLite option: sqlite_adapter_usage.md
+  - CLI tools: cli.md
+  - Code Reference:
+    - Query API:
+      - Hazard: hazard_query_api.md
+      - Gridded Hazard: gridded_hazard_query_api.md
+      - Disaggregation: hazard_disagg_query_api.md
   - Contributing: contributing.md
   - Changelog: changelog.md
 theme:
@@ -23,6 +29,7 @@ theme:
     - navigation.instant
     - navigation.tabs.sticky
 markdown_extensions:
+  - mkdocs-click
   - pymdownx.emoji:
       emoji_index: !!python/name:materialx.emoji.twemoji
       emoji_generator: !!python/name:materialx.emoji.to_svg
@@ -50,8 +57,13 @@ plugins:
   - search:
       lang: en
   - mkdocstrings:
-      watch:
-        - toshi_hazard_store
+      # watch:
+      #   - toshi_hazard_store
+      handlers:
+        python:
+          options:
+            show_submodules: true
+
 extra:
   social:
     - icon: fontawesome/brands/twitter

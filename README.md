@@ -14,9 +14,10 @@
 
 ## Features
 
-* Main purpose is to upload Openquake hazard results to a DynamodDB tables defined herein.
-* relates the results to the toshi hazard id identifying the OQ hazard job run.
-* extracts metadata from the openquake hdf5 solution
+* Manage Openquake hazard results in AWS DynamodDB tables defined herein.
+* Option for caching using sqlite, See NZSHM22_HAZARD_STORE_LOCAL_CACHE environment variable.
+* Option to use a local sqlite store instead of DynamoDB, see THS_USE_SQLITE_ADAPTER and THS_SQLITE_FOLDER variables.
+* cli tools for end users
 
 ## Credits
 

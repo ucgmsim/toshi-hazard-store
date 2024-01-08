@@ -1,9 +1,13 @@
 # Changelog
 
-## [0.8.0] - 2023-12-21
+## [0.8.0] - 2024-01-08
 ### Added
  - db_adapter architecture
  - sqlite3 as db_adapter for localstorage option
+ - new envionment varisbale for localstorage
+ - more documentation
+ - use tmp_path for new localstorage tests
+
 
 ## [0.7.7] - 2023-12-13
 ### Changed 

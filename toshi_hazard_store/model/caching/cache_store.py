@@ -27,7 +27,7 @@ def get_connection(model_class) -> sqlite3.Connection:
 
 
 def cache_enabled() -> bool:
-    """return Ture if the cache is correctly configured."""
+    """return True if the cache is correctly configured."""
     if LOCAL_CACHE_FOLDER is not None:
         if pathlib.Path(LOCAL_CACHE_FOLDER).exists():
             return True
