@@ -11,7 +11,7 @@ from pynamodb.connection.base import OperationSettings
 from pynamodb.constants import DELETE, PUT
 from pynamodb.expressions.condition import Condition
 
-from toshi_hazard_store.config import DEPLOYMENT_STAGE, SQLITE_ADAPTER_FOLDER
+from toshi_hazard_store.config import SQLITE_ADAPTER_FOLDER
 
 from ..pynamodb_adapter_interface import PynamodbAdapterInterface  # noqa
 from .sqlite_store import (
@@ -38,7 +38,7 @@ log = logging.getLogger(__name__)
 
 
 def get_connection(model_class: Type[_T]) -> sqlite3.Connection:
-    dbpath = pathlib.Path(SQLITE_ADAPTER_FOLDER) / f"{ DEPLOYMENT_STAGE}_{safe_table_name(model_class)}.db"
+    dbpath = pathlib.Path(SQLITE_ADAPTER_FOLDER) / f"{safe_table_name(model_class)}.db"
     if not dbpath.parent.exists():
         raise RuntimeError(f'The sqlite storage folder "{dbpath.parent.absolute()}" was not found.')
     log.debug(f"get sqlite3 connection at {dbpath}")
