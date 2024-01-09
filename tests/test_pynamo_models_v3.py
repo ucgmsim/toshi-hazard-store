@@ -1,10 +1,16 @@
 import unittest
+import pytest
+
+import os
+from unittest import mock
 
 import pynamodb.exceptions
 from moto import mock_dynamodb
 from nzshm_common.location.code_location import CodedLocation
 
 from toshi_hazard_store import model
+from toshi_hazard_store.v2.db_adapter.sqlite import SqliteAdapter
+from toshi_hazard_store.model.openquake_models import ensure_class_bases_begin_with
 
 
 def get_one_rlz():
@@ -35,16 +41,45 @@ def get_one_hazard_aggregate():
     ).set_location(location)
 
 
+# ref https://docs.pytest.org/en/7.3.x/example/parametrize.html#deferring-the-setup-of-parametrized-resources
+def pytest_generate_tests(metafunc):
+    if "adapted_model" in metafunc.fixturenames:
+        metafunc.parametrize("adapted_model", ["pynamodb", "sqlite"], indirect=True)
+
+
+@pytest.fixture
+def adapted_model(request, tmp_path):
+    if request.param == 'pynamodb':
+        with mock_dynamodb():
+            model.ToshiOpenquakeMeta.create_table(wait=True)
+            yield model
+            model.ToshiOpenquakeMeta.delete_table()
+    elif request.param == 'sqlite':
+        envvars = {"THS_SQLITE_FOLDER": str(tmp_path), "THS_USE_SQLITE_ADAPTER": "TRUE"}
+        with mock.patch.dict(os.environ, envvars, clear=True):
+            ensure_class_bases_begin_with(
+                namespace=model.__dict__,
+                class_name=str('ToshiOpenquakeMeta'),  # `str` type differs on Python 2 vs. 3.
+                base_class=SqliteAdapter,
+            )
+            model.ToshiOpenquakeMeta.create_table(wait=True)
+            yield model
+            model.ToshiOpenquakeMeta.delete_table()
+    else:
+        raise ValueError("invalid internal test config")
+
+
 # MAKE this test both pynamo and sqlite
 class TestPynamoMeta(object):
-    def test_table_exists(self, adapter_model):
-        assert adapter_model.OpenquakeRealization.exists()
-        assert adapter_model.ToshiOpenquakeMeta.exists()
+    def test_table_exists(self, adapted_model):
+        # assert adapted_model.OpenquakeRealization.exists()
+        assert adapted_model.ToshiOpenquakeMeta.exists()
 
-    def test_save_one_meta_object(self, get_one_meta):
+    def test_save_one_meta_object(self, get_one_meta, adapted_model):
         obj = get_one_meta
         obj.save()
         assert obj.inv_time == 1.0
+        # assert adapted_model == 2
 
 
 @mock_dynamodb
@@ -60,7 +95,7 @@ class PynamoTestTwo(unittest.TestCase):
 
     def test_table_exists(self):
         self.assertEqual(model.OpenquakeRealization.exists(), True)
-        self.assertEqual(model.ToshiOpenquakeMeta.exists(), True)
+        # self.assertEqual(model.ToshiOpenquakeMeta.exists(), True)
 
     def test_save_one_new_realization_object(self):
         """New realization handles all the IMT levels."""

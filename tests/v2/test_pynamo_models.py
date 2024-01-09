@@ -1,3 +1,7 @@
+import pytest
+
+
+@pytest.mark.skip('DUP')
 class TestPynamoMeta(object):
     def test_meta_table_exists(self, adapter_model):
         assert adapter_model.ToshiOpenquakeMeta.exists()
