@@ -28,28 +28,60 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize("adapted_model", ["pynamodb", "sqlite"], indirect=True)
 
 
+def set_adapter(adapter):
+    ensure_class_bases_begin_with(
+        namespace=model.__dict__,
+        class_name=str('LocationIndexedModel'),
+        base_class=adapter
+    )
+    ensure_class_bases_begin_with(
+        namespace=model.__dict__,
+        class_name=str('OpenquakeRealization'),  # `str` type differs on Python 2 vs. 3.
+        base_class=model.LocationIndexedModel
+    )
+
+
+@pytest.fixture
+def adapted_model(request, tmp_path):
+    if request.param == 'pynamodb':
+        with mock_dynamodb():
+            model.OpenquakeRealization.create_table(wait=True)
+            yield model
+            model.OpenquakeRealization.delete_table()
+    elif request.param == 'sqlite':
+        envvars = {"THS_SQLITE_FOLDER": str(tmp_path), "THS_USE_SQLITE_ADAPTER": "TRUE"}
+        with mock.patch.dict(os.environ, envvars, clear=True):
+            set_adapter(SqliteAdapter)
+            model.OpenquakeRealization.create_table(wait=True)
+            yield model
+            model.OpenquakeRealization.delete_table()
+
+    else:
+        raise ValueError("invalid internal test config")
+
+
 class TestOpenquakeRealizationModel:
-    @pytest.mark.skip('fix base classes')
+
+    # @pytest.mark.skip('fix base classes')
     def test_table_exists(self, adapted_model):
         assert model.OpenquakeRealization.exists()
         # self.assertEqual(model.ToshiOpenquakeMeta.exists(), True)
 
-    @pytest.mark.skip('fix base classes')
-    def test_save_one_new_realization_object(self, get_one_rlz, adapted_model):
+    def test_save_one_new_realization_object(self, adapted_model, get_one_rlz):
         """New realization handles all the IMT levels."""
         print(model.__dict__['OpenquakeRealization'].__bases__)
-        with mock_dynamodb():
-            OpenquakeRealization.create_table(wait=True)
-            rlz = get_one_rlz()
-            # print(f'rlz: {rlz} {rlz.version}')
-            rlz.save()
-            # print(f'rlz: {rlz} {rlz.version}')
-            # print(dir(rlz))
-            assert rlz.values[0].lvls[0] == 1
-            assert rlz.values[0].vals[0] == 101
-            assert rlz.values[0].lvls[-1] == 50
-            assert rlz.values[0].vals[-1] == 150
-            assert rlz.partition_key == '-41.3~174.8'  # 0.1 degree res
+        # with mock_dynamodb():
+        # model.OpenquakeRealization.create_table(wait=True)
+        rlz = get_one_rlz()
+        # print(f'rlz: {rlz} {rlz.version}')
+        rlz.save()
+        # print(f'rlz: {rlz} {rlz.version}')
+        # print(dir(rlz))
+        assert rlz.values[0].lvls[0] == 1
+        assert rlz.values[0].vals[0] == 101
+        assert rlz.values[0].lvls[-1] == 50
+        assert rlz.values[0].vals[-1] == 150
+        assert rlz.partition_key == '-41.3~174.8'  # 0.1 degree res
 
 
 """

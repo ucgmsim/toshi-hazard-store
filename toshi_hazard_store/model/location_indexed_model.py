@@ -19,6 +19,8 @@ def datetime_now():
 class LocationIndexedModel(Model):
     """Model base class."""
 
+    __metaclass__ = type
+
     partition_key = UnicodeAttribute(hash_key=True)  # For this we will use a downsampled location to 1.0 degree
     sort_key = UnicodeAttribute(range_key=True)
 

@@ -103,7 +103,7 @@ class HazardAggregation(ModelCacheMixin, LocationIndexedModel):
 
     def set_location(self, location: CodedLocation):
         """Set internal fields, indices etc from the location."""
-        super().set_location(location)
+        LocationIndexedModel.set_location(self, location)
 
         # update the indices
         vs30s = str(self.vs30).zfill(VS30_KEYLEN)
@@ -169,7 +169,7 @@ class OpenquakeRealization(LocationIndexedModel):
     def set_location(self, location: CodedLocation):
         """Set internal fields, indices etc from the location."""
         print(type(self).__bases__)
-        super().set_location(location)
+        LocationIndexedModel.set_location(self, location)
 
         # update the indices
         rlzs = str(self.rlz).zfill(6)

@@ -53,7 +53,7 @@ def get_one_meta():
     )
 
 
-@pytest.fixture()
+@pytest.fixture(scope='function')
 def get_one_rlz():
     imtvs = []
     for t in ['PGA', 'SA(0.5)', 'SA(1.0)']:

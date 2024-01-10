@@ -26,12 +26,6 @@ def set_adapter(adapter):
 @pytest.fixture
 def adapted_model(request, tmp_path):
     if request.param == 'pynamodb':
-        # for table_name in ['ToshiOpenquakeMeta']:
-        #     ensure_class_bases_begin_with(
-        #         namespace=model.__dict__,
-        #         class_name=table_name,  # `str` type differs on Python 2 vs. 3.
-        #         base_class=Model,
-        #     )
         with mock_dynamodb():
             model.ToshiOpenquakeMeta.create_table(wait=True)
             # model.OpenquakeRealization.create_table(wait=True)
