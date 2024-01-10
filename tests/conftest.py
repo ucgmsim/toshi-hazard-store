@@ -4,6 +4,7 @@ from unittest import mock
 
 import pytest
 from moto import mock_dynamodb
+from nzshm_common.location.code_location import CodedLocation
 
 # from pynamodb.attributes import UnicodeAttribute
 from pynamodb.models import Model
@@ -32,26 +33,43 @@ def adapter_model():
 
 @pytest.fixture()
 def get_one_meta():
-    with mock_dynamodb():
-        model.ToshiOpenquakeMeta.create_table(wait=True)
-        yield model.ToshiOpenquakeMeta(
-            partition_key="ToshiOpenquakeMeta",
-            hazard_solution_id="AMCDEF",
-            general_task_id="GBBSGG",
-            hazsol_vs30_rk="AMCDEF:350",
-            # updated=dt.datetime.now(tzutc()),
-            # known at configuration
-            vs30=350,  # vs30 value
-            imts=['PGA', 'SA(0.5)'],  # list of IMTs
-            locations_id='AKL',  # Location code or list ID
-            source_tags=["hiktlck", "b0.979", "C3.9", "s0.78"],
-            source_ids=["SW52ZXJzaW9uU29sdXRpb25Ocm1sOjEwODA3NQ==", "RmlsZToxMDY1MjU="],
-            inv_time=1.0,
-            # extracted from the OQ HDF5
-            src_lt=json.dumps(dict(sources=[1, 2])),  # sources meta as DataFrame JSON
-            gsim_lt=json.dumps(dict(gsims=[1, 2])),  # gmpe meta as DataFrame JSON
-            rlz_lt=json.dumps(dict(rlzs=[1, 2])),  # realization meta as DataFrame JSON
-        )
+    yield lambda: model.ToshiOpenquakeMeta(
+        partition_key="ToshiOpenquakeMeta",
+        hazard_solution_id="AMCDEF",
+        general_task_id="GBBSGG",
+        hazsol_vs30_rk="AMCDEF:350",
+        # updated=dt.datetime.now(tzutc()),
+        # known at configuration
+        vs30=350,  # vs30 value
+        imts=['PGA', 'SA(0.5)'],  # list of IMTs
+        locations_id='AKL',  # Location code or list ID
+        source_tags=["hiktlck", "b0.979", "C3.9", "s0.78"],
+        source_ids=["SW52ZXJzaW9uU29sdXRpb25Ocm1sOjEwODA3NQ==", "RmlsZToxMDY1MjU="],
+        inv_time=1.0,
+        # extracted from the OQ HDF5
+        src_lt=json.dumps(dict(sources=[1, 2])),  # sources meta as DataFrame JSON
+        gsim_lt=json.dumps(dict(gsims=[1, 2])),  # gmpe meta as DataFrame JSON
+        rlz_lt=json.dumps(dict(rlzs=[1, 2])),  # realization meta as DataFrame JSON
+    )
+
+
+@pytest.fixture()
+def get_one_rlz():
+    imtvs = []
+    for t in ['PGA', 'SA(0.5)', 'SA(1.0)']:
+        levels = range(1, 51)
+        values = range(101, 151)
+        imtvs.append(model.IMTValuesAttribute(imt="PGA", lvls=levels, vals=values))
+
+    location = CodedLocation(lat=-41.3, lon=174.78, resolution=0.001)
+    yield lambda: model.OpenquakeRealization(
+        values=imtvs,
+        rlz=10,
+        vs30=450,
+        hazard_solution_id="AMCDEF",
+        source_tags=["hiktlck", "b0.979", "C3.9", "s0.78"],
+        source_ids=["SW52ZXJzaW9uU29sdXRpb25Ocm1sOjEwODA3NQ==", "RmlsZToxMDY1MjU="],
+    ).set_location(location)
 
 
 @pytest.fixture(autouse=True, scope="session")

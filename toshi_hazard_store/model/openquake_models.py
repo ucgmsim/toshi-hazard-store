@@ -144,6 +144,8 @@ class HazardAggregation(ModelCacheMixin, LocationIndexedModel):
 class OpenquakeRealization(LocationIndexedModel):
     """Stores the individual hazard realisation curves."""
 
+    __metaclass__ = type
+
     class Meta:
         """DynamoDB Metadata."""
 
@@ -166,6 +168,7 @@ class OpenquakeRealization(LocationIndexedModel):
 
     def set_location(self, location: CodedLocation):
         """Set internal fields, indices etc from the location."""
+        print(type(self).__bases__)
         super().set_location(location)
 
         # update the indices
@@ -183,6 +186,14 @@ tables = [
     ToshiOpenquakeMeta,
     HazardAggregation,
 ]
+
+
+def set_adapter(adapter):
+    ensure_class_bases_begin_with(
+        namespace=globals(),
+        class_name=str('ToshiOpenquakeMeta'),  # `str` type differs on Python 2 vs. 3.
+        base_class=adapter,
+    )
 
 
 def migrate():

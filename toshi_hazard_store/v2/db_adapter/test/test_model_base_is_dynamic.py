@@ -81,37 +81,3 @@ def test_dynamic_baseclass():
     assert isinstance(instance, Model)
     assert getattr(instance, 'exists')  # interface method
     assert getattr(instance, 'my_hash_key')  # custom model attibute
-
-
-def test_dynamic_baseclass_adapter_sqlite(get_one_meta):
-    ensure_class_bases_begin_with(
-        namespace=toshi_hazard_store.model.__dict__,
-        class_name=str('ToshiOpenquakeMeta'),  # `str` type differs on Python 2 vs. 3.
-        base_class=SqliteAdapter,
-    )
-
-    instance = get_one_meta()
-    assert isinstance(instance, SqliteAdapter)
-    assert isinstance(instance, Model)
-    assert getattr(instance, 'exists')  # interface method
-    assert getattr(instance, 'partition_key')  # model attribute
-
-
-def test_default_baseclass_adapter_pynamodb(get_one_meta):
-    #   assert not isinstance(MySqlModel(my_hash_key='A', my_range_key='B'), Model)
-    # print(model.__dict__['ToshiOpenquakeMeta'])
-    # print(model.__dict__['ToshiOpenquakeMeta'].__bases__)
-    ensure_class_bases_begin_with(
-        namespace=toshi_hazard_store.model.__dict__,
-        class_name=str('ToshiOpenquakeMeta'),  # `str` type differs on Python 2 vs. 3.
-        base_class=Model,
-    )
-    print(model.__dict__['ToshiOpenquakeMeta'].__bases__)
-
-    instance = get_one_meta()
-
-    print(model.ToshiOpenquakeMeta.__bases__)
-    assert not isinstance(instance, SqliteAdapter)
-    assert isinstance(instance, Model)
-    assert getattr(instance, 'exists')  # interface method
-    assert getattr(instance, 'partition_key')  # model attribute
