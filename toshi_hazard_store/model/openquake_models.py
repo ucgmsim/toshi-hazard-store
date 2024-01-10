@@ -9,55 +9,20 @@ from pynamodb.indexes import AllProjection, LocalSecondaryIndex
 from pynamodb.models import Model
 from pynamodb_attributes import IntegerAttribute, TimestampAttribute
 
-from toshi_hazard_store.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION, USE_SQLITE_ADAPTER
+from toshi_hazard_store.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION
 from toshi_hazard_store.model.caching import ModelCacheMixin
 
 from .attributes import EnumConstrainedUnicodeAttribute, IMTValuesAttribute, LevelValuePairAttribute
 from .constraints import AggregationEnum, IntensityMeasureTypeEnum
 from .location_indexed_model import VS30_KEYLEN, LocationIndexedModel, datetime_now
 
-
-from toshi_hazard_store.v2.db_adapter.sqlite import SqliteAdapter
-
 # MODELBASE = SqliteAdapter if USE_SQLITE_ADAPTER else Model
 # MODELCACHEBASE = SqliteAdapter if USE_SQLITE_ADAPTER else ModelCacheMixin
 
 log = logging.getLogger(__name__)
 
-# ref https://stackoverflow.com/a/28075525
-def ensure_class_bases_begin_with(namespace, class_name, base_class):
-    """Ensure the named class's bases start with the base class.
 
-    :param namespace: The namespace containing the class name.
-    :param class_name: The name of the class to alter.
-    :param base_class: The type to be the first base class for the
-        newly created type.
-    :return: ``None``.
-
-    Call this function after ensuring `base_class` is
-    available, before using the class named by `class_name`.
-
-    """
-    existing_class = namespace[class_name]
-    assert isinstance(existing_class, type)
-
-    bases = list(existing_class.__bases__)
-    if base_class is bases[0]:
-        # Already bound to a type with the right bases.
-        return
-    bases.insert(0, base_class)
-
-    new_class_namespace = existing_class.__dict__.copy()
-    # Type creation will assign the correct ‘__dict__’ attribute.
-    new_class_namespace.pop('__dict__', None)
-
-    metaclass = existing_class.__metaclass__
-    new_class = metaclass(class_name, tuple(bases), new_class_namespace)
-
-    namespace[class_name] = new_class
-
-
-class ToshiOpenquakeMeta:
+class ToshiOpenquakeMeta(Model):
     """Stores metadata from the job configuration and the oq HDF5."""
 
     __metaclass__ = type
@@ -90,10 +55,6 @@ class ToshiOpenquakeMeta:
     src_lt = JSONAttribute()  # sources meta as DataFrame JSON
     gsim_lt = JSONAttribute()  # gmpe meta as DataFrame JSON
     rlz_lt = JSONAttribute()  # realization meta as DataFrame JSON
-
-
-# set default otp pynamodb
-ensure_class_bases_begin_with(namespace=globals(), class_name='ToshiOpenquakeMeta', base_class=Model)
 
 
 class vs30_nloc1_gt_rlz_index(LocalSecondaryIndex):

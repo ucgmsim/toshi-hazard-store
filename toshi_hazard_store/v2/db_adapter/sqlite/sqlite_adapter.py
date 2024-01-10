@@ -76,7 +76,7 @@ class SqliteBatchWrite(pynamodb.models.BatchWrite, Generic[_T]):
 
 
 # see https://stackoverflow.com/questions/11276037/resolving-metaclass-conflicts/61350480#61350480
-class SqliteAdapter(pynamodb.models.Model):  # PynamodbAdapterInterface):
+class SqliteAdapter(pynamodb.models.Model):  # pynamodb.models.Model, PynamodbAdapterInterface):
 
     adapted_model = sqlite3
 

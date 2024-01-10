@@ -1,16 +1,15 @@
-import unittest
-import pytest
-
 import os
+import unittest
 from unittest import mock
 
 import pynamodb.exceptions
+import pytest
 from moto import mock_dynamodb
 from nzshm_common.location.code_location import CodedLocation
 
 from toshi_hazard_store import model
+from toshi_hazard_store.v2.db_adapter import ensure_class_bases_begin_with
 from toshi_hazard_store.v2.db_adapter.sqlite import SqliteAdapter
-from toshi_hazard_store.model.openquake_models import ensure_class_bases_begin_with
 
 
 def get_one_rlz():

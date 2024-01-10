@@ -1,16 +1,17 @@
-import os
 import json
+import os
 from unittest import mock
 
 import pytest
+from moto import mock_dynamodb
 
 # from pynamodb.attributes import UnicodeAttribute
-# from pynamodb.models import Model
+from pynamodb.models import Model
+
+from toshi_hazard_store import model
+from toshi_hazard_store.v2.db_adapter import ensure_class_bases_begin_with
 
 # from toshi_hazard_store.v2.db_adapter.sqlite import SqliteAdapter
-
-from moto import mock_dynamodb
-from toshi_hazard_store import model
 
 
 @pytest.fixture()
@@ -51,3 +52,9 @@ def get_one_meta():
             gsim_lt=json.dumps(dict(gsims=[1, 2])),  # gmpe meta as DataFrame JSON
             rlz_lt=json.dumps(dict(rlzs=[1, 2])),  # realization meta as DataFrame JSON
         )
+
+
+@pytest.fixture(autouse=True, scope="session")
+def set_model():
+    # set default model bases for pynamodb
+    ensure_class_bases_begin_with(namespace=model.__dict__, class_name='ToshiOpenquakeMeta', base_class=Model)
