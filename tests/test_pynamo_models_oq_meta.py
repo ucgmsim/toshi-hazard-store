@@ -1,11 +1,8 @@
 import os
-import unittest
 from unittest import mock
 
-import pynamodb.exceptions
 import pytest
 from moto import mock_dynamodb
-from nzshm_common.location.code_location import CodedLocation
 from pynamodb.models import Model
 
 import toshi_hazard_store

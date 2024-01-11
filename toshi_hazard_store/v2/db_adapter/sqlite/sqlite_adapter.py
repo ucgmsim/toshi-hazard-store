@@ -132,6 +132,8 @@ class SqliteAdapter(pynamodb.models.Model):  # pynamodb.models.Model, PynamodbAd
         rate_limit: Optional[float] = None,
         settings: OperationSettings = OperationSettings.default,
     ) -> Iterable[_T]:  #
+        if range_key_condition is None:
+            raise TypeError("must supply range_key_condition argument")
         return get_model(get_connection(cls), cls, hash_key, range_key_condition, filter_condition)
 
     @staticmethod

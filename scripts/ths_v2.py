@@ -1,4 +1,4 @@
-"""Console script for testing v2 db_adapter tables"""
+"""Console script for testing DBAdapter vs PyanamodbConsumedHandler"""
 # noqa
 import logging
 import sys
@@ -14,8 +14,8 @@ from toshi_hazard_store import model as model_old
 from toshi_hazard_store import query
 from toshi_hazard_store.v2 import model
 
-toshi_hazard_store.query.hazard_query.model = model
-toshi_hazard_store.query.hazard_query.mRLZ = model.OpenquakeRealization
+# toshi_hazard_store.query.hazard_query.model = model
+# toshi_hazard_store.query.hazard_query.mRLZ = model.OpenquakeRealization
 
 NZ_01_GRID = 'NZ_0_1_NB_1_1'
 

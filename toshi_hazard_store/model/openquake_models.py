@@ -188,12 +188,12 @@ tables = [
 ]
 
 
-def set_adapter(adapter):
-    ensure_class_bases_begin_with(
-        namespace=globals(),
-        class_name=str('ToshiOpenquakeMeta'),  # `str` type differs on Python 2 vs. 3.
-        base_class=adapter,
-    )
+# def set_adapter(adapter):
+#     ensure_class_bases_begin_with(
+#         namespace=globals(),
+#         class_name=str('ToshiOpenquakeMeta'),  # `str` type differs on Python 2 vs. 3.
+#         base_class=adapter,
+#     )
 
 
 def migrate():

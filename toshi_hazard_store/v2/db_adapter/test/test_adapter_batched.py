@@ -26,7 +26,7 @@ def test_table_batch_save(adapter_test_table):
             batch.save(itm)
 
     res = adapter_test_table.query(
-        hash_key="ABD123",
+        hash_key="ABD123", range_key_condition=adapter_test_table.my_range_key >= 'qwerty123'
     )
     result = list(res)
     assert len(result) == 26

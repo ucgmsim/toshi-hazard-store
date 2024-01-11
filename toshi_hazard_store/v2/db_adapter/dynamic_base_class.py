@@ -27,9 +27,13 @@ def ensure_class_bases_begin_with(namespace, class_name, base_class):
     log.debug(f"initial bases:  {existing_class.__bases__}")
     # Remove any superclasses that are subclassed from the new class
     bases = [
-        base for base in existing_class.__bases__
-            if not (issubclass(base, base_class) or (base.__name__ == base_class.__name__ and inspect.getmodule(base) is inspect.getmodule(base_class)))
-        ]
+        base
+        for base in existing_class.__bases__
+        if not (
+            issubclass(base, base_class)
+            or (base.__name__ == base_class.__name__ and inspect.getmodule(base) is inspect.getmodule(base_class))
+        )
+    ]
     # bases = [base for base in bases if not #  repr() prints namesapes classname
     log.debug(f"trimmed bases:  {bases}")
 

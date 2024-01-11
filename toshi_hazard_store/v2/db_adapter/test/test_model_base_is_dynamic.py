@@ -2,24 +2,26 @@
 from pynamodb.attributes import UnicodeAttribute
 from pynamodb.models import Model
 
-import toshi_hazard_store
-from toshi_hazard_store import model
 from toshi_hazard_store.v2.db_adapter import ensure_class_bases_begin_with
 from toshi_hazard_store.v2.db_adapter.sqlite import SqliteAdapter
 
 
 class MyModel(Model):
     __metaclass__ = type
+
     class Meta:
         table_name = "MySQLITEModel"
+
     my_hash_key = UnicodeAttribute(hash_key=True)
     my_range_key = UnicodeAttribute(range_key=True)
 
 
 class MySubclassedModel(MyModel):
     __metaclass__ = type
+
     class Meta:
         table_name = "MySQLITEModel"
+
     extra = UnicodeAttribute()
 
 
@@ -87,6 +89,7 @@ def test_dynamic_baseclass_reassign():
     assert getattr(instance, 'exists')  # interface method
     assert getattr(instance, 'my_hash_key')  # custom model attibute
 
+
 def test_default_subclass():
     instance = MySubclassedModel(my_hash_key='A', my_range_key='B', extra="C")
     assert isinstance(instance, MySubclassedModel)
@@ -103,13 +106,14 @@ def test_dynamic_subclass_pynamodb():
         class_name=str('MyModel'),
         base_class=Model,
     )
-    instance = MySubclassedModel(my_hash_key='A', my_range_key='B',  extra="C")
+    instance = MySubclassedModel(my_hash_key='A', my_range_key='B', extra="C")
     print(dir(instance))
     assert isinstance(instance, MySubclassedModel)
     assert isinstance(instance, Model)
     assert getattr(instance, 'exists')  # interface method
     assert getattr(instance, 'my_hash_key')  # custom model attibute
     assert getattr(instance, 'extra')  # custom model attibute
+
 
 def test_dynamic_subclass_sqlite():
     # we reassign the base class where Model is uses
@@ -118,13 +122,14 @@ def test_dynamic_subclass_sqlite():
         class_name=str('MyModel'),
         base_class=SqliteAdapter,
     )
-    instance = MySubclassedModel(my_hash_key='A', my_range_key='B',  extra="C")
+    instance = MySubclassedModel(my_hash_key='A', my_range_key='B', extra="C")
     print(dir(instance))
     assert isinstance(instance, MySubclassedModel)
     assert isinstance(instance, Model)
     assert getattr(instance, 'exists')  # interface method
     assert getattr(instance, 'my_hash_key')  # custom model attibute
     assert getattr(instance, 'extra')  # custom model attibute
+
 
 def test_dynamic_subclass_reassign():
     ensure_class_bases_begin_with(
@@ -133,7 +138,7 @@ def test_dynamic_subclass_reassign():
         base_class=Model,
     )
 
-    instance = MySubclassedModel(my_hash_key='A', my_range_key='B',  extra="C")
+    instance = MySubclassedModel(my_hash_key='A', my_range_key='B', extra="C")
     print(dir(instance))
     assert isinstance(instance, MySubclassedModel)
     assert isinstance(instance, Model)
@@ -153,7 +158,7 @@ def test_dynamic_subclass_reassign():
         base_class=MyModel,
     )
 
-    instance = MySubclassedModel(my_hash_key='A1', my_range_key='B1',  extra="C1")
+    instance = MySubclassedModel(my_hash_key='A1', my_range_key='B1', extra="C1")
     print(dir(instance))
     print('bases', MySubclassedModel.__bases__)
 

@@ -216,6 +216,7 @@ def put_model(
         msg = str(e)
         if 'UNIQUE constraint failed' in msg:
             log.info('attempt to insert a duplicate key failed: ')
+        raise
     except Exception as e:
         log.error(e)
         raise

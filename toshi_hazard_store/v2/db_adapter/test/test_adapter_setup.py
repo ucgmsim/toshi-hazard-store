@@ -30,6 +30,8 @@ def test_table_create_drop(adapter_test_table):
     'adapter_test_table', [(lazy_fixture('sqlite_adapter_test_table')), (lazy_fixture('pynamodb_adapter_test_table'))]
 )
 def test_table_save(adapter_test_table):
+    if adapter_test_table.exists():
+        adapter_test_table.delete_table()
     adapter_test_table.create_table()
     # obj = MySqlModel(my_hash_key="ABD123", my_range_key="qwerty123")
     obj = adapter_test_table(my_hash_key="ABD123", my_range_key="qwerty123")
@@ -42,6 +44,8 @@ def test_table_save(adapter_test_table):
     'adapter_test_table', [(lazy_fixture('sqlite_adapter_test_table')), (lazy_fixture('pynamodb_adapter_test_table'))]
 )
 def test_table_save_and_query(adapter_test_table):
+    if adapter_test_table.exists():
+        adapter_test_table.delete_table()
     adapter_test_table.create_table()
     adapter_test_table(my_hash_key="ABD123", my_range_key="qwerty123").save()
     res = adapter_test_table.query(
@@ -67,9 +71,7 @@ def test_table_save_and_query_many(adapter_test_table):
     for rk in range(10):
         adapter_test_table(my_hash_key="ABD123", my_range_key=f"qwerty123-{rk}").save()
 
-    res = adapter_test_table.query(
-        hash_key="ABD123",
-    )
+    res = adapter_test_table.query(hash_key="ABD123", range_key_condition=adapter_test_table.my_range_key >= 'qwerty')
 
     result = list(res)
     assert len(result) == 10
