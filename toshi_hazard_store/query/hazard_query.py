@@ -63,7 +63,7 @@ def get_rlz_curves_v3(
     rlzs: Iterable[int],
     tids: Iterable[str],
     imts: Iterable[str],
-    model=model,
+    model=model.OpenquakeRealization,
 ) -> Iterator[mRLZ]:
     """Query the OpenquakeRealization table.
 
@@ -113,8 +113,10 @@ def get_rlz_curves_v3(
             log.debug('sort_key_first_val: %s' % sort_key_first_val)
             log.debug('condition_expr: %s' % condition_expr)
 
-            results = mRLZ.query(
-                hash_location_code, mRLZ.sort_key == sort_key_first_val, filter_condition=condition_expr
+            results = model.OpenquakeRealization.query(
+                hash_location_code,
+                model.OpenquakeRealization.sort_key == sort_key_first_val,
+                filter_condition=condition_expr,
             )
 
             # print(f"get_hazard_rlz_curves_v3: qry {qry}")

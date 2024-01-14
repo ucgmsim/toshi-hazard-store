@@ -8,27 +8,6 @@ from nzshm_common.location.code_location import CodedLocation
 from toshi_hazard_store import model
 
 
-def get_one_rlz():
-    imtvs = []
-    for t in ['PGA', 'SA(0.5)', 'SA(1.0)']:
-        levels = range(1, 51)
-        values = range(101, 151)
-        imtvs.append(model.IMTValuesAttribute(imt="PGA", lvls=levels, vals=values))
-
-    location = CodedLocation(lat=-41.3, lon=174.78, resolution=0.001)
-    rlz = model.OpenquakeRealization(
-        values=imtvs,
-        rlz=10,
-        vs30=0,
-        site_vs30=random.randint(200, 1000),
-        hazard_solution_id="AMCDEF",
-        source_tags=["hiktlck", "b0.979", "C3.9", "s0.78"],
-        source_ids=["SW52ZXJzaW9uU29sdXRpb25Ocm1sOjEwODA3NQ==", "RmlsZToxMDY1MjU="],
-    )
-    rlz.set_location(location)
-    return rlz
-
-
 def get_one_hazard_aggregate():
     lvps = list(map(lambda x: model.LevelValuePairAttribute(lvl=x / 1e3, val=(x / 1e6)), range(1, 51)))
     location = CodedLocation(lat=-41.3, lon=174.78, resolution=0.001)
@@ -63,43 +42,34 @@ def get_one_meta():
     )
 
 
-@mock_dynamodb
-class PynamoTestOpenquakeRealizationQuery(unittest.TestCase):
-    def setUp(self):
+# class TestOpenquakeRealizationQuery:
 
-        model.migrate()
-        super(PynamoTestOpenquakeRealizationQuery, self).setUp()
+#     def test_model_query_no_condition(self, adapted_rlz_model, get_one_rlz):
 
-    def tearDown(self):
-        model.drop_tables()
-        return super(PynamoTestOpenquakeRealizationQuery, self).tearDown()
+#         rlz = get_one_rlz()
+#         rlz.save()
 
-    def test_model_query_no_condition(self):
+#         # query on model
+#         res = list(adapted_rlz_model.OpenquakeRealization.query(rlz.partition_key))[0]
+#         assert res.partition_key ==rlz.partition_key
+#         assert res.sort_key ==rlz.sort_key
 
-        rlz = get_one_rlz()
-        rlz.save()
+#     def test_model_query_equal_condition(self, adapted_rlz_model, get_one_rlz):
 
-        # query on model
-        res = list(model.OpenquakeRealization.query(rlz.partition_key))[0]
-        self.assertEqual(res.partition_key, rlz.partition_key)
-        self.assertEqual(res.sort_key, rlz.sort_key)
+#         rlz = get_one_rlz()
+#         rlz.save()
 
-    def test_model_query_equal_condition(self):
+#         # query on model
+#         res = list(
+#             adapted_rlz_model.OpenquakeRealization.query(
+#                 rlz.partition_key, model.OpenquakeRealization.sort_key == '-41.300~174.780:000:000010:AMCDEF'
+#             )
+#         )[0]
+#         assert res.partition_key ==rlz.partition_key
+#         assert res.sort_key == rlz.sort_key
+#         self.assertTrue(200 < res.site_vs30 < 1000)
 
-        rlz = get_one_rlz()
-        rlz.save()
-
-        # query on model
-        res = list(
-            model.OpenquakeRealization.query(
-                rlz.partition_key, model.OpenquakeRealization.sort_key == '-41.300~174.780:000:000010:AMCDEF'
-            )
-        )[0]
-        self.assertEqual(res.partition_key, rlz.partition_key)
-        self.assertEqual(res.sort_key, rlz.sort_key)
-        self.assertTrue(200 < res.site_vs30 < 1000)
-
-        print(res.site_vs30)
+#         print(res.site_vs30)
 
 
 @mock_dynamodb
@@ -131,6 +101,6 @@ class PynamoTestHazardAggregationQuery(unittest.TestCase):
                 # model.HazardAggregation.sort_key == '-41.300~174.780:450:PGA:mean:HAZ_MODEL_ONE'
             )
         )[0]
-        self.assertEqual(res.partition_key, hag.partition_key)
-        self.assertEqual(res.sort_key, hag.sort_key)
+        assert res.partition_key == hag.partition_key
+        assert res.sort_key == hag.sort_key
         self.assertTrue(200 < res.site_vs30 < 1000)

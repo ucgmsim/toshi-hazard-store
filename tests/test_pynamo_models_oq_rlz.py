@@ -1,12 +1,7 @@
-import pynamodb.exceptions
-import pytest
 import sqlite3
 
-
-# ref https://docs.pytest.org/en/7.3.x/example/parametrize.html#deferring-the-setup-of-parametrized-resources
-def pytest_generate_tests(metafunc):
-    if "adapted_rlz_model" in metafunc.fixturenames:
-        metafunc.parametrize("adapted_rlz_model", ["pynamodb", "sqlite"], indirect=True)
+import pynamodb.exceptions
+import pytest
 
 
 class TestOpenquakeRealizationModel:

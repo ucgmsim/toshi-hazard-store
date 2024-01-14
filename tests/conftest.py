@@ -1,3 +1,4 @@
+import itertools
 import json
 import os
 from unittest import mock
@@ -5,14 +6,20 @@ from unittest import mock
 import pytest
 from moto import mock_dynamodb
 from nzshm_common.location.code_location import CodedLocation
+from nzshm_common.location.location import LOCATIONS_BY_ID
 
 # from pynamodb.attributes import UnicodeAttribute
 from pynamodb.models import Model
 
 from toshi_hazard_store import model
 from toshi_hazard_store.v2.db_adapter import ensure_class_bases_begin_with
-
 from toshi_hazard_store.v2.db_adapter.sqlite import SqliteAdapter
+
+
+# ref https://docs.pytest.org/en/7.3.x/example/parametrize.html#deferring-the-setup-of-parametrized-resources
+def pytest_generate_tests(metafunc):
+    if "adapted_rlz_model" in metafunc.fixturenames:
+        metafunc.parametrize("adapted_rlz_model", ["pynamodb", "sqlite"], indirect=True)
 
 
 @pytest.fixture()
@@ -139,7 +146,46 @@ def get_one_hazagg():
     ).set_location(location)
 
 
-# @pytest.fixture(autouse=True, scope="session")
-# def set_model():
-#     # set default model bases for pynamodb
-#     ensure_class_bases_begin_with(namespace=model.__dict__, class_name='ToshiOpenquakeMeta', base_class=Model)
+@pytest.fixture
+def many_rlz_args():
+    yield dict(
+        TOSHI_ID='FAk3T0sHi1D==',
+        vs30s=[250, 500, 1000, 1500],
+        imts=['PGA'],
+        locs=[CodedLocation(o['latitude'], o['longitude'], 0.001) for o in list(LOCATIONS_BY_ID.values())[:2]],
+        rlzs=[x for x in range(5)],
+    )
+
+
+@pytest.fixture(scope='function')
+def build_rlzs_v3_models(many_rlz_args, adapted_rlz_model):
+    """New realization handles all the IMT levels."""
+
+    # lat = -41.3
+    # lon = 174.78
+    n_lvls = 29
+
+    def model_generator():
+        # rlzs = [x for x in range(5)]
+        for rlz in many_rlz_args['rlzs']:
+            values = []
+            for imt, val in enumerate(many_rlz_args['imts']):
+                values.append(
+                    model.IMTValuesAttribute(
+                        imt=val,
+                        lvls=[x / 1e3 for x in range(1, n_lvls)],
+                        vals=[x / 1e6 for x in range(1, n_lvls)],
+                    )
+                )
+            for (loc, vs30) in itertools.product(many_rlz_args["locs"][:5], many_rlz_args["vs30s"]):
+                # yield model.OpenquakeRealization(loc=loc, rlz=rlz, values=imtvs, lat=lat, lon=lon)
+                yield model.OpenquakeRealization(
+                    values=values,
+                    rlz=rlz,
+                    vs30=vs30,
+                    hazard_solution_id=many_rlz_args["TOSHI_ID"],
+                    source_tags=['TagOne'],
+                    source_ids=['Z', 'XX'],
+                ).set_location(loc)
+
+    yield model_generator
