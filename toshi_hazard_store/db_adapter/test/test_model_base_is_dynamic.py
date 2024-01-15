@@ -2,8 +2,8 @@
 from pynamodb.attributes import UnicodeAttribute
 from pynamodb.models import Model
 
-from toshi_hazard_store.v2.db_adapter import ensure_class_bases_begin_with
-from toshi_hazard_store.v2.db_adapter.sqlite import SqliteAdapter
+from toshi_hazard_store.db_adapter import ensure_class_bases_begin_with
+from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
 
 
 class MyModel(Model):

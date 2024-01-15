@@ -7,7 +7,7 @@ from pynamodb.attributes import UnicodeAttribute
 from pynamodb.models import Model
 
 from toshi_hazard_store import model
-from toshi_hazard_store.v2.db_adapter.sqlite import SqliteAdapter
+from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
 
 
 @pytest.fixture(autouse=True)

@@ -7,8 +7,8 @@ from pynamodb.models import Model
 
 import toshi_hazard_store
 from toshi_hazard_store import model
-from toshi_hazard_store.v2.db_adapter import ensure_class_bases_begin_with
-from toshi_hazard_store.v2.db_adapter.sqlite import SqliteAdapter
+from toshi_hazard_store.db_adapter import ensure_class_bases_begin_with
+from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
 
 
 def set_adapter(adapter):

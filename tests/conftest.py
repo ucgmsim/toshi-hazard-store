@@ -12,8 +12,8 @@ from nzshm_common.location.location import LOCATIONS_BY_ID
 from pynamodb.models import Model
 
 from toshi_hazard_store import model
-from toshi_hazard_store.v2.db_adapter import ensure_class_bases_begin_with
-from toshi_hazard_store.v2.db_adapter.sqlite import SqliteAdapter
+from toshi_hazard_store.db_adapter import ensure_class_bases_begin_with
+from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
 
 
 # ref https://docs.pytest.org/en/7.3.x/example/parametrize.html#deferring-the-setup-of-parametrized-resources
