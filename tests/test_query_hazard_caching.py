@@ -8,9 +8,11 @@ from unittest.mock import patch
 from moto import mock_dynamodb
 from nzshm_common.location.code_location import CodedLocation
 from nzshm_common.location.location import LOCATIONS_BY_ID
+from pynamodb.models import Model
 
 from toshi_hazard_store import model, query
 from toshi_hazard_store.model.caching import cache_store
+from toshi_hazard_store.v2.db_adapter import ensure_class_bases_begin_with
 
 HAZARD_MODEL_ID = 'MODEL_THE_FIRST'
 vs30s = [250, 350, 450]
@@ -47,6 +49,15 @@ class TestGetHazardCurvesCached(unittest.TestCase):
     @patch("toshi_hazard_store.model.caching.cache_store.DEPLOYMENT_STAGE", "MOCK")
     @patch("toshi_hazard_store.model.caching.cache_store.LOCAL_CACHE_FOLDER", str(folder.name))
     def setUp(self):
+        ensure_class_bases_begin_with(
+            namespace=model.__dict__, class_name=str('LocationIndexedModel'), base_class=Model
+        )
+        ensure_class_bases_begin_with(
+            namespace=model.__dict__,
+            class_name=str('HazardAggregation'),  # `str` type differs on Python 2 vs. 3.
+            base_class=model.LocationIndexedModel,
+        )
+
         model.migrate()
         assert pathlib.Path(folder.name).exists()
         with model.HazardAggregation.batch_write() as batch:
@@ -90,6 +101,14 @@ class TestCacheStore(unittest.TestCase):
     @patch("toshi_hazard_store.model.caching.cache_store.DEPLOYMENT_STAGE", "MOCK")
     @patch("toshi_hazard_store.model.caching.cache_store.LOCAL_CACHE_FOLDER", str(folder.name))
     def setUp(self):
+        ensure_class_bases_begin_with(
+            namespace=model.__dict__, class_name=str('LocationIndexedModel'), base_class=Model
+        )
+        ensure_class_bases_begin_with(
+            namespace=model.__dict__,
+            class_name=str('HazardAggregation'),  # `str` type differs on Python 2 vs. 3.
+            base_class=model.LocationIndexedModel,
+        )
         model.migrate()  # we do this so we get a cache table
         n_lvls = 29
         lvps = list(map(lambda x: model.LevelValuePairAttribute(lvl=x / 1e3, val=(x / 1e6)), range(1, n_lvls)))
@@ -149,6 +168,14 @@ class TestCacheStoreWithOptionalAttribute(unittest.TestCase):
     @patch("toshi_hazard_store.model.caching.cache_store.DEPLOYMENT_STAGE", "MOCK")
     @patch("toshi_hazard_store.model.caching.cache_store.LOCAL_CACHE_FOLDER", str(folder.name))
     def setUp(self):
+        ensure_class_bases_begin_with(
+            namespace=model.__dict__, class_name=str('LocationIndexedModel'), base_class=Model
+        )
+        ensure_class_bases_begin_with(
+            namespace=model.__dict__,
+            class_name=str('HazardAggregation'),  # `str` type differs on Python 2 vs. 3.
+            base_class=model.LocationIndexedModel,
+        )
         model.migrate()  # we do this so we get a cache table
         n_lvls = 29
         lvps = list(map(lambda x: model.LevelValuePairAttribute(lvl=x / 1e3, val=(x / 1e6)), range(1, n_lvls)))

@@ -1,6 +1,5 @@
 import pytest
 
-
 # # ref https://docs.pytest.org/en/7.3.x/example/parametrize.html#deferring-the-setup-of-parametrized-resources
 # def pytest_generate_tests(metafunc):
 #     if "adapted_hazagg_model" in metafunc.fixturenames:

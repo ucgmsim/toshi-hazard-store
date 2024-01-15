@@ -32,17 +32,17 @@ def setenvvar(tmp_path):
         yield  # This is the magical bit which restore the environment after
 
 
-@pytest.fixture(scope="function")
-def adapter_model():
-    with mock_dynamodb():
-        model.migrate()
-        yield model
-        model.drop_tables()
+# @pytest.fixture(scope="function")
+# def adapter_model():
+#     with mock_dynamodb():
+#         model.migrate()
+#         yield model
+#         model.drop_tables()
 
 
 @pytest.fixture
 def adapted_hazagg_model(request, tmp_path):
-    def set_rlz_adapter(adapter):
+    def set_adapter(adapter):
         ensure_class_bases_begin_with(
             namespace=model.__dict__, class_name=str('LocationIndexedModel'), base_class=adapter
         )
@@ -54,14 +54,14 @@ def adapted_hazagg_model(request, tmp_path):
 
     if request.param == 'pynamodb':
         with mock_dynamodb():
-            set_rlz_adapter(Model)
+            set_adapter(Model)
             model.HazardAggregation.create_table(wait=True)
             yield model
             model.HazardAggregation.delete_table()
     elif request.param == 'sqlite':
         envvars = {"THS_SQLITE_FOLDER": str(tmp_path), "THS_USE_SQLITE_ADAPTER": "TRUE"}
         with mock.patch.dict(os.environ, envvars, clear=True):
-            set_rlz_adapter(SqliteAdapter)
+            set_adapter(SqliteAdapter)
             model.HazardAggregation.create_table(wait=True)
             yield model
             model.HazardAggregation.delete_table()

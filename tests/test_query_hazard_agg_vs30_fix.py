@@ -1,4 +1,5 @@
 import pytest
+
 from toshi_hazard_store import query_v3
 
 # HAZARD_MODEL_ID = 'MODEL_THE_FIRST'
