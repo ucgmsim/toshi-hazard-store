@@ -130,8 +130,10 @@ class HazardAggregation(ModelCacheMixin, LocationIndexedModel):
                     'partition_key',
                     'sort_key',
                     'values',
+                    'version',
+                    'site_vs30',
                 ]:
-                    model_attrs.remove(attr)
+                    model_attrs.remove(attr) if attr in model_attrs else None
 
                 levels = [f'poe-{value.lvl}' for value in model.values]
                 yield (model_attrs + levels)

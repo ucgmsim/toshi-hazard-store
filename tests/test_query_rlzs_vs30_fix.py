@@ -34,7 +34,7 @@ class TestQueryRlzsVs30:
         ids=['mixed', 'one_long', 'two_long', 'one_short', 'two_short'],
     )
     def test_query_hazard_aggr_with_vs30(self, adapted_rlz_model, build_realizations, many_rlz_args, vs30s):
-        vs30s = [500, 1000]
+        # vs30s = [500, 1000]
         qlocs = [loc.downsample(0.001).code for loc in many_rlz_args['locs']]
         res = list(
             query_v3.get_rlz_curves_v3(

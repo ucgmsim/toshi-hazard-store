@@ -12,8 +12,8 @@ log = logging.getLogger(__name__)
 # log.setLevel(logging.DEBUG)
 
 mOQM = model.ToshiOpenquakeMeta
-mRLZ = model.OpenquakeRealization
-mHAG = model.HazardAggregation
+# mRLZ = model.OpenquakeRealization
+# mHAG = model.HazardAggregation
 
 
 def get_hazard_metadata_v3(haz_sol_ids: Iterable[str], vs30_vals: Iterable[int]) -> Iterator[mOQM]:
@@ -63,8 +63,8 @@ def get_rlz_curves_v3(
     rlzs: Iterable[int],
     tids: Iterable[str],
     imts: Iterable[str],
-    model=model.OpenquakeRealization,
-) -> Iterator[mRLZ]:
+    model=model,
+) -> Iterator[model.OpenquakeRealization]:
     """Query the OpenquakeRealization table.
 
     Parameters:
@@ -77,6 +77,8 @@ def get_rlz_curves_v3(
     Yields:
         HazardRealization models
     """
+
+    mRLZ = model.OpenquakeRealization
 
     def build_condition_expr(loc, vs30, rlz, tid):
         """Build the filter condition expression."""
@@ -139,7 +141,8 @@ def get_hazard_curves(
     imts: Iterable[str],
     aggs: Union[Iterable[str], None] = None,
     local_cache: bool = False,
-) -> Iterator[mHAG]:
+    model=model,
+) -> Iterator[model.HazardAggregation]:
     """Query the HazardAggregation table.
 
     Parameters:
@@ -155,6 +158,8 @@ def get_hazard_curves(
     aggs = aggs or ["mean", "0.1"]
 
     log.info("get_hazard_curves( %s" % locs)
+
+    mHAG = model.HazardAggregation
 
     def build_condition_expr(loc, vs30, hid, agg):
         """Build the filter condition expression."""

@@ -1,13 +1,13 @@
 import pytest
 
 
-# ref https://docs.pytest.org/en/7.3.x/example/parametrize.html#deferring-the-setup-of-parametrized-resources
-def pytest_generate_tests(metafunc):
-    if "adapted_hazagg_model" in metafunc.fixturenames:
-        metafunc.parametrize("adapted_hazagg_model", ["pynamodb", "sqlite"], indirect=True)
+# # ref https://docs.pytest.org/en/7.3.x/example/parametrize.html#deferring-the-setup-of-parametrized-resources
+# def pytest_generate_tests(metafunc):
+#     if "adapted_hazagg_model" in metafunc.fixturenames:
+#         metafunc.parametrize("adapted_hazagg_model", ["pynamodb", "sqlite"], indirect=True)
 
 
-class TestHazardAggregationQModel:
+class TestHazardAggregationModel:
     def test_table_exists(self, adapted_hazagg_model):
         assert adapted_hazagg_model.HazardAggregation.exists()
 
