@@ -10,18 +10,16 @@ from nzshm_common.location.location import LOCATIONS, location_by_id
 
 # Monkey-patch temporary
 import toshi_hazard_store.query.hazard_query
-from toshi_hazard_store import model as model_old
-from toshi_hazard_store import query
-from toshi_hazard_store.v2 import model
+from toshi_hazard_store import model, query
 
 # toshi_hazard_store.query.hazard_query.model = model
 # toshi_hazard_store.query.hazard_query.mRLZ = model.OpenquakeRealization
 
 NZ_01_GRID = 'NZ_0_1_NB_1_1'
 
-ALL_AGG_VALS = [e.value for e in model_old.AggregationEnum]
-ALL_IMT_VALS = [e.value for e in model_old.IntensityMeasureTypeEnum]
-ALL_VS30_VALS = [e.value for e in model_old.VS30Enum][1:]  # drop the 0 value!
+ALL_AGG_VALS = [e.value for e in model.AggregationEnum]
+ALL_IMT_VALS = [e.value for e in model.IntensityMeasureTypeEnum]
+ALL_VS30_VALS = [e.value for e in model.VS30Enum][1:]  # drop the 0 value!
 ALL_CITY_LOCS = [CodedLocation(o['latitude'], o['longitude'], 0.001) for o in LOCATIONS]
 
 

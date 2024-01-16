@@ -5,11 +5,8 @@ import datetime as dt
 import logging
 from pathlib import Path
 
-from toshi_hazard_store import model as v1_model
-from toshi_hazard_store.config import USE_SQLITE_ADAPTER
-from toshi_hazard_store.v2 import model as v2_model
-
-model = v2_model if USE_SQLITE_ADAPTER else v1_model
+from toshi_hazard_store import model
+from toshi_hazard_store.config import USE_SQLITE_ADAPTER  # noqa TODO
 
 try:
     from openquake.calculators.extract import Extractor

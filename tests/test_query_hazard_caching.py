@@ -11,8 +11,8 @@ from nzshm_common.location.location import LOCATIONS_BY_ID
 from pynamodb.models import Model
 
 from toshi_hazard_store import model, query
-from toshi_hazard_store.model.caching import cache_store
 from toshi_hazard_store.db_adapter import ensure_class_bases_begin_with
+from toshi_hazard_store.model.caching import cache_store
 
 HAZARD_MODEL_ID = 'MODEL_THE_FIRST'
 vs30s = [250, 350, 450]

@@ -30,8 +30,6 @@ if TYPE_CHECKING:
 _T = TypeVar('_T', bound='pynamodb.models.Model')
 _KeyType = Any
 
-# LOCAL_STORAGE_FOLDER = "./LOCALSTORAGE"
-# DEPLOYMENT_STAGE = "DEV"
 BATCH_WRITE_PAGE_LIMIT = 250
 
 log = logging.getLogger(__name__)
@@ -75,11 +73,7 @@ class SqliteBatchWrite(pynamodb.models.BatchWrite, Generic[_T]):
         )
 
 
-# see https://stackoverflow.com/questions/11276037/resolving-metaclass-conflicts/61350480#61350480
-class SqliteAdapter(pynamodb.models.Model):  # pynamodb.models.Model, PynamodbAdapterInterface):
-
-    adapted_model = sqlite3
-
+class SqliteAdapter(PynamodbAdapterInterface):
     @classmethod
     def batch_write(
         cls: Type[_T], auto_commit: bool = True, settings: OperationSettings = OperationSettings.default

@@ -74,6 +74,7 @@ class TestToshiOpenquakeMetaModel:
         assert getattr(instance, 'exists')  # interface method
         assert getattr(instance, 'partition_key')  # model attribute
 
+    # @pytest.mark.skip('fiddle')
     def test_default_baseclass_adapter_pynamodb(self, get_one_meta):
         #   assert not isinstance(MySqlModel(my_hash_key='A', my_range_key='B'), Model)
         # print(model.__dict__['ToshiOpenquakeMeta'])

@@ -1,8 +1,20 @@
 """
 Defines methods to be provided by a adapter class implementation.
+
+The intention is that concrete adapter implementations must adhere to the
+Model API from PynamoDB.
+
+For details of how this works
+ - https://mypy.readthedocs.io/en/stable/metaclasses.html#gotchas-and-limitations-of-metaclass-support
+ - https://stackoverflow.com/a/76681565
+
 """
-from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Type, TypeVar
+from abc import ABC, ABCMeta, abstractmethod
+from typing import TYPE_CHECKING, Any, Dict, Iterable, Optional, Type, TypeVar
+
+from pynamodb.connection.base import OperationSettings
+from pynamodb.models import Condition, MetaModel, Model
+from pynamodb.pagination import ResultIterator
 
 if TYPE_CHECKING:
     import pynamodb.models.Model
@@ -10,39 +22,54 @@ if TYPE_CHECKING:
 _T = TypeVar(
     '_T', bound='pynamodb.models.Model'
 )  # TODO figure out how to extend the pynamodb Model with the AdapterMeta attribute
-_KeyType = Any
+
+
+class _ABCModelMeta(MetaModel, ABCMeta):
+    """Combine the metaclasses needed for the interface base class"""
+
+
+class ABCModel(Model, ABC, metaclass=_ABCModelMeta):
+    """A base class with the superclasses `Model` & `ABC`"""
 
 
 # cant' use this yet, see https://stackoverflow.com/questions/11276037/resolving-metaclass-conflicts/61350480#61350480
-class PynamodbAdapterInterface(ABC):
+class PynamodbAdapterInterface(ABCModel):
     """
-    Defines methods to be provided by a adapter class implementation.
+    Defines the interface for concrete adapter implementations.
     """
 
+    @classmethod
     @abstractmethod
-    def get_connection(self, model_class: Type[_T]):
-        """get a connector to the storage engine"""
+    def create_table(model_class: Type[_T], *args, **kwargs):
+        ...
+
+    @classmethod
+    @abstractmethod
+    def delete_table(model_class: Type[_T]):
         pass
 
-    @staticmethod
+    @classmethod
     @abstractmethod
-    def create_table(connection: Any, model_class: Type[_T], *args, **kwargs):
-        pass
-
-    @staticmethod
-    @abstractmethod
-    def delete_table(connection: Any, model_class: Type[_T]):
-        pass
-
-    @staticmethod
-    @abstractmethod
-    def query(connection: Any, model_class: Type[_T], hash_key: str, range_key_condition, filter_condition):
+    def query(
+        model_class: Type[_T],
+        hash_key: Any,
+        range_key_condition: Optional[Condition] = None,
+        filter_condition: Optional[Condition] = None,
+        consistent_read: bool = False,
+        index_name: Optional[str] = None,
+        scan_index_forward: Optional[bool] = None,
+        limit: Optional[int] = None,
+        last_evaluated_key: Optional[Dict[str, Dict[str, Any]]] = None,
+        attributes_to_get: Optional[Iterable[str]] = None,
+        page_size: Optional[int] = None,
+        rate_limit: Optional[float] = None,
+        settings: OperationSettings = OperationSettings.default,
+    ) -> ResultIterator['PynamodbAdapterInterface']:
         """Get iterator for given conditions"""
         pass
 
-    @staticmethod
     @abstractmethod
-    def save(connection: Any, model_instance: _T) -> None:
+    def save(self: _T, *args, **kwargs) -> dict[str, Any]:
         """Put an item to the store"""
         pass
 
