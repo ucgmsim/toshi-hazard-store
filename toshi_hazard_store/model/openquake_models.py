@@ -146,7 +146,7 @@ class HazardAggregation(ModelCacheMixin, LocationIndexedModel):
 class OpenquakeRealization(LocationIndexedModel):
     """Stores the individual hazard realisation curves."""
 
-    __metaclass__ = type
+    # __metaclass__ = type
 
     class Meta:
         """DynamoDB Metadata."""
@@ -200,6 +200,11 @@ tables = [
 
 def migrate():
     """Create the tables, unless they exist already."""
+    tables = [
+        ToshiOpenquakeMeta(),
+        OpenquakeRealization(),
+        HazardAggregation(),
+    ]
     for table in tables:
         if not table.exists():  # pragma: no cover
             table.create_table(wait=True)

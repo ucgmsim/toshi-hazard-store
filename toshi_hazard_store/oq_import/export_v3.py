@@ -5,7 +5,9 @@ from dataclasses import dataclass
 
 import pandas as pd
 
-from toshi_hazard_store import model
+from toshi_hazard_store import model, configure_adapter
+from toshi_hazard_store.db_adapter import ensure_class_bases_begin_with
+from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
 from toshi_hazard_store.config import NUM_BATCH_WORKERS, USE_SQLITE_ADAPTER
 from toshi_hazard_store.multi_batch import save_parallel
 from toshi_hazard_store.transform import parse_logic_tree_branches
@@ -13,6 +15,31 @@ from toshi_hazard_store.utils import normalise_site_code
 
 NUM_BATCH_WORKERS = 1 if USE_SQLITE_ADAPTER else NUM_BATCH_WORKERS
 BATCH_SIZE = 1000 if USE_SQLITE_ADAPTER else random.randint(15, 50)
+
+if USE_SQLITE_ADAPTER:
+    # configure_adapter(adapter_model = SqliteAdapter)
+
+    ensure_class_bases_begin_with(
+        namespace=model.__dict__,
+        class_name=str('ToshiOpenquakeMeta'),  # `str` type differs on Python 2 vs. 3.
+        base_class=SqliteAdapter,
+    )
+    ensure_class_bases_begin_with(
+        namespace=model.__dict__,
+        class_name=str('LocationIndexedModel'),
+        base_class=SqliteAdapter
+    )
+    ensure_class_bases_begin_with(
+            namespace=model.__dict__,
+            class_name=str('OpenquakeRealization'),  # `str` type differs on Python 2 vs. 3.
+            base_class=SqliteAdapter,
+    )
+    ensure_class_bases_begin_with(
+        namespace=model.__dict__,
+        class_name=str('HazardAggregation'),
+        base_class=SqliteAdapter,
+
+    )
 
 
 @dataclass

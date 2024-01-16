@@ -8,12 +8,19 @@ from pathlib import Path
 from toshi_hazard_store import model
 from toshi_hazard_store.config import USE_SQLITE_ADAPTER  # noqa TODO
 
+from toshi_hazard_store import configure_adapter
+from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
+
 try:
     from openquake.calculators.extract import Extractor
 
     from toshi_hazard_store.oq_import import export_meta_v3, export_rlzs_v3
 except (ModuleNotFoundError, ImportError):
     print("WARNING: the transform module uses the optional openquake dependencies - h5py, pandas and openquake.")
+
+
+if USE_SQLITE_ADAPTER:
+    configure_adapter(adapter_model = SqliteAdapter)
 
 
 log = logging.getLogger()
@@ -98,7 +105,7 @@ def handle_args(args):
     if args.create_tables:
         print('Ensuring tables exist.')
         ## model.drop_tables() #DANGERMOUSE
-        model.migrate()  # ensure model Table(s) exist (check env REGION, DEPLOYMENT_STAGE, etc
+        model.openquake_models.migrate()  # ensure model Table(s) exist (check env REGION, DEPLOYMENT_STAGE, etc
 
     extract_and_save(args)
 

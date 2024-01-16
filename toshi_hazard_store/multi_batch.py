@@ -1,7 +1,33 @@
 import multiprocessing
 
-from toshi_hazard_store import model
+
+from toshi_hazard_store import model, configure_adapter
+from toshi_hazard_store.db_adapter import ensure_class_bases_begin_with
+from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
 from toshi_hazard_store.config import USE_SQLITE_ADAPTER  # noqa TODO
+
+if USE_SQLITE_ADAPTER:
+    ensure_class_bases_begin_with(
+        namespace=model.__dict__,
+        class_name=str('ToshiOpenquakeMeta'),  # `str` type differs on Python 2 vs. 3.
+        base_class=SqliteAdapter,
+    )
+    ensure_class_bases_begin_with(
+        namespace=model.__dict__,
+        class_name=str('LocationIndexedModel'),
+        base_class=SqliteAdapter
+    )
+    ensure_class_bases_begin_with(
+            namespace=model.__dict__,
+            class_name=str('OpenquakeRealization'),  # `str` type differs on Python 2 vs. 3.
+            base_class=SqliteAdapter,
+    )
+    ensure_class_bases_begin_with(
+        namespace=model.__dict__,
+        class_name=str('HazardAggregation'),
+        base_class=SqliteAdapter,
+
+    )
 
 
 class DynamoBatchWorker(multiprocessing.Process):

@@ -93,6 +93,7 @@ class SqliteAdapter(PynamodbAdapterInterface):
 
     @classmethod
     def exists(cls: Type[_T]) -> bool:
+        """Override pynamodb exits()for sqlite"""
         return check_exists(get_connection(cls), cls)
 
     @classmethod
