@@ -128,7 +128,12 @@ def export_rlzs_v3(extractor, oqmeta: OpenquakeMeta, return_rlz=False):
                 )
                 if oqmeta.model.vs30 == 0:
                     oq_realization.site_vs30 = sites.loc[i_site, 'vs30']
+
+                print('1 >>>', type(oq_realization), oq_realization)
+
                 oq_realization.set_location(loc)
+
+                print('2 >>>', type(oq_realization), oq_realization)
                 yield oq_realization
 
     # used for testing

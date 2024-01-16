@@ -288,10 +288,10 @@ def ensure_table_exists(conn: sqlite3.Connection, model_class: Type[_T]):
             return _sql + f"\tPRIMARY KEY {model_class._hash_key_attribute().attr_name}\n)"
         raise ValueError()
 
-    print('model_class', model_class)
+    # print('model_class', model_class)
     create_sql = create_table_sql(model_class)
 
-    print(create_sql)
+    # print(create_sql)
     try:
         conn.execute(create_sql)
     except Exception as e:

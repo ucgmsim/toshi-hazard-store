@@ -170,7 +170,7 @@ class OpenquakeRealization(LocationIndexedModel):
 
     def set_location(self, location: CodedLocation):
         """Set internal fields, indices etc from the location."""
-        print(type(self).__bases__)
+        # print(type(self).__bases__)
         LocationIndexedModel.set_location(self, location)
 
         # update the indices

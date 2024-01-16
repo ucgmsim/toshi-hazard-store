@@ -129,7 +129,7 @@ def get_one_rlz():
         imtvs.append(model.IMTValuesAttribute(imt="PGA", lvls=levels, vals=values))
 
     location = CodedLocation(lat=-41.3, lon=174.78, resolution=0.001)
-    yield lambda: model.OpenquakeRealization(
+    yield lambda: model.OpenquakeRealization (
         values=imtvs,
         rlz=10,
         vs30=450,
