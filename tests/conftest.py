@@ -15,6 +15,13 @@ from toshi_hazard_store import model
 from toshi_hazard_store.db_adapter import ensure_class_bases_begin_with
 from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
 
+import sys
+import importlib
+
+@pytest.fixture(scope="function", autouse=True)
+def force_model_reload():
+    importlib.reload(sys.modules['toshi_hazard_store'])
+    from toshi_hazard_store import model
 
 # ref https://docs.pytest.org/en/7.3.x/example/parametrize.html#deferring-the-setup-of-parametrized-resources
 def pytest_generate_tests(metafunc):
@@ -129,7 +136,8 @@ def get_one_rlz():
         imtvs.append(model.IMTValuesAttribute(imt="PGA", lvls=levels, vals=values))
 
     location = CodedLocation(lat=-41.3, lon=174.78, resolution=0.001)
-    yield lambda: model.OpenquakeRealization (
+    yield lambda cls = model.OpenquakeRealization: cls(
+    # yield lambda: model.OpenquakeRealization(
         values=imtvs,
         rlz=10,
         vs30=450,
