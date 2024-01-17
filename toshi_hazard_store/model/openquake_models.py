@@ -183,29 +183,15 @@ class OpenquakeRealization(LocationIndexedModel):
         return self
 
 
-tables = [
-    OpenquakeRealization,
-    ToshiOpenquakeMeta,
-    HazardAggregation,
-]
-
-
-# def set_adapter(adapter):
-#     ensure_class_bases_begin_with(
-#         namespace=globals(),
-#         class_name=str('ToshiOpenquakeMeta'),  # `str` type differs on Python 2 vs. 3.
-#         base_class=adapter,
-#     )
+def get_tables():
+    """table classes may be rebased, this makes sure we always get the latest class definition."""
+    for cls in [globals()['ToshiOpenquakeMeta'], globals()['OpenquakeRealization'], globals()['HazardAggregation']]:
+        yield cls
 
 
 def migrate():
     """Create the tables, unless they exist already."""
-    tables = [
-        ToshiOpenquakeMeta(),
-        OpenquakeRealization(),
-        HazardAggregation(),
-    ]
-    for table in tables:
+    for table in get_tables():
         if not table.exists():  # pragma: no cover
             table.create_table(wait=True)
             log.info(f"Migrate created table: {table}")
@@ -213,7 +199,7 @@ def migrate():
 
 def drop_tables():
     """Drop the tables, if they exist."""
-    for table in tables:
+    for table in get_tables():
         if table.exists():  # pragma: no cover
             table.delete_table()
             log.info(f'deleted table: {table}')
