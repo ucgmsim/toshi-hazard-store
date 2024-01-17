@@ -75,6 +75,9 @@ class OqImportTest(unittest.TestCase):
         with open(self.rlzs_filepath, 'rb') as rlzsfile:
             expected = pickle.load(rlzsfile)
 
+        assert rlzs[0].partition_key == '-41.3~174.8'
+        assert rlzs[0].sort_key == '-41.300~174.780:400:000000:HAZID'
+
         self.assertEqual(len(rlzs), len(expected))
         self.assertEqual(len(rlzs[0].values), 1)
 

@@ -42,8 +42,11 @@ def export_meta_v3(extractor, toshi_hazard_id, toshi_gt_id, locations_id, source
         print('WARNING: Dataframes for this job may be too large to store on DynamoDB.')
 
     vs30 = oq['reference_vs30_value']
+
     if math.isnan(vs30):
         vs30 = 0
+
+    print('vs30: ', vs30)
 
     obj = openquake_models.ToshiOpenquakeMeta(
         partition_key="ToshiOpenquakeMeta",

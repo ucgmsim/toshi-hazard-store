@@ -7,6 +7,7 @@ from typing import Iterable, Iterator, Union
 from nzshm_common.location.code_location import CodedLocation
 
 import toshi_hazard_store.model as model
+from toshi_hazard_store.model import openquake_models
 
 log = logging.getLogger(__name__)
 # log.setLevel(logging.DEBUG)
@@ -26,11 +27,11 @@ def get_hazard_metadata_v3(haz_sol_ids: Iterable[str], vs30_vals: Iterable[int])
     Yields:
         ToshiOpenquakeMeta objects
     """
-
+    mOQM = openquake_models.__dict__['ToshiOpenquakeMeta']
     total_hits = 0
     for (tid, vs30) in itertools.product(haz_sol_ids, vs30_vals):
         sort_key_val = f"{tid}:{vs30}"
-        log.debug('sort_key_val: %s' % sort_key_val)
+        log.info('sort_key_val: %s' % sort_key_val)
 
         for hit in mOQM.query(
             "ToshiOpenquakeMeta",  # NB the partition key is the table name!
@@ -63,7 +64,7 @@ def get_rlz_curves_v3(
     rlzs: Iterable[int],
     tids: Iterable[str],
     imts: Iterable[str],
-    model=model,
+    model=None,
 ) -> Iterator[model.OpenquakeRealization]:
     """Query the OpenquakeRealization table.
 
@@ -78,7 +79,7 @@ def get_rlz_curves_v3(
         HazardRealization models
     """
 
-    mRLZ = model.OpenquakeRealization
+    mRLZ = openquake_models.__dict__['OpenquakeRealization']
 
     def build_condition_expr(loc, vs30, rlz, tid):
         """Build the filter condition expression."""
@@ -104,7 +105,7 @@ def get_rlz_curves_v3(
     total_hits = 0
     for hash_location_code in get_hashes(locs):
         partition_hits = 0
-        log.info('hash_key %s' % hash_location_code)
+        log.debug('hash_key %s' % hash_location_code)
         hash_locs = list(filter(lambda loc: downsample_code(loc, 0.1) == hash_location_code, locs))
 
         for (hloc, tid, vs30, rlz) in itertools.product(hash_locs, tids, vs30s, rlzs):
@@ -115,9 +116,9 @@ def get_rlz_curves_v3(
             log.debug('sort_key_first_val: %s' % sort_key_first_val)
             log.debug('condition_expr: %s' % condition_expr)
 
-            results = model.OpenquakeRealization.query(
+            results = mRLZ.query(
                 hash_location_code,
-                model.OpenquakeRealization.sort_key == sort_key_first_val,
+                mRLZ.sort_key == sort_key_first_val,
                 filter_condition=condition_expr,
             )
 
@@ -129,7 +130,7 @@ def get_rlz_curves_v3(
                 yield (hit)
 
         total_hits += partition_hits
-        log.info('hash_key %s has %s hits' % (hash_location_code, partition_hits))
+        log.debug('hash_key %s has %s hits' % (hash_location_code, partition_hits))
 
     log.info('Total %s hits' % total_hits)
 

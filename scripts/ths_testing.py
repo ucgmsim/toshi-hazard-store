@@ -5,21 +5,26 @@ import sys
 
 import click
 import pandas as pd
+from nzshm_common.grids.region_grid import load_grid
 from nzshm_common.location.code_location import CodedLocation
 from nzshm_common.location.location import LOCATIONS, location_by_id
 
-from toshi_hazard_store import model, query, query_v3
-from toshi_hazard_store.config import DEPLOYMENT_STAGE, LOCAL_CACHE_FOLDER, REGION
+from toshi_hazard_store import configure_adapter, model, query, query_v3
+from toshi_hazard_store.config import DEPLOYMENT_STAGE, LOCAL_CACHE_FOLDER, REGION, USE_SQLITE_ADAPTER
+from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
+from toshi_hazard_store.model import openquake_models
 
-# from nzshm_common.grids import load_grid, RegionGrid
+if USE_SQLITE_ADAPTER:
+    configure_adapter(adapter_model=SqliteAdapter)
 
-
-NZ_01_GRID = 'NZ_0_1_NB_1_1'
+NZ_01_GRID = load_grid('NZ_0_1_NB_1_1')
+NZ_02_GRID = load_grid('NZ_0_2_NB_1_1')
 
 ALL_AGG_VALS = [e.value for e in model.AggregationEnum]
 ALL_IMT_VALS = [e.value for e in model.IntensityMeasureTypeEnum]
 ALL_VS30_VALS = [e.value for e in model.VS30Enum][1:]  # drop the 0 value!
 ALL_CITY_LOCS = [CodedLocation(o['latitude'], o['longitude'], 0.001) for o in LOCATIONS]
+ALL_GRID_LOCS = [CodedLocation(loc[0], loc[1], 0.001) for loc in NZ_01_GRID][000:100]
 
 
 class PyanamodbConsumedHandler(logging.Handler):
@@ -46,10 +51,12 @@ log = logging.getLogger()
 count_cost_handler = PyanamodbConsumedHandler(logging.DEBUG)
 log.addHandler(count_cost_handler)
 
-# logging.basicConfig(level=logging.)
-logging.getLogger('pynamodb').setLevel(logging.DEBUG)
+# logging.basicConfig(level=logging.INFO)
+logging.getLogger('pynamodb').setLevel(logging.DEBUG)  # must be DEBUG for query cost calculations
 # logging.getLogger('botocore').setLevel(logging.DEBUG)
 logging.getLogger('toshi_hazard_store').setLevel(logging.INFO)
+# logging.getLogger('toshi_hazard_store.db_adapter.sqlite').setLevel(logging.DEBUG)
+
 
 formatter = logging.Formatter(fmt='%(asctime)s %(name)s %(levelname)-8s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 screen_handler = logging.StreamHandler(stream=sys.stdout)
@@ -112,7 +119,7 @@ def cache_info():
 )
 def get_hazard_curves(model_id, num_aggs, num_vs30s, num_imts, num_locations):
 
-    mHAG = model.HazardAggregation
+    mHAG = openquake_models.HazardAggregation
     mHAG.create_table(wait=True)
 
     vs30s = ALL_VS30_VALS[:num_vs30s]
@@ -160,7 +167,7 @@ def get_hazard_curves(model_id, num_aggs, num_vs30s, num_imts, num_locations):
 )
 def get_hazard_curve(model_id, agg, vs30, imt, location):
 
-    mHAG = model.HazardAggregation
+    mHAG = openquake_models.HazardAggregation
     mHAG.create_table(wait=True)
 
     vs30s = [
@@ -389,6 +396,49 @@ def get_haz_api(num_locations):
 
 
 @cli.command()
+@click.option('--location', '-L', type=str, default='-36.870~174.770')
+@click.option('--vs30', '-V', type=int, default=150)
+@click.option('--rlz', '-R', type=int, default=0)
+def get_one_rlz(vs30, location, rlz):
+    toshi_ids = ['T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTA2ODMzNg==']
+    count_cost_handler.reset()
+    results = list(
+        query.get_rlz_curves_v3(
+            locs=[location],
+            vs30s=[vs30],
+            rlzs=[rlz],
+            tids=toshi_ids,
+            imts=ALL_IMT_VALS,
+        )
+    )
+
+    for m in results:
+        click.echo(f"m: {m}")
+
+    click.echo("get_rlzs Query consumed: %s units" % count_cost_handler.consumed)
+    click.echo("Query returned: %s items" % len(results))
+
+
+@cli.command()
+@click.option('--location', '-L', type=str, default='-36.870~174.770')
+@click.option('--vs30', '-V', type=int, default=150)
+@click.option('--rlz', '-R', type=int, default=0)
+def get_rlz_direct(vs30, location, rlz):
+
+    mRLZ = openquake_models.__dict__['OpenquakeRealization']
+    results = list(
+        mRLZ.query(
+            '-36.9~174.8',
+            mRLZ.sort_key == '-36.870~174.770:150:000000:T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTA2ODMzNg==',
+        )
+    )
+    for m in results:
+        click.echo(f"m: {m.sort_key} ")
+
+    click.echo("Query returned: %s items" % len(results))
+
+
+@cli.command()
 @click.option('--num_locations', '-L', type=int, default=1)
 @click.option('--num_imts', '-I', type=int, default=1)
 @click.option('--num_vs30s', '-V', type=int, default=1)
@@ -399,23 +449,18 @@ def get_rlzs(num_vs30s, num_imts, num_locations, num_rlzs):
     imts = ALL_IMT_VALS[:num_imts]
     # aggs = ALL_AGG_VALS[:num_aggs]
     rlzs = [n for n in range(6)][:num_rlzs]
+    # locs = [loc.code for loc in ALL_GRID_LOCS[:num_locations]]
     locs = [loc.code for loc in ALL_CITY_LOCS[:num_locations]]
 
     toshi_ids = ['T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTA2ODMzNg==']
     # toshi_ids = ['T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTA2ODU2NQ==']
     count_cost_handler.reset()
-    results = list(
-        query.get_rlz_curves_v3(
-            locs,
-            vs30s,
-            rlzs,
-            toshi_ids,
-            imts,
-        )
-    )
+    results = list(query.get_rlz_curves_v3(locs, vs30s, rlzs, toshi_ids, imts, openquake_models.OpenquakeRealization))
     # pts_summary_data = pd.DataFrame.from_dict(columns_from_results(results))
 
-    click.echo(results[-1])
+    for m in results:
+        click.echo(f"m: {m}")
+
     click.echo("get_rlzs Query consumed: %s units" % count_cost_handler.consumed)
     click.echo("Query returned: %s items" % len(results))
 
@@ -446,7 +491,9 @@ def get_meta(num_vs30s):
     results = list(query_v3.get_hazard_metadata_v3(toshi_ids, vs30s))
     # pts_summary_data = pd.DataFrame.from_dict(columns_from_results(results))
 
-    click.echo(results[-1])
+    for m in results:
+        click.echo(f"locs: {m.locations_id} GT: {m.general_task_id} HId: {m.hazard_solution_id}")
+
     click.echo("get_rlzs Query consumed: %s units" % count_cost_handler.consumed)
     click.echo("Query returned: %s items" % len(results))
 

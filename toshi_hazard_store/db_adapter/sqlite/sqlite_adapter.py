@@ -89,6 +89,7 @@ class SqliteAdapter(PynamodbAdapterInterface):
         settings: OperationSettings = OperationSettings.default,
         add_version_condition: bool = False,
     ) -> dict[str, Any]:
+        log.debug('SqliteAdapter.save')
         return put_model(get_connection(type(self)), self)
 
     @classmethod
