@@ -10,7 +10,7 @@ from nzshm_common.location.location import LOCATIONS, location_by_id
 
 # Monkey-patch temporary
 import toshi_hazard_store.query.hazard_query
-from toshi_hazard_store import model, query, configure_adapter
+from toshi_hazard_store import configure_adapter, model, query
 from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
 
 # toshi_hazard_store.query.hazard_query.model = model
@@ -23,7 +23,8 @@ ALL_IMT_VALS = [e.value for e in model.IntensityMeasureTypeEnum]
 ALL_VS30_VALS = [e.value for e in model.VS30Enum][1:]  # drop the 0 value!
 ALL_CITY_LOCS = [CodedLocation(o['latitude'], o['longitude'], 0.001) for o in LOCATIONS]
 
-configure_adapter(adapter_model = SqliteAdapter)
+configure_adapter(adapter_model=SqliteAdapter)
+
 
 class PyanamodbConsumedHandler(logging.Handler):
     def __init__(self, level=0) -> None:

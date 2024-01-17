@@ -1,12 +1,12 @@
 import io
 import pickle
-import pytest
 
-from pynamodb.models import Model
 from pynamodb.attributes import UnicodeAttribute
+from pynamodb.models import Model
 
 from toshi_hazard_store.db_adapter import ensure_class_bases_begin_with
 from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
+
 
 class MyModel(Model):
     __metaclass__ = type
@@ -42,11 +42,7 @@ def test_pickle_pyanmodb_model():
 
 
 def test_pickle_rebased_model():
-    ensure_class_bases_begin_with(
-        namespace=globals(),
-        class_name=str('MyModel'),
-        base_class=SqliteAdapter
-    )
+    ensure_class_bases_begin_with(namespace=globals(), class_name=str('MyModel'), base_class=SqliteAdapter)
 
     obj = MyModel(my_hash_key='X', my_range_key='Y')
 
@@ -61,11 +57,7 @@ def test_pickle_rebased_model():
 
 def test_pickle_subclassed_model():
 
-    ensure_class_bases_begin_with(
-        namespace=globals(),
-        class_name=str('MySubclassedModel'),
-        base_class=SqliteAdapter
-    )
+    ensure_class_bases_begin_with(namespace=globals(), class_name=str('MySubclassedModel'), base_class=SqliteAdapter)
 
     obj = MySubclassedModel(my_hash_key='X', my_range_key='Y')
 
@@ -79,5 +71,3 @@ def test_pickle_subclassed_model():
 
     print(type(obj), obj)
     # assert 0
-
-

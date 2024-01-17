@@ -5,10 +5,10 @@ from dataclasses import dataclass
 
 import pandas as pd
 
-from toshi_hazard_store import model, configure_adapter
-from toshi_hazard_store.db_adapter import ensure_class_bases_begin_with
-from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
+from toshi_hazard_store import configure_adapter, model
 from toshi_hazard_store.config import NUM_BATCH_WORKERS, USE_SQLITE_ADAPTER
+from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
+from toshi_hazard_store.model import openquake_models
 from toshi_hazard_store.multi_batch import save_parallel
 from toshi_hazard_store.transform import parse_logic_tree_branches
 from toshi_hazard_store.utils import normalise_site_code
@@ -17,29 +17,7 @@ NUM_BATCH_WORKERS = 1 if USE_SQLITE_ADAPTER else NUM_BATCH_WORKERS
 BATCH_SIZE = 1000 if USE_SQLITE_ADAPTER else random.randint(15, 50)
 
 if USE_SQLITE_ADAPTER:
-    # configure_adapter(adapter_model = SqliteAdapter)
-
-    ensure_class_bases_begin_with(
-        namespace=model.__dict__,
-        class_name=str('ToshiOpenquakeMeta'),  # `str` type differs on Python 2 vs. 3.
-        base_class=SqliteAdapter,
-    )
-    ensure_class_bases_begin_with(
-        namespace=model.__dict__,
-        class_name=str('LocationIndexedModel'),
-        base_class=SqliteAdapter
-    )
-    ensure_class_bases_begin_with(
-            namespace=model.__dict__,
-            class_name=str('OpenquakeRealization'),  # `str` type differs on Python 2 vs. 3.
-            base_class=SqliteAdapter,
-    )
-    ensure_class_bases_begin_with(
-        namespace=model.__dict__,
-        class_name=str('HazardAggregation'),
-        base_class=SqliteAdapter,
-
-    )
+    configure_adapter(SqliteAdapter)
 
 
 @dataclass
@@ -47,7 +25,7 @@ class OpenquakeMeta:
     source_lt: pd.DataFrame
     gsim_lt: pd.DataFrame
     rlz_lt: pd.DataFrame
-    model: model.ToshiOpenquakeMeta
+    model: openquake_models.ToshiOpenquakeMeta
 
 
 def export_meta_v3(extractor, toshi_hazard_id, toshi_gt_id, locations_id, source_tags, source_ids):
@@ -67,7 +45,7 @@ def export_meta_v3(extractor, toshi_hazard_id, toshi_gt_id, locations_id, source
     if math.isnan(vs30):
         vs30 = 0
 
-    obj = model.ToshiOpenquakeMeta(
+    obj = openquake_models.ToshiOpenquakeMeta(
         partition_key="ToshiOpenquakeMeta",
         hazard_solution_id=toshi_hazard_id,
         general_task_id=toshi_gt_id,
@@ -118,7 +96,7 @@ def export_rlzs_v3(extractor, oqmeta: OpenquakeMeta, return_rlz=False):
                             vals=rlzs[rlz][i_site][i_imt].tolist(),
                         )
                     )
-                oq_realization = model.OpenquakeRealization(
+                oq_realization = openquake_models.OpenquakeRealization(
                     values=values,
                     rlz=i_rlz,
                     vs30=oqmeta.model.vs30,
@@ -128,16 +106,10 @@ def export_rlzs_v3(extractor, oqmeta: OpenquakeMeta, return_rlz=False):
                 )
                 if oqmeta.model.vs30 == 0:
                     oq_realization.site_vs30 = sites.loc[i_site, 'vs30']
-
-                print('1 >>>', type(oq_realization), oq_realization)
-
-                oq_realization.set_location(loc)
-
-                print('2 >>>', type(oq_realization), oq_realization)
-                yield oq_realization
+                yield oq_realization.set_location(loc)
 
     # used for testing
     if return_rlz:
         return list(generate_models())
 
-    save_parallel("", generate_models(), model.OpenquakeRealization, NUM_BATCH_WORKERS, BATCH_SIZE)
+    save_parallel("", generate_models(), openquake_models.OpenquakeRealization, NUM_BATCH_WORKERS, BATCH_SIZE)

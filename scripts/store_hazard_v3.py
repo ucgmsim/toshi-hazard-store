@@ -5,10 +5,8 @@ import datetime as dt
 import logging
 from pathlib import Path
 
-from toshi_hazard_store import model
+from toshi_hazard_store import configure_adapter, model
 from toshi_hazard_store.config import USE_SQLITE_ADAPTER  # noqa TODO
-
-from toshi_hazard_store import configure_adapter
 from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
 
 try:
@@ -20,7 +18,7 @@ except (ModuleNotFoundError, ImportError):
 
 
 if USE_SQLITE_ADAPTER:
-    configure_adapter(adapter_model = SqliteAdapter)
+    configure_adapter(adapter_model=SqliteAdapter)
 
 
 log = logging.getLogger()

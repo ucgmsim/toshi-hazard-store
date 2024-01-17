@@ -1,3 +1,8 @@
+from typing import Type
+
+from toshi_hazard_store.db_adapter import PynamodbAdapterInterface, ensure_class_bases_begin_with
+
+from . import location_indexed_model, openquake_models
 from .attributes import IMTValuesAttribute, LevelValuePairAttribute
 from .constraints import AggregationEnum, IntensityMeasureTypeEnum, ProbabilityEnum, VS30Enum
 from .disagg_models import DisaggAggregationExceedance, DisaggAggregationOccurence
@@ -11,10 +16,7 @@ from .openquake_models import VS30_KEYLEN, HazardAggregation, OpenquakeRealizati
 from .openquake_models import drop_tables as drop_openquake
 from .openquake_models import migrate as migrate_openquake
 from .openquake_models import vs30_nloc001_gt_rlz_index
-from . import openquake_models
-from . import location_indexed_model
 
-from toshi_hazard_store.db_adapter import PynamodbAdapterInterface, ensure_class_bases_begin_with
 # from .openquake_models import tables as oqv3_tables
 # from .openquake_v2_model import
 
@@ -33,21 +35,19 @@ def drop_tables():
     drop_disagg()
 
 
-def configure_adapter(adapter_model: PynamodbAdapterInterface):
+def configure_adapter(adapter_model: Type[PynamodbAdapterInterface]):
     ensure_class_bases_begin_with(
         namespace=openquake_models.__dict__,
         class_name=str('ToshiOpenquakeMeta'),  # `str` type differs on Python 2 vs. 3.
         base_class=adapter_model,
     )
     ensure_class_bases_begin_with(
-        namespace=location_indexed_model.__dict__,
-        class_name=str('LocationIndexedModel'),
-        base_class=adapter_model
+        namespace=location_indexed_model.__dict__, class_name=str('LocationIndexedModel'), base_class=adapter_model
     )
     ensure_class_bases_begin_with(
-            namespace=openquake_models.__dict__,
-            class_name=str('OpenquakeRealization'),  # `str` type differs on Python 2 vs. 3.
-            base_class=adapter_model,
+        namespace=openquake_models.__dict__,
+        class_name=str('OpenquakeRealization'),  # `str` type differs on Python 2 vs. 3.
+        base_class=adapter_model,
     )
     ensure_class_bases_begin_with(
         namespace=openquake_models.__dict__,

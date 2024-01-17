@@ -49,15 +49,6 @@ class TestGetHazardCurvesCached(unittest.TestCase):
     @patch("toshi_hazard_store.model.caching.cache_store.DEPLOYMENT_STAGE", "MOCK")
     @patch("toshi_hazard_store.model.caching.cache_store.LOCAL_CACHE_FOLDER", str(folder.name))
     def setUp(self):
-        ensure_class_bases_begin_with(
-            namespace=model.__dict__, class_name=str('LocationIndexedModel'), base_class=Model
-        )
-        ensure_class_bases_begin_with(
-            namespace=model.__dict__,
-            class_name=str('HazardAggregation'),  # `str` type differs on Python 2 vs. 3.
-            base_class=model.LocationIndexedModel,
-        )
-
         model.migrate()
         assert pathlib.Path(folder.name).exists()
         with model.HazardAggregation.batch_write() as batch:

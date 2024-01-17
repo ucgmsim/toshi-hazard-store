@@ -1,20 +1,9 @@
 import io
 import pickle
-import pytest
 
-from toshi_hazard_store.model import openquake_models
-from toshi_hazard_store.model import location_indexed_model
 from toshi_hazard_store.db_adapter import ensure_class_bases_begin_with
 from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
-
-import sys
-import importlib
-
-@pytest.fixture(scope="function", autouse=True)
-def force_model_reload():
-    importlib.reload(sys.modules['toshi_hazard_store.model'])
-    from toshi_hazard_store.model import openquake_models
-    from toshi_hazard_store.model import location_indexed_model
+from toshi_hazard_store.model import location_indexed_model, openquake_models
 
 
 def test_pickle_pyanmodb_rlz_model(get_one_rlz):
@@ -33,14 +22,10 @@ def test_pickle_pyanmodb_rlz_model(get_one_rlz):
     assert new_obj.values[0].vals[0] == obj.values[0].vals[0]
 
 
-def test_pickle_rebased_rlz_model_A(get_one_rlz):
-    ensure_class_bases_begin_with(
-            namespace=openquake_models.__dict__,
-            class_name=str('OpenquakeRealization'),  # `str` type differs on Python 2 vs. 3.
-            base_class=SqliteAdapter,
-    )
+def test_pickle_adapted_rlz_model(adapted_rlz_model, get_one_rlz):
+    """the conftest fixture is picklable"""
 
-    obj = get_one_rlz(openquake_models.OpenquakeRealization)
+    obj = get_one_rlz()
 
     print("type(openquake_models.OpenquakeRealization) : ", type(openquake_models.OpenquakeRealization))
 
@@ -55,8 +40,8 @@ def test_pickle_rebased_rlz_model_A(get_one_rlz):
     assert new_obj.values[0].vals[0] == obj.values[0].vals[0]
 
 
-@pytest.mark.skip('HUH')
-def test_pickle_rebased_rlz_model_B(get_one_rlz):
+def test_pickle_rebased_rlz_model(get_one_rlz):
+    """the rebased model is picklable"""
     ensure_class_bases_begin_with(
         namespace=location_indexed_model.__dict__, class_name=str('LocationIndexedModel'), base_class=SqliteAdapter
     )
@@ -64,7 +49,7 @@ def test_pickle_rebased_rlz_model_B(get_one_rlz):
         namespace=openquake_models.__dict__,
         class_name=str('OpenquakeRealization'),  # `str` type differs on Python 2 vs. 3.
         base_class=location_indexed_model.__dict__['LocationIndexedModel'],
-        )
+    )
 
     obj = get_one_rlz(openquake_models.OpenquakeRealization)
 

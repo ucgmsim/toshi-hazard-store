@@ -1,33 +1,12 @@
 import multiprocessing
 
-
-from toshi_hazard_store import model, configure_adapter
-from toshi_hazard_store.db_adapter import ensure_class_bases_begin_with
-from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
+from toshi_hazard_store import configure_adapter
 from toshi_hazard_store.config import USE_SQLITE_ADAPTER  # noqa TODO
+from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
+from toshi_hazard_store.model import openquake_models
 
 if USE_SQLITE_ADAPTER:
-    ensure_class_bases_begin_with(
-        namespace=model.__dict__,
-        class_name=str('ToshiOpenquakeMeta'),  # `str` type differs on Python 2 vs. 3.
-        base_class=SqliteAdapter,
-    )
-    ensure_class_bases_begin_with(
-        namespace=model.__dict__,
-        class_name=str('LocationIndexedModel'),
-        base_class=SqliteAdapter
-    )
-    ensure_class_bases_begin_with(
-            namespace=model.__dict__,
-            class_name=str('OpenquakeRealization'),  # `str` type differs on Python 2 vs. 3.
-            base_class=SqliteAdapter,
-    )
-    ensure_class_bases_begin_with(
-        namespace=model.__dict__,
-        class_name=str('HazardAggregation'),
-        base_class=SqliteAdapter,
-
-    )
+    configure_adapter(SqliteAdapter)
 
 
 class DynamoBatchWorker(multiprocessing.Process):
@@ -77,8 +56,8 @@ class DynamoBatchWorker(multiprocessing.Process):
         #     query.batch_save_hcurve_stats_v2(self.toshi_id, models=models)
         # elif self.model == model.ToshiOpenquakeHazardCurveRlzsV2:
         #     query.batch_save_hcurve_rlzs_v2(self.toshi_id, models=models)
-        if self.model == model.OpenquakeRealization:
-            with model.OpenquakeRealization.batch_write() as batch:
+        if self.model == openquake_models.OpenquakeRealization:
+            with openquake_models.OpenquakeRealization.batch_write() as batch:
                 for item in models:
                     batch.save(item)
         else:

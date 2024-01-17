@@ -90,9 +90,9 @@ class TestOpenquakeRealizationQuery:
     def test_save_duplicate_raises(self, adapted_rlz_model, get_one_rlz):
 
         with pytest.raises((pynamodb.exceptions.PutError, sqlite3.IntegrityError)) as excinfo:
-            rlza = get_one_rlz()
+            rlza = get_one_rlz(adapted_rlz_model.OpenquakeRealization)
             rlza.save()
-            rlzb = get_one_rlz()
+            rlzb = get_one_rlz(adapted_rlz_model.OpenquakeRealization)
             rlzb.save()
         print(excinfo)
         # assert 0

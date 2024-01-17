@@ -1,6 +1,8 @@
+import importlib
 import itertools
 import json
 import os
+import sys
 from unittest import mock
 
 import pytest
@@ -14,14 +16,14 @@ from pynamodb.models import Model
 from toshi_hazard_store import model
 from toshi_hazard_store.db_adapter import ensure_class_bases_begin_with
 from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
+from toshi_hazard_store.model import openquake_models
 
-import sys
-import importlib
 
 @pytest.fixture(scope="function", autouse=True)
 def force_model_reload():
-    importlib.reload(sys.modules['toshi_hazard_store'])
-    from toshi_hazard_store import model
+    importlib.reload(sys.modules['toshi_hazard_store.model'])
+    from toshi_hazard_store.model import openquake_models  # noqa
+
 
 # ref https://docs.pytest.org/en/7.3.x/example/parametrize.html#deferring-the-setup-of-parametrized-resources
 def pytest_generate_tests(metafunc):
@@ -51,27 +53,27 @@ def setenvvar(tmp_path):
 def adapted_hazagg_model(request, tmp_path):
     def set_adapter(adapter):
         ensure_class_bases_begin_with(
-            namespace=model.__dict__, class_name=str('LocationIndexedModel'), base_class=adapter
+            namespace=openquake_models.__dict__, class_name=str('LocationIndexedModel'), base_class=adapter
         )
         ensure_class_bases_begin_with(
-            namespace=model.__dict__,
+            namespace=openquake_models.__dict__,
             class_name=str('HazardAggregation'),  # `str` type differs on Python 2 vs. 3.
-            base_class=model.LocationIndexedModel,
+            base_class=openquake_models.LocationIndexedModel,
         )
 
     if request.param == 'pynamodb':
         with mock_dynamodb():
             set_adapter(Model)
-            model.HazardAggregation.create_table(wait=True)
-            yield model
-            model.HazardAggregation.delete_table()
+            openquake_models.HazardAggregation.create_table(wait=True)
+            yield openquake_models
+            openquake_models.HazardAggregation.delete_table()
     elif request.param == 'sqlite':
         envvars = {"THS_SQLITE_FOLDER": str(tmp_path), "THS_USE_SQLITE_ADAPTER": "TRUE"}
         with mock.patch.dict(os.environ, envvars, clear=True):
             set_adapter(SqliteAdapter)
-            model.HazardAggregation.create_table(wait=True)
-            yield model
-            model.HazardAggregation.delete_table()
+            openquake_models.HazardAggregation.create_table(wait=True)
+            yield openquake_models
+            openquake_models.HazardAggregation.delete_table()
     else:
         raise ValueError("invalid internal test config")
 
@@ -80,34 +82,34 @@ def adapted_hazagg_model(request, tmp_path):
 def adapted_rlz_model(request, tmp_path):
     def set_rlz_adapter(adapter):
         ensure_class_bases_begin_with(
-            namespace=model.__dict__, class_name=str('LocationIndexedModel'), base_class=adapter
+            namespace=openquake_models.__dict__, class_name=str('LocationIndexedModel'), base_class=adapter
         )
         ensure_class_bases_begin_with(
-            namespace=model.__dict__,
+            namespace=openquake_models.__dict__,
             class_name=str('OpenquakeRealization'),  # `str` type differs on Python 2 vs. 3.
-            base_class=model.LocationIndexedModel,
+            base_class=openquake_models.LocationIndexedModel,
         )
 
     if request.param == 'pynamodb':
         with mock_dynamodb():
             set_rlz_adapter(Model)
-            model.OpenquakeRealization.create_table(wait=True)
-            yield model
-            model.OpenquakeRealization.delete_table()
+            openquake_models.OpenquakeRealization.create_table(wait=True)
+            yield openquake_models
+            openquake_models.OpenquakeRealization.delete_table()
     elif request.param == 'sqlite':
         envvars = {"THS_SQLITE_FOLDER": str(tmp_path), "THS_USE_SQLITE_ADAPTER": "TRUE"}
         with mock.patch.dict(os.environ, envvars, clear=True):
             set_rlz_adapter(SqliteAdapter)
-            model.OpenquakeRealization.create_table(wait=True)
-            yield model
-            model.OpenquakeRealization.delete_table()
+            openquake_models.OpenquakeRealization.create_table(wait=True)
+            yield openquake_models
+            openquake_models.OpenquakeRealization.delete_table()
     else:
         raise ValueError("invalid internal test config")
 
 
 @pytest.fixture()
 def get_one_meta():
-    yield lambda: model.ToshiOpenquakeMeta(
+    yield lambda cls=openquake_models.ToshiOpenquakeMeta: cls(
         partition_key="ToshiOpenquakeMeta",
         hazard_solution_id="AMCDEF",
         general_task_id="GBBSGG",
@@ -136,8 +138,8 @@ def get_one_rlz():
         imtvs.append(model.IMTValuesAttribute(imt="PGA", lvls=levels, vals=values))
 
     location = CodedLocation(lat=-41.3, lon=174.78, resolution=0.001)
-    yield lambda cls = model.OpenquakeRealization: cls(
-    # yield lambda: model.OpenquakeRealization(
+    yield lambda cls=openquake_models.OpenquakeRealization: cls(
+        # yield lambda: model.OpenquakeRealization(
         values=imtvs,
         rlz=10,
         vs30=450,
@@ -151,7 +153,7 @@ def get_one_rlz():
 def get_one_hazagg():
     lvps = list(map(lambda x: model.LevelValuePairAttribute(lvl=x / 1e3, val=(x / 1e6)), range(1, 51)))
     location = CodedLocation(lat=-41.3, lon=174.78, resolution=0.001)
-    yield lambda: model.HazardAggregation(
+    yield lambda: openquake_models.HazardAggregation(
         values=lvps, agg=model.AggregationEnum.MEAN.value, imt="PGA", vs30=450, hazard_model_id="HAZ_MODEL_ONE"
     ).set_location(location)
 
