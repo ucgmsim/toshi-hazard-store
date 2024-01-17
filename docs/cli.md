@@ -3,9 +3,9 @@
 This page provides documentation for our command line tools.
 
 ::: mkdocs-click
-    :module: scripts.ths_v2
+    :module: scripts.ths_testing
     :command: cli
-    :prog_name: ths_v2
+    :prog_name: ths_testing
 
 ::: mkdocs-click
     :module: scripts.ths_cache
