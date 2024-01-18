@@ -127,7 +127,7 @@ def get_rlzs(num_vs30s, num_imts, num_locations, num_rlzs):
     """Run Realizations query typical of Toshi Hazard Post"""
 
     # vs30s = ALL_VS30_VALS[:num_vs30s]
-    vs30s = [400]
+    vs30s = [150]
     imts = ALL_IMT_VALS[:num_imts]
     rlzs = [n for n in range(6)][:num_rlzs]
 
@@ -137,9 +137,9 @@ def get_rlzs(num_vs30s, num_imts, num_locations, num_rlzs):
         CodedLocation(o['latitude'], o['longitude'], 0.001).code,
     ]
 
-    # toshi_ids = ['T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTA2ODMzNg==']
+    toshi_ids = ['T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTA2ODMzNg==']
     # toshi_ids = ['T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTA2ODU2NQ==']
-    toshi_ids = ['T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODcwMQ==']
+    # toshi_ids = ['T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODcwMQ==']
     count_cost_handler.reset()
     results = list(
         query.get_rlz_curves_v3(

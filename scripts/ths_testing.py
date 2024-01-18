@@ -1,4 +1,7 @@
-"""Console script for testing or pre-poulating toshi_hazard_store local cache."""
+"""Console script for testing or pre-populating toshi_hazard_store local cache.
+
+for text banners we use https://patorjk.com/software/taag/#p=display&v=0&f=Standard&t=main.
+"""
 # noqa
 import logging
 import sys
@@ -79,9 +82,11 @@ def columns_from_results(results):
 
 @click.group()
 def cli():
-    """toshi_hazard_store cache utility - check, load, test."""
-    pass
-    # cache_info()
+    """Console script for testing toshi_hazard_store interactively. Mainly useful as a demonstration of how to
+    query the store for hazard data, or to do some local analysis using smaller models.
+
+    Can be used with the cloud NSHM hazard store, or locally using sqlite.
+    """
 
 
 @cli.command()
@@ -106,7 +111,9 @@ def cache_info():
     click.echo(ALL_CITY_LOCS)
 
 
-@cli.command()
+cli.command()
+
+
 @click.option('--num_locations', '-L', type=int, default=1)
 @click.option('--num_imts', '-I', type=int, default=1)
 @click.option('--num_vs30s', '-V', type=int, default=1)

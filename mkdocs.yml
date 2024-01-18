@@ -6,14 +6,19 @@ repo_name: GNS-Science/toshi-hazard-store
 nav:
   - Home: index.md
   - Installation: installation.md
-  - Usage: usage.md
-  - SQLite option: sqlite_adapter_usage.md
+  - Cloud configuration: usage.md
+  - Local configuration: sqlite_adapter_usage.md
   - CLI tools: cli.md
-  - Code Reference:
-    - Query API:
+  - Query API:
       - Hazard: hazard_query_api.md
       - Gridded Hazard: gridded_hazard_query_api.md
-      - Disaggregation: hazard_disagg_query_api.md
+      - Hazard Disaggregation: hazard_disagg_query_api.md
+  - Database Models:
+      - Hazard: domain_model/openquake_models.md
+      - Gridded Hazard: domain_model/gridded_hazard_models.md
+      - Hazard Disaggregation: domain_model/disaggregation_models.md
+      - PROPOSED:
+        - Hazard: domain_model/proposed_hazard_models.md
   - Contributing: contributing.md
   - Changelog: changelog.md
 theme:
@@ -43,7 +48,6 @@ markdown_extensions:
       generic: true
   - pymdownx.highlight:
       linenums: false
-  - pymdownx.superfences
   - pymdownx.inlinehilite
   - pymdownx.details
   - admonition
@@ -52,6 +56,12 @@ markdown_extensions:
       permalink: true
       slugify: !!python/name:pymdownx.slugs.uslugify
   - meta
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
 plugins:
   - include-markdown
   - search:

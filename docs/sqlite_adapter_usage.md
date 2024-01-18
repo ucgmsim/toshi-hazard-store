@@ -1,5 +1,4 @@
-
-Users may choose to store data locally instead of the default AWS DynamoDB store. Caveats:
+Users may choose to store data locally instead of the default cloud AWS DynamoDB store. Caveats:
 
  - The complete NSHM_v1.0.4 dataset will likely prove too large for this option.
  - this is single-user only
@@ -9,8 +8,10 @@ Users may choose to store data locally instead of the default AWS DynamoDB store
 ## Environment configuration
 
 ```
-SQLITE_ADAPTER_FOLDER = os.getenv('THS_SQLITE_FOLDER', './LOCALSTORAGE')
-USE_SQLITE_ADAPTER = boolean_env('THS_USE_SQLITE_ADAPTER')
+NZSHM22_HAZARD_STORE_STAGE={XXX} # e.g. LOCAL - this can be used to differentiate local datasets)
+SQLITE_ADAPTER_FOLDER={YYY}      # valid path to a local storage folder}
+USE_SQLITE_ADAPTER=TRUE
+
 ```
 ## CLI for testing
 
@@ -53,7 +54,7 @@ sys     0m0.957s
 
 **NB:** It is also possible to run a local instance of DyanmoDB using docker, and it should work as above if the environment is configured crrectly (TODO: write this up). This is not recommended except for testing.
 
-#### Hazard Solution metadata (Sqlite adapter)
+### Hazard Solution metadata (Sqlite adapter)
 
 using the locally populated datastore ....
 

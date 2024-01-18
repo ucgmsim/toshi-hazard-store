@@ -11,3 +11,5 @@ This page provides documentation for our command line tools.
     :module: scripts.ths_cache
     :command: cli
     :prog_name: ths_cache
+
+    This module maybe deprecated
