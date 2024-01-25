@@ -21,7 +21,7 @@ class TestQueryRlzsVs30:
                 rlzs=many_rlz_args['rlzs'],
                 tids=[many_rlz_args['TOSHI_ID']],
                 imts=many_rlz_args['imts'],
-                model=adapted_rlz_model,
+                # model=adapted_rlz_model,
             )
         )
         print(res)
@@ -43,7 +43,7 @@ class TestQueryRlzsVs30:
                 rlzs=many_rlz_args['rlzs'],
                 tids=[many_rlz_args['TOSHI_ID']],
                 imts=many_rlz_args['imts'],
-                model=adapted_rlz_model,
+                # model=adapted_rlz_model,
             )
         )
         assert len(res) == len(many_rlz_args['rlzs']) * len(vs30s) * len(many_rlz_args['locs'])

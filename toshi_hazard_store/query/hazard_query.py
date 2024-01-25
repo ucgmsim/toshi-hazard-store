@@ -1,4 +1,13 @@
-"""Queries for retriving openquake hazard objects."""
+"""Helpers for querying Hazard Realiazations and related .
+
+Main methods:
+
+ - **get_hazard_metadata_v3()**  returns iterator of matching metatdata records
+ - **get_rlz_curves_v3()**  returns iterator of matching realzations
+ - **get_hazard_curves()** returns iterator of curves (i.e. aggregations of many realizations)
+
+
+for retrieving openquake hazard objects efficiently."""
 import decimal
 import itertools
 import logging
@@ -6,18 +15,13 @@ from typing import Iterable, Iterator, Union
 
 from nzshm_common.location.code_location import CodedLocation
 
-import toshi_hazard_store.model as model
 from toshi_hazard_store.model import openquake_models
+from toshi_hazard_store.model.openquake_models import HazardAggregation, OpenquakeRealization, ToshiOpenquakeMeta
 
 log = logging.getLogger(__name__)
-# log.setLevel(logging.DEBUG)
-
-mOQM = model.ToshiOpenquakeMeta
-# mRLZ = model.OpenquakeRealization
-# mHAG = model.HazardAggregation
 
 
-def get_hazard_metadata_v3(haz_sol_ids: Iterable[str], vs30_vals: Iterable[int]) -> Iterator[mOQM]:
+def get_hazard_metadata_v3(haz_sol_ids: Iterable[str], vs30_vals: Iterable[int]) -> Iterator[ToshiOpenquakeMeta]:
     """Query the ToshiOpenquakeMeta table
 
     Parameters:
@@ -25,9 +29,10 @@ def get_hazard_metadata_v3(haz_sol_ids: Iterable[str], vs30_vals: Iterable[int])
         vs30_vals: vs30 values eg [400, 500]
 
     Yields:
-        ToshiOpenquakeMeta objects
+        an iterator of the matching ToshiOpenquakeMeta objects
     """
     mOQM = openquake_models.__dict__['ToshiOpenquakeMeta']
+
     total_hits = 0
     for (tid, vs30) in itertools.product(haz_sol_ids, vs30_vals):
         sort_key_val = f"{tid}:{vs30}"
@@ -64,8 +69,8 @@ def get_rlz_curves_v3(
     rlzs: Iterable[int],
     tids: Iterable[str],
     imts: Iterable[str],
-    model=None,
-) -> Iterator[model.OpenquakeRealization]:
+    # model=None,
+) -> Iterator[OpenquakeRealization]:
     """Query the OpenquakeRealization table.
 
     Parameters:
@@ -79,6 +84,7 @@ def get_rlz_curves_v3(
         HazardRealization models
     """
 
+    # table classes may be rebased, this makes sure we always get the current class definition.
     mRLZ = openquake_models.__dict__['OpenquakeRealization']
 
     def build_condition_expr(loc, vs30, rlz, tid):
@@ -141,26 +147,35 @@ def get_hazard_curves(
     hazard_model_ids: Iterable[str],
     imts: Iterable[str],
     aggs: Union[Iterable[str], None] = None,
-    local_cache: bool = False,
-    model=model,
-) -> Iterator[model.HazardAggregation]:
-    """Query the HazardAggregation table.
+) -> Iterator[HazardAggregation]:
+    """Query the HazardAggregation table for matching hazard curves.
+
+    Examples:
+        >>>  get_hazard_curves(
+                locs=['-46.430~168.360'],
+                vs30s=[250, 350, 500],
+                hazard_model_ids=['NSHM_V1.0.4'],
+                imts=['PGA', 'SA(0.5)']
+            )
+        >>> <generator object get_hazard_curves at 0x7f115d67be60>
 
     Parameters:
-        locs: coded location codes e.g. ['-46.430~168.360']
+        locs: coded location strings e.g. ['-46.430~168.360']
         vs30s: vs30 values eg [400, 500]
         hazard_model_ids:  hazard model ids e.. ['NSHM_V1.0.4']
-        imts: imt (IntensityMeasureType) values e.g ['PGA', 'SA(0.5)']
-        aggs: aggregation values e.g. ['mean']
+        imts: IntensityMeasureType values e.g ['PGA', 'SA(0.5)']
+        aggs: aggregation values e.g. ['mean', '0.9']
 
     Yields:
-        HazardAggregation models
+        an iterator of the matching HazardAggregation models
     """
     aggs = aggs or ["mean", "0.1"]
 
     log.info("get_hazard_curves( %s" % locs)
 
-    mHAG = model.HazardAggregation
+    # table classes may be rebased, this makes sure we always get the current class definition.
+    mHAG = openquake_models.__dict__['HazardAggregation']
+    log.debug(f"mHAG.__bases__ : {mHAG.__bases__}")
 
     def build_condition_expr(loc, vs30, hid, agg):
         """Build the filter condition expression."""

@@ -43,7 +43,7 @@ class TestQueryHazardAggregationV3_VS30:
                 vs30s=vs30s,
                 hazard_model_ids=[many_hazagg_args['HAZARD_MODEL_ID']],
                 imts=many_hazagg_args['imts'],
-                model=adapted_hazagg_model,
+                # model=adapted_hazagg_model,
             )
         )
         print(res)

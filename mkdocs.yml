@@ -67,8 +67,8 @@ plugins:
   - search:
       lang: en
   - mkdocstrings:
-      # watch:
-      #   - toshi_hazard_store
+      watch:
+        - toshi_hazard_store
       handlers:
         python:
           options:
