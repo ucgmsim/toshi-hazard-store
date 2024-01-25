@@ -69,6 +69,7 @@ plugins:
   - mkdocstrings:
       watch:
         - toshi_hazard_store
+        - scripts
       handlers:
         python:
           options:

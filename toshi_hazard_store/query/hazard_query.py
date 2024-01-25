@@ -1,13 +1,14 @@
-"""Helpers for querying Hazard Realiazations and related .
+"""Helpers for querying Hazard Realizations and related models.
 
-Main methods:
+Provides efficient queries for the models: **HazardAggregation, OpenquakeRealization & ToshiOpenquakeMeta*.*
 
- - **get_hazard_metadata_v3()**  returns iterator of matching metatdata records
- - **get_rlz_curves_v3()**  returns iterator of matching realzations
- - **get_hazard_curves()** returns iterator of curves (i.e. aggregations of many realizations)
+Functions:
 
+ - **get_hazard_metadata_v3()**  - returns iterator of matching ToshiOpenquakeMeta objects.
+ - **get_rlz_curves_v3()**   - returns iterator of matching OpenquakeRealization objects.
+ - **get_hazard_curves()**  - returns iterator of HazardAggregation objects.
 
-for retrieving openquake hazard objects efficiently."""
+"""
 import decimal
 import itertools
 import logging
@@ -19,6 +20,98 @@ from toshi_hazard_store.model import openquake_models
 from toshi_hazard_store.model.openquake_models import HazardAggregation, OpenquakeRealization, ToshiOpenquakeMeta
 
 log = logging.getLogger(__name__)
+
+
+def get_hazard_curves(
+    locs: Iterable[str],
+    vs30s: Iterable[int],
+    hazard_model_ids: Iterable[str],
+    imts: Iterable[str],
+    aggs: Union[Iterable[str], None] = None,
+) -> Iterator[HazardAggregation]:
+    """Query the HazardAggregation table for matching hazard curves.
+
+    Examples:
+        >>>  get_hazard_curves(
+                locs=['-46.430~168.360'],
+                vs30s=[250, 350, 500],
+                hazard_model_ids=['NSHM_V1.0.4'],
+                imts=['PGA', 'SA(0.5)']
+            )
+        >>> <generator object get_hazard_curves at 0x7f115d67be60>
+
+    Parameters:
+        locs: coded location strings e.g. ['-46.430~168.360']
+        vs30s: vs30 values eg [400, 500]
+        hazard_model_ids:  hazard model ids e.. ['NSHM_V1.0.4']
+        imts: IntensityMeasureType values e.g ['PGA', 'SA(0.5)']
+        aggs: aggregation values e.g. ['mean', '0.9']
+
+    Yields:
+        an iterator of the matching HazardAggregation models.
+    """
+    aggs = aggs or ["mean", "0.1"]
+
+    log.info("get_hazard_curves( %s" % locs)
+
+    # table classes may be rebased, this makes sure we always get the current class definition.
+    mHAG = openquake_models.__dict__['HazardAggregation']
+    log.debug(f"mHAG.__bases__ : {mHAG.__bases__}")
+
+    def build_condition_expr(loc, vs30, hid, agg):
+        """Build the filter condition expression."""
+        grid_res = decimal.Decimal(str(loc.split('~')[0]))
+        places = grid_res.as_tuple().exponent
+
+        res = float(decimal.Decimal(10) ** places)
+        loc = downsample_code(loc, res)
+
+        expr = None
+
+        if places == -1:
+            expr = mHAG.nloc_1 == loc
+        elif places == -2:
+            expr = mHAG.nloc_01 == loc
+        elif places == -3:
+            expr = mHAG.nloc_001 == loc
+        else:
+            assert 0
+
+        return expr & (mHAG.vs30 == vs30) & (mHAG.imt == imt) & (mHAG.agg == agg) & (mHAG.hazard_model_id == hid)
+
+    # TODO: use https://pypi.org/project/InPynamoDB/
+    total_hits = 0
+    for hash_location_code in get_hashes(locs):
+        partition_hits = 0
+        log.info('hash_key %s' % hash_location_code)
+        hash_locs = list(filter(lambda loc: downsample_code(loc, 0.1) == hash_location_code, locs))
+
+        for (hloc, hid, vs30, imt, agg) in itertools.product(hash_locs, hazard_model_ids, vs30s, imts, aggs):
+
+            sort_key_first_val = f"{hloc}:{vs30}:{imt}:{agg}:{hid}"
+            condition_expr = build_condition_expr(hloc, vs30, hid, agg)
+
+            log.debug('sort_key_first_val: %s' % sort_key_first_val)
+            log.debug('condition_expr: %s' % condition_expr)
+
+            results = mHAG.query(
+                hash_key=hash_location_code,
+                range_key_condition=mHAG.sort_key == sort_key_first_val,
+                filter_condition=condition_expr,
+                # limit=10,
+                # rate_limit=None,
+                # last_evaluated_key=None
+            )
+
+            log.debug("get_hazard_rlz_curves_v3: results %s" % results)
+            for hit in results:
+                partition_hits += 1
+                yield (hit)
+
+        total_hits += partition_hits
+        log.info('hash_key %s has %s hits' % (hash_location_code, partition_hits))
+
+    log.info('Total %s hits' % total_hits)
 
 
 def get_hazard_metadata_v3(haz_sol_ids: Iterable[str], vs30_vals: Iterable[int]) -> Iterator[ToshiOpenquakeMeta]:
@@ -137,97 +230,5 @@ def get_rlz_curves_v3(
 
         total_hits += partition_hits
         log.debug('hash_key %s has %s hits' % (hash_location_code, partition_hits))
-
-    log.info('Total %s hits' % total_hits)
-
-
-def get_hazard_curves(
-    locs: Iterable[str],
-    vs30s: Iterable[int],
-    hazard_model_ids: Iterable[str],
-    imts: Iterable[str],
-    aggs: Union[Iterable[str], None] = None,
-) -> Iterator[HazardAggregation]:
-    """Query the HazardAggregation table for matching hazard curves.
-
-    Examples:
-        >>>  get_hazard_curves(
-                locs=['-46.430~168.360'],
-                vs30s=[250, 350, 500],
-                hazard_model_ids=['NSHM_V1.0.4'],
-                imts=['PGA', 'SA(0.5)']
-            )
-        >>> <generator object get_hazard_curves at 0x7f115d67be60>
-
-    Parameters:
-        locs: coded location strings e.g. ['-46.430~168.360']
-        vs30s: vs30 values eg [400, 500]
-        hazard_model_ids:  hazard model ids e.. ['NSHM_V1.0.4']
-        imts: IntensityMeasureType values e.g ['PGA', 'SA(0.5)']
-        aggs: aggregation values e.g. ['mean', '0.9']
-
-    Yields:
-        an iterator of the matching HazardAggregation models
-    """
-    aggs = aggs or ["mean", "0.1"]
-
-    log.info("get_hazard_curves( %s" % locs)
-
-    # table classes may be rebased, this makes sure we always get the current class definition.
-    mHAG = openquake_models.__dict__['HazardAggregation']
-    log.debug(f"mHAG.__bases__ : {mHAG.__bases__}")
-
-    def build_condition_expr(loc, vs30, hid, agg):
-        """Build the filter condition expression."""
-        grid_res = decimal.Decimal(str(loc.split('~')[0]))
-        places = grid_res.as_tuple().exponent
-
-        res = float(decimal.Decimal(10) ** places)
-        loc = downsample_code(loc, res)
-
-        expr = None
-
-        if places == -1:
-            expr = mHAG.nloc_1 == loc
-        elif places == -2:
-            expr = mHAG.nloc_01 == loc
-        elif places == -3:
-            expr = mHAG.nloc_001 == loc
-        else:
-            assert 0
-
-        return expr & (mHAG.vs30 == vs30) & (mHAG.imt == imt) & (mHAG.agg == agg) & (mHAG.hazard_model_id == hid)
-
-    # TODO: use https://pypi.org/project/InPynamoDB/
-    total_hits = 0
-    for hash_location_code in get_hashes(locs):
-        partition_hits = 0
-        log.info('hash_key %s' % hash_location_code)
-        hash_locs = list(filter(lambda loc: downsample_code(loc, 0.1) == hash_location_code, locs))
-
-        for (hloc, hid, vs30, imt, agg) in itertools.product(hash_locs, hazard_model_ids, vs30s, imts, aggs):
-
-            sort_key_first_val = f"{hloc}:{vs30}:{imt}:{agg}:{hid}"
-            condition_expr = build_condition_expr(hloc, vs30, hid, agg)
-
-            log.debug('sort_key_first_val: %s' % sort_key_first_val)
-            log.debug('condition_expr: %s' % condition_expr)
-
-            results = mHAG.query(
-                hash_key=hash_location_code,
-                range_key_condition=mHAG.sort_key == sort_key_first_val,
-                filter_condition=condition_expr,
-                # limit=10,
-                # rate_limit=None,
-                # last_evaluated_key=None
-            )
-
-            log.debug("get_hazard_rlz_curves_v3: results %s" % results)
-            for hit in results:
-                partition_hits += 1
-                yield (hit)
-
-        total_hits += partition_hits
-        log.info('hash_key %s has %s hits' % (hash_location_code, partition_hits))
 
     log.info('Total %s hits' % total_hits)

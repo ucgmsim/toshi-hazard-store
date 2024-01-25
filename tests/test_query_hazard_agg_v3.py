@@ -18,7 +18,6 @@ class TestQueryHazardAggregationV3:
                 vs30s=many_hazagg_args['vs30s'],
                 hazard_model_ids=[many_hazagg_args['HAZARD_MODEL_ID']],
                 imts=many_hazagg_args['imts'],
-                # model=adapted_hazagg_model,
             )
         )
         print(res)
@@ -36,7 +35,6 @@ class TestQueryHazardAggregationV3:
                 vs30s=many_hazagg_args['vs30s'],
                 hazard_model_ids=[many_hazagg_args['HAZARD_MODEL_ID'], 'FAKE_ID'],
                 imts=many_hazagg_args['imts'],
-                # model=adapted_hazagg_model,
             )
         )
         assert len(res) == len(many_hazagg_args['imts']) * len(many_hazagg_args['aggs']) * len(
@@ -54,7 +52,6 @@ class TestQueryHazardAggregationV3:
                 hazard_model_ids=[many_hazagg_args['HAZARD_MODEL_ID']],
                 imts=many_hazagg_args['imts'][:1],
                 aggs=['mean'],
-                # model=adapted_hazagg_model,
             )
         )
         print(res)

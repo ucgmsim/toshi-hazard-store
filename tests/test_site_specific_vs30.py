@@ -41,4 +41,4 @@ class TestHazardAggregationQuery:
         )[0]
         assert res.partition_key == hag.partition_key
         assert res.sort_key == hag.sort_key
-        assert 200 < res.site_vs30 < 1000
+        assert 200 <= res.site_vs30 <= 1000

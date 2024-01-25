@@ -85,7 +85,8 @@ def cli():
     """Console script for testing toshi_hazard_store interactively. Mainly useful as a demonstration of how to
     query the store for hazard data, or to do some local analysis using smaller models.
 
-    Can be used with the cloud NSHM hazard store, or locally using sqlite.
+    Can be used with the cloud NSHM hazard store, or locally using sqlite. See project documentation for
+    environment settings.
     """
 
 
