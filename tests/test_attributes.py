@@ -194,6 +194,7 @@ year_prob_mapping = {
     "_5_PCT_IN_50YRS": 1.0253e-03,
     "_2_PCT_IN_50YRS": 4.0397e-04,
     "_1_PCT_IN_50YRS": 2.0099e-04,
+    "_05_PCT_IN_50YRS": 1.0025e-04,
 }
 
 

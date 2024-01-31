@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.7.8] - 2023-01-31
+### Added
+ - 0.5% in 50 years PoE for disaggregations
+
 ## [0.7.7] - 2023-12-13
 ### Changed 
  - fix publication workflow
