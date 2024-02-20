@@ -40,8 +40,10 @@ pandas = "~2.0.3"
 numpy = "^1.26.4"
 nzshm-common = "^0.6.1"
 pynamodb-attributes = "^0.4.0"
-openquake-engine = {version = "^3.18.0", optional = true}
 pynamodb = "^5.5.1"
+openquake-engine = {version = "^3.18.0", optional = true}
+fiona = {version = "^1.9.5", optional = true}
+networkx = {version = "^3.2.1", optional = true}
 
 [tool.poetry.group.dev.dependencies]
 black  = { version = "^22.3"}
@@ -93,12 +95,12 @@ doc = [
     "mkdocs-autorefs"
     ]
 
-openquake = ["openquake-engine"]
+openquake = ["openquake-engine", "fiona", "networkx"]
 
 [tool.black]
 line-length = 120
 skip-string-normalization = true
-target-version = ['py38', 'py39']
+target-version = ['py310', 'py311']
 include = '\.pyi?$'
 exclude = '''
 /(
