@@ -1,5 +1,6 @@
 # Changelog
 
+<<<<<<< HEAD
 ## [0.8.0] - 2024-01-08
 ### Added
  - db_adapter architecture
@@ -8,6 +9,11 @@
  - more documentation
  - use tmp_path for new localstorage tests
 
+=======
+## [0.7.8] - 2023-01-31
+### Added
+ - 0.5% in 50 years PoE for disaggregations
+>>>>>>> origin/update-urllib3-dep
 
 ## [0.7.7] - 2023-12-13
 ### Changed 
