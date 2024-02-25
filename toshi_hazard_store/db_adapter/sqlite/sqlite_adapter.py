@@ -1,6 +1,7 @@
 """
 Implement db adapter for slqlite
 """
+
 import logging
 import pathlib
 import sqlite3

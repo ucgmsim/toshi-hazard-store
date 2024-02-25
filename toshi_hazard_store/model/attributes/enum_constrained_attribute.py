@@ -1,4 +1,5 @@
 """This module defines some custom enum attributes."""
+
 import logging
 from enum import Enum
 from typing import Any, Optional, Type, TypeVar, Union
@@ -28,7 +29,7 @@ class EnumConstrainedAttributeMixin:
         try:
             assert self.enum_type(value)
             return value
-        except (ValueError):
+        except ValueError:
             raise ValueError(f'value {value} must be a member of {self.enum_type}')
 
     def serialize(self, value: Any) -> str:
@@ -39,7 +40,7 @@ class EnumConstrainedAttributeMixin:
             # if not isinstance(value, self.value_type):
             #     raise ValueError(f'value {value} must be a member of {self.enum_type}')
             self.enum_type(value)
-        except (ValueError) as err:
+        except ValueError as err:
             raise err
         return str(value)
 

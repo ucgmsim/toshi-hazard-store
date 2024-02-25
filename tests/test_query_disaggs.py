@@ -21,7 +21,7 @@ probability = model.ProbabilityEnum._10_PCT_IN_50YRS
 
 
 def build_disagg_aggregation_models():
-    for (loc, vs30, imt, hazard_agg, disagg_agg) in itertools.product(locs[:5], vs30s, imts, hazard_aggs, disagg_aggs):
+    for loc, vs30, imt, hazard_agg, disagg_agg in itertools.product(locs[:5], vs30s, imts, hazard_aggs, disagg_aggs):
         yield model.DisaggAggregationExceedance.new_model(
             hazard_model_id=HAZARD_MODEL_ID,
             location=loc,

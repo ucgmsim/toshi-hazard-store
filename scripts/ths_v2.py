@@ -1,4 +1,5 @@
 """Console script for testing DBAdapter vs PyanamodbConsumedHandler"""
+
 # noqa
 import logging
 import sys

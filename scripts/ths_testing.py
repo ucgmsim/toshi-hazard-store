@@ -2,6 +2,7 @@
 
 for text banners we use https://patorjk.com/software/taag/#p=display&v=0&f=Standard&t=main.
 """
+
 # noqa
 import logging
 import sys

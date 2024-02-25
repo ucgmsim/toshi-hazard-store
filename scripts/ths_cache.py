@@ -1,4 +1,5 @@
 """Console script for testing or pre-poulating toshi_hazard_store local cache."""
+
 # noqa
 import logging
 import os

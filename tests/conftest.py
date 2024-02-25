@@ -189,7 +189,7 @@ def build_rlzs_v3_models(many_rlz_args, adapted_rlz_model):
                         vals=[x / 1e6 for x in range(1, n_lvls)],
                     )
                 )
-            for (loc, vs30) in itertools.product(many_rlz_args["locs"][:5], many_rlz_args["vs30s"]):
+            for loc, vs30 in itertools.product(many_rlz_args["locs"][:5], many_rlz_args["vs30s"]):
                 # yield model.OpenquakeRealization(loc=loc, rlz=rlz, values=imtvs, lat=lat, lon=lon)
                 yield model.OpenquakeRealization(
                     values=values,
@@ -220,7 +220,7 @@ def build_hazard_aggregation_models(many_hazagg_args, adapted_hazagg_model):
     def model_generator():
         n_lvls = 29
         lvps = list(map(lambda x: model.LevelValuePairAttribute(lvl=x / 1e3, val=(x / 1e6)), range(1, n_lvls)))
-        for (loc, vs30, agg) in itertools.product(
+        for loc, vs30, agg in itertools.product(
             many_hazagg_args['locs'][:5], many_hazagg_args['vs30s'], many_hazagg_args['aggs']
         ):
             for imt, val in enumerate(many_hazagg_args['imts']):

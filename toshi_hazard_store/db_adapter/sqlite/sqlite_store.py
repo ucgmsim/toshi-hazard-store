@@ -1,6 +1,7 @@
 """
 sqlite helpers to manage caching tables
 """
+
 import base64
 import json
 import logging
@@ -172,7 +173,7 @@ def put_models(
         log.debug("Last row id: %s" % cursor.lastrowid)
         # cursor.close()
         # conn.execute(_sql)
-    except (sqlite3.IntegrityError) as e:
+    except sqlite3.IntegrityError as e:
         msg = str(e)
         if 'UNIQUE constraint failed' in msg:
             log.info('attempt to insert a duplicate key failed: ')
@@ -212,7 +213,7 @@ def put_model(
         log.debug("Last row id: %s" % cursor.lastrowid)
         # cursor.close()
         # conn.execute(_sql)
-    except (sqlite3.IntegrityError) as e:
+    except sqlite3.IntegrityError as e:
         msg = str(e)
         if 'UNIQUE constraint failed' in msg:
             log.info('attempt to insert a duplicate key failed: ')

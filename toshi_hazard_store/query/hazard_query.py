@@ -9,6 +9,7 @@ Functions:
  - **get_hazard_curves()**  - returns iterator of HazardAggregation objects.
 
 """
+
 import decimal
 import itertools
 import logging
@@ -86,7 +87,7 @@ def get_hazard_curves(
         log.info('hash_key %s' % hash_location_code)
         hash_locs = list(filter(lambda loc: downsample_code(loc, 0.1) == hash_location_code, locs))
 
-        for (hloc, hid, vs30, imt, agg) in itertools.product(hash_locs, hazard_model_ids, vs30s, imts, aggs):
+        for hloc, hid, vs30, imt, agg in itertools.product(hash_locs, hazard_model_ids, vs30s, imts, aggs):
 
             sort_key_first_val = f"{hloc}:{vs30}:{imt}:{agg}:{hid}"
             condition_expr = build_condition_expr(hloc, vs30, hid, agg)
@@ -127,7 +128,7 @@ def get_hazard_metadata_v3(haz_sol_ids: Iterable[str], vs30_vals: Iterable[int])
     mOQM = openquake_models.__dict__['ToshiOpenquakeMeta']
 
     total_hits = 0
-    for (tid, vs30) in itertools.product(haz_sol_ids, vs30_vals):
+    for tid, vs30 in itertools.product(haz_sol_ids, vs30_vals):
         sort_key_val = f"{tid}:{vs30}"
         log.info('sort_key_val: %s' % sort_key_val)
 
@@ -207,7 +208,7 @@ def get_rlz_curves_v3(
         log.debug('hash_key %s' % hash_location_code)
         hash_locs = list(filter(lambda loc: downsample_code(loc, 0.1) == hash_location_code, locs))
 
-        for (hloc, tid, vs30, rlz) in itertools.product(hash_locs, tids, vs30s, rlzs):
+        for hloc, tid, vs30, rlz in itertools.product(hash_locs, tids, vs30s, rlzs):
 
             sort_key_first_val = f"{hloc}:{vs30}:{str(rlz).zfill(6)}:{tid}"
             condition_expr = build_condition_expr(hloc, vs30, rlz, tid)

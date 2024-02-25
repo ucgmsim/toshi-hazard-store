@@ -1,4 +1,5 @@
 """nzshm_common building some lists for aggregations."""
+
 from typing import Dict, List, Tuple
 
 from nzshm_common.grids.region_grid import load_grid

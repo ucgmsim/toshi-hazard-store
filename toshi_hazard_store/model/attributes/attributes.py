@@ -1,6 +1,5 @@
 """This module defines some custom attributes."""
 
-
 import json
 import pickle
 import zlib

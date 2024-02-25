@@ -9,6 +9,7 @@ For details of how this works
  - https://stackoverflow.com/a/76681565
 
 """
+
 from abc import ABC, ABCMeta, abstractmethod
 from typing import TYPE_CHECKING, Any, Dict, Iterable, Optional, Type, TypeVar
 
@@ -40,8 +41,7 @@ class PynamodbAdapterInterface(ABCModel):
 
     @classmethod
     @abstractmethod
-    def create_table(model_class: Type[_T], *args, **kwargs):
-        ...
+    def create_table(model_class: Type[_T], *args, **kwargs): ...
 
     @classmethod
     @abstractmethod

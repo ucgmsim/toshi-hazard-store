@@ -83,7 +83,7 @@ def get_gridded_hazard(
         return condition_expr
 
     total_hits = 0
-    for (hazard_model_id, grid_id, vs30, imt, agg, poe) in itertools.product(
+    for hazard_model_id, grid_id, vs30, imt, agg, poe in itertools.product(
         hazard_model_ids, location_grid_ids, vs30s, imts, aggs, poes
     ):
 

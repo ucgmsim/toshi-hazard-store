@@ -1,4 +1,5 @@
 """This module defines a custom enum attribute."""
+
 import logging
 from enum import Enum
 from typing import Any, Type, TypeVar
@@ -59,6 +60,6 @@ class EnumAttribute(Attribute[T]):
             try:
                 assert self.enum_type(value)  # CBC MARKS
                 return super().serialize(value)
-            except (Exception) as err:
+            except Exception as err:
                 print(err)
                 raise ValueError(f'value {value} must be a member of {self.enum_type}.')

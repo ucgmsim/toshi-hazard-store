@@ -82,7 +82,6 @@ def get_disagg_aggregates(
     probabilities: Iterable[ProbabilityEnum],
     dbmodel: Type[Union[mDAE, mDAO]] = mDAE,
 ) -> Iterator[Union[mDAE, mDAO]]:
-
     """Query the DisaggAggregation table
 
     Parameters:
@@ -139,7 +138,7 @@ def get_disagg_aggregates(
         log.info('hash_key %s' % hash_location_code)
         hash_locs = list(filter(lambda loc: downsample_code(loc, 0.1) == hash_location_code, locs))
 
-        for (hloc, hazard_model_id, hazard_agg, disagg_agg, vs30, imt, probability) in itertools.product(
+        for hloc, hazard_model_id, hazard_agg, disagg_agg, vs30, imt, probability in itertools.product(
             hash_locs, hazard_model_ids, hazard_agg_keys, disagg_agg_keys, vs30s, imts, probability_keys
         ):
 

@@ -32,7 +32,7 @@ def tearDown():
 def build_hazard_aggregation_models():
     n_lvls = 29
     lvps = list(map(lambda x: model.LevelValuePairAttribute(lvl=x / 1e3, val=(x / 1e6)), range(1, n_lvls)))
-    for (loc, vs30, agg) in itertools.product(locs[:5], vs30s, aggs):
+    for loc, vs30, agg in itertools.product(locs[:5], vs30s, aggs):
         for imt, val in enumerate(imts):
             yield model.HazardAggregation(
                 values=lvps,

@@ -35,7 +35,7 @@ class TestHazardAggregationQuery:
             adapted_hazagg_model.HazardAggregation.query(
                 hag.partition_key,
                 range_condition,
-                filter_condition
+                filter_condition,
                 # model.HazardAggregation.sort_key == '-41.300~174.780:450:PGA:mean:HAZ_MODEL_ONE'
             )
         )[0]
