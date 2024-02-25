@@ -13,7 +13,13 @@ from nzshm_common.location.code_location import CodedLocation
 from nzshm_common.location.location import LOCATIONS, location_by_id
 
 from toshi_hazard_store import configure_adapter, model, query, query_v3
-from toshi_hazard_store.config import DEPLOYMENT_STAGE, LOCAL_CACHE_FOLDER, REGION, USE_SQLITE_ADAPTER
+from toshi_hazard_store.config import (
+    DEPLOYMENT_STAGE,
+    LOCAL_CACHE_FOLDER,
+    REGION,
+    SQLITE_ADAPTER_FOLDER,
+    USE_SQLITE_ADAPTER,
+)
 from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
 from toshi_hazard_store.model import openquake_models
 
@@ -26,7 +32,9 @@ NZ_02_GRID = load_grid('NZ_0_2_NB_1_1')
 ALL_AGG_VALS = [e.value for e in model.AggregationEnum]
 ALL_IMT_VALS = [e.value for e in model.IntensityMeasureTypeEnum]
 ALL_VS30_VALS = [e.value for e in model.VS30Enum][1:]  # drop the 0 value!
-ALL_CITY_LOCS = [CodedLocation(o['latitude'], o['longitude'], 0.001) for o in LOCATIONS]
+ALL_CITY_LOCS = [
+    CodedLocation(o['latitude'], o['longitude'], 0.001) for o in LOCATIONS[:35]
+]  # NOTE this ugly hack to get just the first entires which we know/hope are the NZ34 cities
 ALL_GRID_LOCS = [CodedLocation(loc[0], loc[1], 0.001) for loc in NZ_01_GRID][000:100]
 
 
@@ -82,32 +90,45 @@ def columns_from_results(results):
 
 @click.group()
 def cli():
-    """Console script for testing toshi_hazard_store interactively. Mainly useful as a demonstration of how to
+    """
+    Console script for testing toshi_hazard_store interactively. Mainly useful as a demonstration of how to
     query the store for hazard data, or to do some local analysis using smaller models.
 
-    Can be used with the cloud NSHM hazard store, or locally using sqlite. See project documentation for
-    environment settings.
+    Can be used with the cloud NSHM hazard store, or locally using sqlite.
+
+     - Local: set THS_SQLITE_ADAPTER_FOLDER & THS_USE_SQLITE_ADAPTER=1
+     - AWS: set NZSHM22_HAZARD_STORE_REGION, NZSHM22_HAZARD_STORE_STAGE, AWS_PROFILE, THS_USE_SQLITE_ADAPTER=0
+
     """
 
 
 @cli.command()
-def cache_info():
-    """Get statistics about the local cache"""
-    click.echo("Config settings from ENVIRONMENT")
-    click.echo("--------------------------------")
+def info_env():
+    """Print the configuration from environment and/or config.py defaults"""
+    click.echo("Config settings from ENVIRONMENT and/or config.py ")
+    click.echo("--------------------------------------------------")
+    click.echo()
     click.echo(f'LOCAL_CACHE_FOLDER: {LOCAL_CACHE_FOLDER}')
-    click.echo(f'AWS REGION: {REGION}')
-    click.echo(f'AWS DEPLOYMENT_STAGE: {DEPLOYMENT_STAGE}')
+    click.echo(f'NZSHM22_HAZARD_STORE_REGION: {REGION}')
+    click.echo(f'NZSHM22_HAZARD_STORE_STAGE: {DEPLOYMENT_STAGE}')
+    click.echo()
+    click.echo(f'THS_USE_SQLITE_ADAPTER: {USE_SQLITE_ADAPTER}')
+    click.echo(f'THS_SQLITE_ADAPTER_FOLDER: {SQLITE_ADAPTER_FOLDER}')
+    click.echo()
 
+
+@cli.command()
+def info_args():
+    """Info about the argument values that can be used for commands"""
     click.echo("Available Aggregate values:")
     click.echo(ALL_AGG_VALS)
-
+    click.echo()
     click.echo("Available Intensity Measure Type (IMT) values:")
     click.echo(ALL_IMT_VALS)
-
+    click.echo()
     click.echo("Available VS30 values:")
     click.echo(ALL_VS30_VALS)
-
+    click.echo()
     click.echo("All City locations")
     click.echo(ALL_CITY_LOCS)
 
@@ -463,7 +484,7 @@ def get_rlzs(num_vs30s, num_imts, num_locations, num_rlzs):
     toshi_ids = ['T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTA2ODMzNg==']
     # toshi_ids = ['T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTA2ODU2NQ==']
     count_cost_handler.reset()
-    results = list(query.get_rlz_curves_v3(locs, vs30s, rlzs, toshi_ids, imts, openquake_models.OpenquakeRealization))
+    results = list(query.get_rlz_curves_v3(locs, vs30s, rlzs, toshi_ids, imts))
     # pts_summary_data = pd.DataFrame.from_dict(columns_from_results(results))
 
     for m in results:

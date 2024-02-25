@@ -3,6 +3,9 @@ site_url: https://GNS-Science.github.io/toshi-hazard-store
 repo_url: https://github.com/GNS-Science/toshi-hazard-store
 repo_name: GNS-Science/toshi-hazard-store
 #strict: true
+watch:
+  - toshi_hazard_store
+  - scripts
 nav:
   - Home: index.md
   - Installation: installation.md
