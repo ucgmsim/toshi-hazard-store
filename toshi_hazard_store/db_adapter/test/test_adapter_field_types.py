@@ -16,7 +16,7 @@ from pytest_lazyfixture import lazy_fixture
         (["PGA", "ABC"], {'PGA', 'ABC'}),
     ],
 )
-def test_table_save_and_query_unicode_set_A(adapter_test_table, payload, expected):
+def test_table_save_and_query_unicode_set(adapter_test_table, payload, expected):
     if adapter_test_table.exists():
         adapter_test_table.delete_table()
     adapter_test_table.create_table()
