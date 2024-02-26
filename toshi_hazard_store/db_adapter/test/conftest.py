@@ -3,7 +3,7 @@ import os
 from unittest import mock
 
 import pytest
-from pynamodb.attributes import UnicodeAttribute
+from pynamodb.attributes import UnicodeAttribute, UnicodeSetAttribute
 from pynamodb.models import Model
 
 from toshi_hazard_store import model
@@ -26,6 +26,7 @@ class MySqlModel(SqliteAdapter, Model):
 
     my_hash_key = UnicodeAttribute(hash_key=True)
     my_range_key = UnicodeAttribute(range_key=True)
+    my_unicode_set = UnicodeSetAttribute()
 
 
 class MyPynamodbModel(Model):
@@ -34,6 +35,7 @@ class MyPynamodbModel(Model):
 
     my_hash_key = UnicodeAttribute(hash_key=True)
     my_range_key = UnicodeAttribute(range_key=True)
+    my_unicode_set = UnicodeSetAttribute()
 
 
 @pytest.fixture(scope="module")

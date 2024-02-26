@@ -41,7 +41,8 @@ class PynamodbAdapterInterface(ABCModel):
 
     @classmethod
     @abstractmethod
-    def create_table(model_class: Type[_T], *args, **kwargs): ...
+    def create_table(model_class: Type[_T], *args, **kwargs):
+        pass
 
     @classmethod
     @abstractmethod

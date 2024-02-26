@@ -69,6 +69,10 @@ def get_model(
             d = dict(row)
             for name, attr in model_class.get_attributes().items():
 
+                if d[name] is None:
+                    del d[name]
+                    continue
+
                 # string conversion
                 if attr.attr_type == 'S':
                     d[name] = str(d[name])
@@ -100,6 +104,12 @@ def get_model(
 
                     # print('LIST:', name)
                     # print(d[name])
+
+                # unicode set conversion
+                if attr.attr_type == 'SS':
+                    # print("VALUE:", str(d[name]))
+                    val = base64.b64decode(d[name]).decode()
+                    d[name] = set(json.loads(val))
 
                 # datetime conversion
                 if isinstance(attr, TimestampAttribute):
@@ -139,7 +149,13 @@ def _attribute_values(model_instance: _T) -> str:
             b64_bytes = json.dumps(field["L"]).encode('ascii')
             _sql += f'"{base64.b64encode(b64_bytes).decode("ascii")}", '
             continue
-        raise ValueError("we should never get here....")
+
+        # handle empty string field
+        if field.get('S') == "":
+            _sql += '"", '
+            continue
+
+        raise ValueError(f"Unhandled field {field}")
     return _sql[:-2]
 
 
