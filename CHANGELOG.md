@@ -1,19 +1,21 @@
 # Changelog
 
-<<<<<<< HEAD
-## [0.8.0] - 2024-01-08
+## [0.8.0] - 2024-02
 ### Added
  - db_adapter architecture
  - sqlite3 as db_adapter for localstorage option
  - new envionment varisbale for localstorage
  - more documentation
  - use tmp_path for new localstorage tests
+ - db_adapter supportss SS field type
 
-=======
-## [0.7.8] - 2023-01-31
+### Changed
+  - update openquake dependency for NSHM GSIMs
+  - more test coverage
+
+## [0.7.8] - 2024-01-31
 ### Added
  - 0.5% in 50 years PoE for disaggregations
->>>>>>> origin/update-urllib3-dep
 
 ## [0.7.7] - 2023-12-13
 ### Changed 
