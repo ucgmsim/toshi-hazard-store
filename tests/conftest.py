@@ -31,6 +31,8 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize("adapted_rlz_model", ["pynamodb", "sqlite"], indirect=True)
     if "adapted_hazagg_model" in metafunc.fixturenames:
         metafunc.parametrize("adapted_hazagg_model", ["pynamodb", "sqlite"], indirect=True)
+    if "adapted_meta_model" in metafunc.fixturenames:
+        metafunc.parametrize("adapted_meta_model", ["pynamodb", "sqlite"], indirect=True)
 
 
 @pytest.fixture()
@@ -103,6 +105,32 @@ def adapted_rlz_model(request, tmp_path):
             openquake_models.OpenquakeRealization.create_table(wait=True)
             yield openquake_models
             openquake_models.OpenquakeRealization.delete_table()
+    else:
+        raise ValueError("invalid internal test config")
+
+
+@pytest.fixture
+def adapted_meta_model(request, tmp_path):
+    def set_adapter(adapter):
+        ensure_class_bases_begin_with(
+            namespace=openquake_models.__dict__,
+            class_name=str('ToshiOpenquakeMeta'),  # `str` type differs on Python 2 vs. 3.
+            base_class=adapter,
+        )
+
+    if request.param == 'pynamodb':
+        with mock_dynamodb():
+            set_adapter(Model)
+            openquake_models.ToshiOpenquakeMeta.create_table(wait=True)
+            yield openquake_models
+            openquake_models.ToshiOpenquakeMeta.delete_table()
+    elif request.param == 'sqlite':
+        envvars = {"THS_SQLITE_FOLDER": str(tmp_path), "THS_USE_SQLITE_ADAPTER": "TRUE"}
+        with mock.patch.dict(os.environ, envvars, clear=True):
+            set_adapter(SqliteAdapter)
+            openquake_models.ToshiOpenquakeMeta.create_table(wait=True)
+            yield openquake_models
+            openquake_models.ToshiOpenquakeMeta.delete_table()
     else:
         raise ValueError("invalid internal test config")
 
