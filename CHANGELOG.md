@@ -11,6 +11,7 @@
 
 ### Changed
   - update openquake dependency for NSHM GSIMs
+  - drop python 3.8 and update deps for openquake
   - more test coverage
 
 ## [0.7.8] - 2024-01-31
