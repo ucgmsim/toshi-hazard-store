@@ -88,7 +88,7 @@ class TestOpenquakeRealizationQuery:
     #     self.assertEqual(res2.sort_key, rlz.sort_key)
 
     def test_save_duplicate_raises(self, adapted_rlz_model, get_one_rlz):
-        """This relies on pynamodb version attribute
+        """This relies on pynamodb version attribute on rlz models
 
         see https://pynamodb.readthedocs.io/en/stable/optimistic_locking.html#version-attribute
         """
@@ -98,9 +98,8 @@ class TestOpenquakeRealizationQuery:
             rlzb = get_one_rlz(adapted_rlz_model.OpenquakeRealization)
             rlzb.save()
 
-    # @pytest.mark.skip("Not yet supported in sqlite db_adapter.")
     def test_batch_save_duplicate_wont_raise(self, adapted_rlz_model, get_one_rlz):
-        """Duplicate keys will simply overwrite, that's the dynamodb way
+        """In Batch mode any duplicate keys will simply overwrite, that's the dynamodb way
 
         Because pynamodb version-checking needs conditional writes, and these are not supported in AWS batch operations.
         """
