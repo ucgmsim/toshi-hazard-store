@@ -7,7 +7,8 @@
  - new envionment varisbale for localstorage
  - more documentation
  - use tmp_path for new localstorage tests
- - db_adapter supportss SS field type
+ - db_adapter supports SS field type
+ - dynamodb unique behaviour implement in sqlite
 
 ### Changed
   - update openquake dependency for NSHM GSIMs
