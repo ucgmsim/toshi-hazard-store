@@ -12,7 +12,7 @@ from datetime import timezone
 from typing import Generator, Iterable, List, Type, TypeVar, Union
 
 import pynamodb.models
-from pynamodb.attributes import JSONAttribute, ListAttribute
+from pynamodb.attributes import JSONAttribute, ListAttribute, VersionAttribute
 from pynamodb.expressions.condition import Condition
 from pynamodb_attributes import TimestampAttribute
 
@@ -121,41 +121,17 @@ def get_model(
         raise
 
 
-def _attribute_values(model_instance: _T) -> str:
+def _attribute_values(model_instance: _T, exclude = None) -> str:
     model_args = model_instance.get_save_kwargs_from_instance()['Item']
     _sql = ""
-    # attrbute values
+
+    exclude = exclude or []
+
     for name, attr in model_instance.get_attributes().items():
-        field = model_args.get(name)
-        log.debug(f'attr {attr} {field}')
-        if field is None:  # optional fields may not have been set, save `Null` instead
-            _sql += 'Null, '
+        if attr in exclude:
             continue
-        if isinstance(attr, JSONAttribute):
-            b64_bytes = json.dumps(field["S"]).encode('ascii')
-            _sql += f'"{base64.b64encode(b64_bytes).decode("ascii")}", '
-            continue
-        if field.get('SS'):  # SET
-            b64_bytes = json.dumps(field["SS"]).encode('ascii')
-            _sql += f'"{base64.b64encode(b64_bytes).decode("ascii")}", '
-            continue
-        if field.get('S'):  # String ir JSONstring
-            _sql += f'"{field["S"]}", '
-            continue
-        if field.get('N'):
-            _sql += f'{float(field["N"])}, '
-            continue
-        if field.get('L'):  # LIST
-            b64_bytes = json.dumps(field["L"]).encode('ascii')
-            _sql += f'"{base64.b64encode(b64_bytes).decode("ascii")}", '
-            continue
-
-        # handle empty string field
-        if field.get('S') == "":
-            _sql += '"", '
-            continue
-
-        raise ValueError(f"Unhandled field {field}")
+        log.debug(f'attr {attr} {name}')
+        _sql += f'{_get_sql_field_value(model_args, attr)}, '
     return _sql[:-2]
 
 
@@ -198,6 +174,80 @@ def put_models(
         raise
 
 
+def _get_sql_field_value(model_args, value):
+    field = model_args.get(value.attr_name)
+    log.debug(f'_get_sql_field_value: {value} {field}')
+    if field is None:  # optional fields may not have been set, save `Null` instead
+        return 'Null'
+
+    if isinstance(value, JSONAttribute):
+        b64_bytes = json.dumps(field["S"]).encode('ascii')
+        return f'"{base64.b64encode(b64_bytes).decode("ascii")}"'
+
+    if field.get('SS'):  # SET
+        b64_bytes = json.dumps(field["SS"]).encode('ascii')
+        return f'"{base64.b64encode(b64_bytes).decode("ascii")}"'
+
+    if field.get('S'):  # String or JSONstring
+        return f'"{field["S"]}"'
+
+    if field.get('N'):
+        return f'{float(field["N"])}'
+
+    if field.get('L'):  # LIST
+        b64_bytes = json.dumps(field["L"]).encode('ascii')
+        return f'"{base64.b64encode(b64_bytes).decode("ascii")}"'
+
+    # handle empty string field
+    if field.get('S') == "":
+        return '""'
+
+def _get_version_attribute(model_instance: _T):
+    for name, value in model_instance.get_attributes().items():
+        if isinstance(value, VersionAttribute):
+            return value
+
+def _insert_into_sql(model_instance: _T):
+    _sql = "INSERT INTO %s \n" % safe_table_name(model_instance.__class__)  # model_class)
+    _sql += "\t("
+    # add attribute names
+    for name, value in model_instance.get_attributes().items():
+        _sql += f'"{name}", '
+    _sql = _sql[:-2] + ")\nVALUES ("
+    _sql += _attribute_values(model_instance) + ");\n"
+    log.debug('SQL: %s' % _sql)
+    return _sql
+
+def _update_sql(model_instance: _T,):
+    key_fields = []
+    model_args = model_instance.get_save_kwargs_from_instance()['Item']
+    _sql = "UPDATE %s \n" % safe_table_name(model_instance.__class__)  # model_class)
+    _sql += "SET "
+
+    # add non-key attribute pairs
+    for name, value in model_instance.get_attributes().items():
+        if value.is_hash_key or value.is_range_key:
+            key_fields.append(value)
+            continue
+        _sql += f'\t{name} = {_get_sql_field_value(model_args, value)}, \n'
+    _sql = _sql[:-3] + "\n"
+
+    _sql += "WHERE "
+
+    for item in key_fields:
+        field = model_args.get(item.attr_name)
+        print(field)
+        _sql += f'\t{item.attr_name} = "{field["S"]}" AND\n'
+
+    version_attr = _get_version_attribute(model_instance)
+    if version_attr:
+        # add constraint
+         _sql += f'\t{version_attr.attr_name} = {int(float(_get_sql_field_value(model_args, version_attr))-1)};\n'
+    else:
+        _sql = _sql[:-4] + ";\n"
+    log.debug('SQL: %s' % _sql)
+    return _sql
+
 def put_model(
     conn: sqlite3.Connection,
     model_instance: _T,
@@ -209,23 +259,10 @@ def put_model(
     :return: None
     """
     log.debug(f"model: {model_instance}")
-    versioned_table = False
-    _sql = "INSERT INTO %s \n" % safe_table_name(model_instance.__class__)  # model_class)
-    _sql += "\t("
-    # add attribute names
-    for name in model_instance.get_attributes().keys():
-        _sql += f'"{name}", '
-        if name == 'version':  # special error handling for versioned tables
-            versioned_table = True
-    _sql = _sql[:-2] + ")\nVALUES ("
-
-    _sql += _attribute_values(model_instance) + ");\n"
-
-    log.debug('SQL: %s' % _sql)
-
+    unique_failure = False
     try:
         cursor = conn.cursor()
-        cursor.execute(_sql)
+        cursor.execute(_insert_into_sql(model_instance))
         conn.commit()
         log.debug(f'cursor: {cursor}')
         log.debug("Last row id: %s" % cursor.lastrowid)
@@ -235,13 +272,21 @@ def put_model(
         msg = str(e)
         if 'UNIQUE constraint failed' in msg:
             log.info('attempt to insert a duplicate key failed: ')
-        if versioned_table:
-            # TODO: SQL query for existing entry with same version
+        unique_failure = True
+        version_attr = _get_version_attribute(model_instance)
+        if version_attr:
             raise
-        # TODO: don't raise an error, but instead issue an update query
     except Exception as e:
         log.error(e)
         raise
+
+    if unique_failure:
+        # try update query
+        cursor = conn.cursor()
+        cursor.execute(_update_sql(model_instance))
+        conn.commit()
+        log.debug(f'cursor: {cursor}')
+        log.debug("Last row id: %s" % cursor.lastrowid)
 
 
 def get_connection(model_class: Type[_T]) -> sqlite3.Connection:
