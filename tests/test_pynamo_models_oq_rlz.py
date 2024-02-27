@@ -88,35 +88,34 @@ class TestOpenquakeRealizationQuery:
     #     self.assertEqual(res2.sort_key, rlz.sort_key)
 
     def test_save_duplicate_raises(self, adapted_rlz_model, get_one_rlz):
+        """This relies on pynamodb version attribute
 
-        with pytest.raises((pynamodb.exceptions.PutError, sqlite3.IntegrityError)) as excinfo:
+        see https://pynamodb.readthedocs.io/en/stable/optimistic_locking.html#version-attribute
+        """
+        with pytest.raises((pynamodb.exceptions.PutError, sqlite3.IntegrityError)):
             rlza = get_one_rlz(adapted_rlz_model.OpenquakeRealization)
             rlza.save()
             rlzb = get_one_rlz(adapted_rlz_model.OpenquakeRealization)
             rlzb.save()
-        print(excinfo)
-        # assert 0
 
-    @pytest.mark.skip("This test is invalid, Looks like batch is swallowing the exception ")
-    def test_batch_save_duplicate_raises(self, adapted_rlz_model, get_one_rlz):
-        """Looks like batch is swallowing the exception here"""
+    @pytest.mark.skip("Not yet supported in sqlite db_adapter.")
+    def test_batch_save_duplicate_wont_raise(self, adapted_rlz_model, get_one_rlz):
+        """Duplicate keys will simply overwrite, that's the dynamodb way
+
+        Because pynamodb version-checking needs conditional writes, and these are not supported in AWS batch operations.
+        """
+        # with pytest.raises((pynamodb.exceptions.PutError, sqlite3.IntegrityError)) as excinfo:
         rlza = get_one_rlz()
+        rlzb = get_one_rlz()
         with adapted_rlz_model.OpenquakeRealization.batch_write() as batch:
+            batch.save(rlzb)
             batch.save(rlza)
 
-        with pytest.raises((Exception, pynamodb.exceptions.PutError, sqlite3.IntegrityError)) as excinfo:
-            rlzb = get_one_rlz()
-            with adapted_rlz_model.OpenquakeRealization.batch_write() as batch:
-                batch.save(rlzb)
-
-        print(excinfo)
-
-    @pytest.mark.skip("And this test is invalid, again, it like batch is swallowing the exception  ... or deduping??")
-    def test_batch_save_internal_duplicate_raises(self, adapted_rlz_model, get_one_rlz):
-        with pytest.raises((pynamodb.exceptions.PutError, sqlite3.IntegrityError)) as excinfo:
-            rlza = get_one_rlz()
-            rlzb = get_one_rlz()
-            with adapted_rlz_model.OpenquakeRealization.batch_write() as batch:
-                batch.save(rlzb)
-                batch.save(rlza)
-        print(excinfo)
+        # query on model
+        res = list(
+            adapted_rlz_model.OpenquakeRealization.query(
+                rlza.partition_key,
+                adapted_rlz_model.OpenquakeRealization.sort_key == '-41.300~174.780:450:000010:AMCDEF',
+            )
+        )
+        assert len(res) == 1

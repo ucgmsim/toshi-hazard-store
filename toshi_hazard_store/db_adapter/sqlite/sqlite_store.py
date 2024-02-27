@@ -209,12 +209,14 @@ def put_model(
     :return: None
     """
     log.debug(f"model: {model_instance}")
-
+    versioned_table = False
     _sql = "INSERT INTO %s \n" % safe_table_name(model_instance.__class__)  # model_class)
     _sql += "\t("
     # add attribute names
     for name in model_instance.get_attributes().keys():
         _sql += f'"{name}", '
+        if name == 'version':  # special error handling for versioned tables
+            versioned_table = True
     _sql = _sql[:-2] + ")\nVALUES ("
 
     _sql += _attribute_values(model_instance) + ");\n"
@@ -233,7 +235,10 @@ def put_model(
         msg = str(e)
         if 'UNIQUE constraint failed' in msg:
             log.info('attempt to insert a duplicate key failed: ')
-        raise
+        if versioned_table:
+            # TODO: SQL query for existing entry with same version
+            raise
+        # TODO: don't raise an error, but instead issue an update query
     except Exception as e:
         log.error(e)
         raise
