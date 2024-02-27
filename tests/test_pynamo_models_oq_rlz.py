@@ -98,7 +98,7 @@ class TestOpenquakeRealizationQuery:
             rlzb = get_one_rlz(adapted_rlz_model.OpenquakeRealization)
             rlzb.save()
 
-    @pytest.mark.skip("Not yet supported in sqlite db_adapter.")
+    # @pytest.mark.skip("Not yet supported in sqlite db_adapter.")
     def test_batch_save_duplicate_wont_raise(self, adapted_rlz_model, get_one_rlz):
         """Duplicate keys will simply overwrite, that's the dynamodb way
 

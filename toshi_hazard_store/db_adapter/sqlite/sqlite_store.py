@@ -121,7 +121,7 @@ def get_model(
         raise
 
 
-def _attribute_values(model_instance: _T, exclude = None) -> str:
+def _attribute_values(model_instance: _T, exclude=None) -> str:
     model_args = model_instance.get_save_kwargs_from_instance()['Item']
     _sql = ""
 
@@ -150,7 +150,20 @@ def put_models(
     _sql = _sql[:-2]
     _sql += ")\nVALUES \n"
 
-    for item in put_items:
+    # if we have duplicates by primary key, take only the last value
+    model_class = put_items[0].__class__
+    if model_class._range_key_attribute() and model_class._hash_key_attribute():
+        unique_on = [model_class._hash_key_attribute(), model_class._range_key_attribute()]
+    else:
+        unique_on = [model_class._hash_key_attribute()]
+
+    unique_put_items = {}
+    for model_instance in put_items:
+        model_args = model_instance.get_save_kwargs_from_instance()['Item']
+        uniq_key = ":".join([f'{_get_sql_field_value(model_args, attr)}' for attr in unique_on])
+        unique_put_items[uniq_key] = model_instance
+
+    for item in unique_put_items.values():
         _sql += "\t(" + _attribute_values(item) + "),\n"
 
     _sql = _sql[:-2] + ";"
@@ -202,10 +215,12 @@ def _get_sql_field_value(model_args, value):
     if field.get('S') == "":
         return '""'
 
+
 def _get_version_attribute(model_instance: _T):
     for name, value in model_instance.get_attributes().items():
         if isinstance(value, VersionAttribute):
             return value
+
 
 def _insert_into_sql(model_instance: _T):
     _sql = "INSERT INTO %s \n" % safe_table_name(model_instance.__class__)  # model_class)
@@ -218,7 +233,10 @@ def _insert_into_sql(model_instance: _T):
     log.debug('SQL: %s' % _sql)
     return _sql
 
-def _update_sql(model_instance: _T,):
+
+def _update_sql(
+    model_instance: _T,
+):
     key_fields = []
     model_args = model_instance.get_save_kwargs_from_instance()['Item']
     _sql = "UPDATE %s \n" % safe_table_name(model_instance.__class__)  # model_class)
@@ -242,11 +260,12 @@ def _update_sql(model_instance: _T,):
     version_attr = _get_version_attribute(model_instance)
     if version_attr:
         # add constraint
-         _sql += f'\t{version_attr.attr_name} = {int(float(_get_sql_field_value(model_args, version_attr))-1)};\n'
+        _sql += f'\t{version_attr.attr_name} = {int(float(_get_sql_field_value(model_args, version_attr))-1)};\n'
     else:
         _sql = _sql[:-4] + ";\n"
     log.debug('SQL: %s' % _sql)
     return _sql
+
 
 def put_model(
     conn: sqlite3.Connection,

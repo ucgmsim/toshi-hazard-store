@@ -39,8 +39,7 @@ def test_unversioned_save_duplicate_does_not_raise(adapter_test_table):
 
 
 @pytest.mark.parametrize(
-    'adapter_test_table',
-    [(lazy_fixture('sqlite_adapter_test_table')), (lazy_fixture('pynamodb_adapter_test_table'))]
+    'adapter_test_table', [(lazy_fixture('sqlite_adapter_test_table')), (lazy_fixture('pynamodb_adapter_test_table'))]
 )
 @mock_dynamodb
 def test_unversioned_save_duplicate_does_update(adapter_test_table):
@@ -99,8 +98,8 @@ def test_versioned_save_duplicate_raises(adapter_test_table):
 
 @pytest.mark.parametrize(
     'adapter_test_table',
-    # [(lazy_fixture('sqlite_adapter_test_table_versioned')), (lazy_fixture('pynamodb_adapter_test_table_versioned'))],
-    [(lazy_fixture('pynamodb_adapter_test_table_versioned'))],
+    [(lazy_fixture('sqlite_adapter_test_table_versioned')), (lazy_fixture('pynamodb_adapter_test_table_versioned'))],
+    # [(lazy_fixture('pynamodb_adapter_test_table_versioned'))],
 )
 @mock_dynamodb
 def test_batch_save_duplicate_does_update(adapter_test_table):
