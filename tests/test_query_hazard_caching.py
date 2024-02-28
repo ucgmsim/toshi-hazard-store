@@ -1,9 +1,6 @@
 import itertools
-import pathlib
 import random
-import tempfile
 import unittest
-from unittest.mock import patch
 
 from moto import mock_dynamodb
 from nzshm_common.location.code_location import CodedLocation
@@ -19,14 +16,6 @@ vs30s = [250, 350, 450]
 imts = ['PGA', 'SA(0.5)']
 aggs = [model.AggregationEnum.MEAN.value, model.AggregationEnum._10.value]
 locs = [CodedLocation(o['latitude'], o['longitude'], 0.001) for o in LOCATIONS_BY_ID.values()]
-
-
-# folder = pathlib.PurePath(os.path.realpath(__file__)).parent
-folder = tempfile.TemporaryDirectory()
-
-
-def tearDown():
-    folder.cleanup()
 
 
 def build_hazard_aggregation_models():
@@ -45,27 +34,19 @@ def build_hazard_aggregation_models():
 
 @mock_dynamodb
 class TestGetHazardCurvesCached(unittest.TestCase):
-    @patch("toshi_hazard_store.model.openquake_models.DEPLOYMENT_STAGE", "MOCK")
-    @patch("toshi_hazard_store.model.caching.cache_store.DEPLOYMENT_STAGE", "MOCK")
-    @patch("toshi_hazard_store.model.caching.cache_store.LOCAL_CACHE_FOLDER", str(folder.name))
+
     def setUp(self):
         model.migrate()
-        assert pathlib.Path(folder.name).exists()
+        # assert pathlib.Path(folder.name).exists()
         with model.HazardAggregation.batch_write() as batch:
             for item in build_hazard_aggregation_models():
                 batch.save(item)
         super(TestGetHazardCurvesCached, self).setUp()
 
-    @patch("toshi_hazard_store.model.openquake_models.DEPLOYMENT_STAGE", "MOCK")
-    @patch("toshi_hazard_store.model.caching.cache_store.DEPLOYMENT_STAGE", "MOCK")
-    @patch("toshi_hazard_store.model.caching.cache_store.LOCAL_CACHE_FOLDER", str(folder.name))
     def tearDown(self):
         model.drop_tables()
         return super(TestGetHazardCurvesCached, self).tearDown()
 
-    @patch("toshi_hazard_store.model.openquake_models.DEPLOYMENT_STAGE", "MOCK")
-    @patch("toshi_hazard_store.model.caching.cache_store.DEPLOYMENT_STAGE", "MOCK")
-    @patch("toshi_hazard_store.model.caching.cache_store.LOCAL_CACHE_FOLDER", str(folder.name))
     def test_query_hazard_curves_cache_population(self):
         qlocs = [loc.downsample(0.001).code for loc in locs[:2]]
         print(f'qlocs {qlocs}')
@@ -88,10 +69,9 @@ class TestGetHazardCurvesCached(unittest.TestCase):
 
 @mock_dynamodb
 class TestCacheStore(unittest.TestCase):
-    @patch("toshi_hazard_store.model.openquake_models.DEPLOYMENT_STAGE", "MOCK")
-    @patch("toshi_hazard_store.model.caching.cache_store.DEPLOYMENT_STAGE", "MOCK")
-    @patch("toshi_hazard_store.model.caching.cache_store.LOCAL_CACHE_FOLDER", str(folder.name))
+
     def setUp(self):
+        # the followiung is needed in case an earlier test failed leaving pathed model classes
         ensure_class_bases_begin_with(
             namespace=model.__dict__, class_name=str('LocationIndexedModel'), base_class=Model
         )
@@ -118,9 +98,6 @@ class TestCacheStore(unittest.TestCase):
     #     folder.cleanup()
     #     return super(TestCacheStore, self).tearDown()
 
-    @patch("toshi_hazard_store.model.openquake_models.DEPLOYMENT_STAGE", "MOCK")
-    @patch("toshi_hazard_store.model.caching.cache_store.DEPLOYMENT_STAGE", "MOCK")
-    @patch("toshi_hazard_store.model.caching.cache_store.LOCAL_CACHE_FOLDER", str(folder.name))
     def test_cache_put(self):
         mHAG = model.HazardAggregation
         mHAG.create_table(wait=True)
@@ -155,9 +132,6 @@ class TestCacheStore(unittest.TestCase):
 
 @mock_dynamodb
 class TestCacheStoreWithOptionalAttribute(unittest.TestCase):
-    @patch("toshi_hazard_store.model.openquake_models.DEPLOYMENT_STAGE", "MOCK")
-    @patch("toshi_hazard_store.model.caching.cache_store.DEPLOYMENT_STAGE", "MOCK")
-    @patch("toshi_hazard_store.model.caching.cache_store.LOCAL_CACHE_FOLDER", str(folder.name))
     def setUp(self):
         ensure_class_bases_begin_with(
             namespace=model.__dict__, class_name=str('LocationIndexedModel'), base_class=Model
@@ -186,9 +160,6 @@ class TestCacheStoreWithOptionalAttribute(unittest.TestCase):
     #     folder.cleanup()
     #     return super(TestCacheStore, self).tearDown()
 
-    @patch("toshi_hazard_store.model.openquake_models.DEPLOYMENT_STAGE", "MOCK")
-    @patch("toshi_hazard_store.model.caching.cache_store.DEPLOYMENT_STAGE", "MOCK")
-    @patch("toshi_hazard_store.model.caching.cache_store.LOCAL_CACHE_FOLDER", str(folder.name))
     def test_cache_put(self):
         mHAG = model.HazardAggregation
         mHAG.create_table(wait=True)
@@ -219,31 +190,3 @@ class TestCacheStoreWithOptionalAttribute(unittest.TestCase):
         assert self.m.agg == m2.agg
         assert self.m.site_vs30 == m2.site_vs30
         assert 200 <= m2.site_vs30 < 300
-
-    # @patch("toshi_hazard_store.model.openquake_models.DEPLOYMENT_STAGE", "MOCK")
-    # @patch("toshi_hazard_store.model.caching.cache_store.DEPLOYMENT_STAGE", "MOCK")
-    # @patch("toshi_hazard_store.model.caching.cache_store.LOCAL_CACHE_FOLDER", str(folder.name))
-    # def test_cache_auto_population(self):
-    #     # 2nd pass of same query should use the cache
-
-    #     qlocs = [loc.downsample(0.001).code for loc in locs[:2]]
-    #     print(f'qlocs {qlocs}')
-    #     res = list(query_v3.get_hazard_curves(qlocs, vs30s, [HAZARD_MODEL_ID], imts))
-
-    #     m1 = next(
-    #         cache_store.get_model(
-    #             conn, model_class=mHAG, range_key_condition=range_condition, filter_condition=filter_condition
-    #         )
-    #     )
-
-    #     m2 = next(
-    #         cache_store.get_model(
-    #             conn, model_class=mHAG, range_key_condition=range_condition, filter_condition=filter_condition
-    #         )
-    #     )
-
-    # assert m1.sort_key == m2.sort_key
-    # assert m1.vs30 == m2.vs30
-    # assert m1.imt == m2.imt
-    # assert m1.nloc_001 == m2.nloc_001
-    # assert m1.agg == m2.agg

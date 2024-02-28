@@ -9,11 +9,13 @@
  - use tmp_path for new localstorage tests
  - db_adapter supports SS field type
  - dynamodb unique behaviour implement in sqlite
+ - support for .env configuration (using python-dotenv)
 
 ### Changed
   - update openquake dependency for NSHM GSIMs
   - drop python 3.8 and update deps for openquake
   - more test coverage
+  - refactor tests to use temporary folders correctly
 
 ## [0.7.8] - 2024-01-31
 ### Added

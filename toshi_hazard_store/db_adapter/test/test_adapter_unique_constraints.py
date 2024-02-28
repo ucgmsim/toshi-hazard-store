@@ -1,16 +1,9 @@
-# from moto import mock_dynamodb
-# from nzshm_common.location.code_location import CodedLocation
-import os
 import sqlite3
 
 import pynamodb.exceptions
 import pytest
 from moto import mock_dynamodb
 from pytest_lazyfixture import lazy_fixture
-
-
-def test_env(tmp_path):
-    assert os.environ["THS_SQLITE_FOLDER"] == str(tmp_path)
 
 
 @pytest.mark.parametrize(

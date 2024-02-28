@@ -37,6 +37,8 @@ log = logging.getLogger(__name__)
 
 
 def get_connection(model_class: Type[_T]) -> sqlite3.Connection:
+    if not SQLITE_ADAPTER_FOLDER:
+        raise RuntimeError('Environment variable: THS_SQLITE_FOLDER is not set.')
     dbpath = pathlib.Path(SQLITE_ADAPTER_FOLDER) / f"{safe_table_name(model_class)}.db"
     if not dbpath.parent.exists():
         raise RuntimeError(f'The sqlite storage folder "{dbpath.parent.absolute()}" was not found.')

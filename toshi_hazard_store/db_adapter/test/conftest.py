@@ -1,22 +1,45 @@
-import os
-from unittest import mock
+import logging
+import pathlib
+import sqlite3
+import tempfile
+from functools import partial
 
 import pytest
 from pynamodb.attributes import UnicodeAttribute, UnicodeSetAttribute, VersionAttribute
 from pynamodb.models import Model
 from pynamodb_attributes import FloatAttribute
 
+import toshi_hazard_store.config
+import toshi_hazard_store.db_adapter.sqlite.sqlite_adapter
 from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
+from toshi_hazard_store.db_adapter.sqlite.sqlite_store import safe_table_name
+
+log = logging.getLogger(__name__)
+
+adapter_folder = tempfile.TemporaryDirectory()
 
 
 @pytest.fixture(autouse=True)
-def setenvvar(tmp_path):
-    # ref https://adamj.eu/tech/2020/10/13/how-to-mock-environment-variables-with-pytest/
-    envvars = {
-        "THS_SQLITE_FOLDER": str(tmp_path),
-    }
-    with mock.patch.dict(os.environ, envvars, clear=True):
-        yield  # This is the magical bit which restore the environment after
+def default_session_fixture(request, monkeypatch):
+    """
+    :type request: _pytest.python.SubRequest
+    :return:
+    """
+    log.info("Patching storage configuration")
+
+    def temporary_adapter_connection(model_class, folder):
+        dbpath = pathlib.Path(folder.name) / f"{safe_table_name(model_class)}.db"
+        if not dbpath.parent.exists():
+            raise RuntimeError(f'The sqlite storage folder "{dbpath.parent.absolute()}" was not found.')
+        log.debug(f"get sqlite3 connection at {dbpath}")
+        return sqlite3.connect(dbpath)
+
+    monkeypatch.setattr(toshi_hazard_store.config, "SQLITE_ADAPTER_FOLDER", str(adapter_folder))
+    monkeypatch.setattr(
+        toshi_hazard_store.db_adapter.sqlite.sqlite_adapter,
+        "get_connection",
+        partial(temporary_adapter_connection, folder=adapter_folder),
+    )
 
 
 class FieldsMixin:

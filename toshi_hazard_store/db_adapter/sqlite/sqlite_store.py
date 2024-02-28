@@ -309,7 +309,7 @@ def put_model(
 
 
 def get_connection(model_class: Type[_T]) -> sqlite3.Connection:
-    log.info(f"get connection for {model_class}")
+    log.info(f"get connection for {model_class} using path {LOCAL_CACHE_FOLDER}/{DEPLOYMENT_STAGE}")
     return sqlite3.connect(pathlib.Path(str(LOCAL_CACHE_FOLDER), DEPLOYMENT_STAGE))
 
 

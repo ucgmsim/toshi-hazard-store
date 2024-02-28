@@ -22,7 +22,7 @@ log = logging.getLogger(__name__)
 def get_connection(model_class) -> sqlite3.Connection:
     if not cache_enabled():
         raise RuntimeError("cannot create connection ")
-    log.info(f"get connection for {model_class}")
+    log.info(f"get cache connection for {model_class} using path {LOCAL_CACHE_FOLDER}/{DEPLOYMENT_STAGE}")
     return sqlite3.connect(pathlib.Path(str(LOCAL_CACHE_FOLDER), DEPLOYMENT_STAGE))
 
 
