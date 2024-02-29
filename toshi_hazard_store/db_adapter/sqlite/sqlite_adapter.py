@@ -8,7 +8,6 @@ import sqlite3
 from typing import TYPE_CHECKING, Any, Dict, Generic, Iterable, List, Optional, Type, TypeVar
 
 import pynamodb.models
-from pynamodb.connection.base import OperationSettings
 from pynamodb.constants import DELETE, PUT
 from pynamodb.expressions.condition import Condition
 
@@ -79,7 +78,8 @@ class SqliteBatchWrite(pynamodb.models.BatchWrite, Generic[_T]):
 class SqliteAdapter(PynamodbAdapterInterface):
     @classmethod
     def batch_write(
-        cls: Type[_T], auto_commit: bool = True, settings: OperationSettings = OperationSettings.default
+        cls: Type[_T],
+        auto_commit: bool = True,
     ) -> SqliteBatchWrite[_T]:
         """
         Returns a BatchWrite context manager for a batch operation.
@@ -89,7 +89,6 @@ class SqliteAdapter(PynamodbAdapterInterface):
     def save(
         self: _T,
         condition: Optional[Condition] = None,
-        settings: OperationSettings = OperationSettings.default,
         add_version_condition: bool = False,
     ) -> dict[str, Any]:
         log.debug('SqliteAdapter.save')
@@ -129,7 +128,6 @@ class SqliteAdapter(PynamodbAdapterInterface):
         attributes_to_get: Optional[Iterable[str]] = None,
         page_size: Optional[int] = None,
         rate_limit: Optional[float] = None,
-        settings: OperationSettings = OperationSettings.default,
     ) -> Iterable[_T]:  #
         if range_key_condition is None:
             raise TypeError("must supply range_key_condition argument")

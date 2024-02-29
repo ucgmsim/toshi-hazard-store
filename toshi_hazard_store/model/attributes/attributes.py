@@ -79,6 +79,8 @@ class PickleAttribute(BinaryAttribute):
     This class will serialize/deserialize any picklable Python object.
     """
 
+    legacy_encoding = True
+
     def serialize(self, value):
         """
         The super class takes the binary string returned from pickle.dumps

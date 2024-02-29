@@ -4,7 +4,6 @@ import logging
 from typing import Any, Dict, Iterable, Optional, Type, TypeVar
 
 import pynamodb.models
-from pynamodb.connection.base import OperationSettings
 from pynamodb.expressions.condition import Condition
 
 from toshi_hazard_store.model.caching import cache_store
@@ -32,7 +31,6 @@ class ModelCacheMixin(pynamodb.models.Model):
         attributes_to_get: Optional[Iterable[str]] = None,
         page_size: Optional[int] = None,
         rate_limit: Optional[float] = None,
-        settings: OperationSettings = OperationSettings.default,
     ) -> pynamodb.models.ResultIterator[_T]:  #
         """
         Proxy query function which trys to use the local_cache before hitting AWS via Pynamodb
@@ -53,7 +51,7 @@ class ModelCacheMixin(pynamodb.models.Model):
                 attributes_to_get,
                 page_size,
                 rate_limit,
-                settings,
+                # settings,
             )
 
         log.info('Try the local_cache first')
@@ -82,7 +80,6 @@ class ModelCacheMixin(pynamodb.models.Model):
                     attributes_to_get,
                     page_size,
                     rate_limit,
-                    settings,
                 ):
                     cache_store.put_model(conn, res)
                     result.append(res)

@@ -32,7 +32,7 @@ class DisaggAggregationBase(LocationIndexedModel):
     disagg_agg = EnumConstrainedUnicodeAttribute(AggregationEnum)
 
     disaggs = CompressedPickleAttribute()  # a very compressible numpy array,
-    bins = PickleAttribute()  # a much smaller numpy array
+    bins = PickleAttribute(legacy_encoding=True)  # a much smaller numpy array
 
     shaking_level = FloatAttribute()
 

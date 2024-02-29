@@ -16,6 +16,7 @@
   - drop python 3.8 and update deps for openquake
   - more test coverage
   - refactor tests to use temporary folders correctly
+  - migrated to pynamodb>=6.0
 
 ## [0.7.8] - 2024-01-31
 ### Added

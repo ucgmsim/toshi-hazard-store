@@ -57,11 +57,13 @@ class VersionedFieldsMixin(FieldsMixin):
 class MySqlModel(FieldsMixin, SqliteAdapter, Model):
     class Meta:
         table_name = "MySQLITEModel"
+        # region = "us-east-1"
 
 
 class MyPynamodbModel(FieldsMixin, Model):
     class Meta:
         table_name = "MyPynamodbModel"
+        region = "us-east-1"
 
 
 @pytest.fixture(scope="module")
@@ -83,6 +85,7 @@ class VersionedSqlModel(VersionedFieldsMixin, SqliteAdapter, Model):
 class VersionedPynamodbModel(VersionedFieldsMixin, Model):
     class Meta:
         table_name = "VersionedPynamodbModel"
+        region = "us-east-1"
 
 
 @pytest.fixture(scope="module")

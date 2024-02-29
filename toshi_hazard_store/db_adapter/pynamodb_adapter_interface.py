@@ -13,7 +13,6 @@ For details of how this works
 from abc import ABC, ABCMeta, abstractmethod
 from typing import TYPE_CHECKING, Any, Dict, Iterable, Optional, Type, TypeVar
 
-from pynamodb.connection.base import OperationSettings
 from pynamodb.models import Condition, MetaModel, Model
 from pynamodb.pagination import ResultIterator
 
@@ -64,7 +63,6 @@ class PynamodbAdapterInterface(ABCModel):
         attributes_to_get: Optional[Iterable[str]] = None,
         page_size: Optional[int] = None,
         rate_limit: Optional[float] = None,
-        settings: OperationSettings = OperationSettings.default,
     ) -> ResultIterator['PynamodbAdapterInterface']:
         """Get iterator for given conditions"""
         pass

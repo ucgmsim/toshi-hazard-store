@@ -39,6 +39,10 @@ def default_session_fixture(request, monkeypatch):
     :type request: _pytest.python.SubRequest
     :return:
     """
+    # pynamodb 6 requies a region set
+    # monkeypatch.setattr(toshi_hazard_store.config, "REGION", "us-east-1")
+    # but this didn't work everywhere (some tests are not pytest)
+
     log.info("Patching storage configuration")
 
     def temporary_cache_connection(model_class, folder):
