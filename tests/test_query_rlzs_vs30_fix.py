@@ -46,3 +46,4 @@ class TestQueryRlzsVs30:
         )
         assert len(res) == len(many_rlz_args['rlzs']) * len(vs30s) * len(many_rlz_args['locs'])
         assert res[0].nloc_001 == qlocs[0]
+        assert len(res[0].values[0].lvls) == 28

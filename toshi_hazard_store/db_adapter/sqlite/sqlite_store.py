@@ -21,7 +21,8 @@ from toshi_hazard_store.model.attributes import IMTValuesAttribute, LevelValuePa
 
 # from pynamodb.attributes import ListAttribute, MapAttribute
 
-TYPE_MAP = {"S": "string", "N": "numeric", "L": "string", "SS": "string"}
+# TYPE_MAP = {"S": "string", "N": "numeric", "L": "string", "SS": "string"}
+# TYPE_MAP = {"S": "string", "N": "string", "L": "string", "SS": "string"}
 
 _T = TypeVar('_T', bound='pynamodb.models.Model')
 
@@ -67,7 +68,16 @@ def get_model(
         conn.row_factory = sqlite3.Row
         for row in conn.execute(_sql):
             d = dict(row)
+
+            # log.info(f"ROW as dict: {d}")
+            # m = model_class().from_dynamodb_dict(d)
+            # log.info(m)
+
             for name, attr in model_class.get_attributes().items():
+
+                log.debug(f"DESERIALIZE: {name} {attr}")
+                log.debug(f"{d[name]}")
+                # log.debug(f"BOOM: {attr.deserialize(str(d[name]))}")
 
                 if d[name] is None:
                     del d[name]
@@ -79,31 +89,47 @@ def get_model(
 
                 # list conversion
                 if attr.attr_type == 'L':
+                    # log.debug(f"{attr.deserialize(d[name])}")
+                    # assert 0
+
                     val = base64.b64decode(str(d[name])).decode('ascii')
                     d[name] = json.loads(val)
-                    # TODO: this is only good for THS_HAZARDAGGREGATION
-                    vals: List[Union[IMTValuesAttribute, LevelValuePairAttribute]] = list()
-                    for itm in d[name]:
-                        # print(itm)
-                        log.debug(f"itm: {itm}")
-                        if itm.get('M'):
-                            m_itm = itm.get('M').get('imt')
-                            if m_itm:
-                                vals.append(
-                                    IMTValuesAttribute(
-                                        imt=m_itm.get('imt'),
-                                        lvls=ListAttribute(m_itm.get('lvls')),
-                                        vals=ListAttribute(m_itm.get('values')),
-                                    )
-                                )
-                            else:
-                                vals.append(LevelValuePairAttribute(lvl=itm['M']['lvl']['N'], val=itm['M']['val']['N']))
-                        else:
-                            raise ValueError("HUH")
-                    d[name] = vals
+                    log.debug(f"LIST CONVERSION: {name}")
+                    log.debug(f"loads: {json.loads(val)}")
 
-                    # print('LIST:', name)
-                    # print(d[name])
+                    # log.debug(f"{attr.deserialize(d[name])}")
+                    log.debug(f"{attr.deserialize(json.loads(val))}")
+
+                    d[name] = attr.deserialize(json.loads(val))
+                    continue
+
+                    # # TODO: this is only good for THS_HAZARDAGGREGATION
+                    # # WHY are we doing anything special here?? it should be handled here as it is in pynamodb
+                    # vals: List[Union[IMTValuesAttribute, LevelValuePairAttribute]] = list()
+                    # for itm in d[name]:
+                    #     # print(itm)
+                    #     log.debug(f"itm: {itm}")
+                    #     if itm.get('M'):
+                    #         m_itm = itm.get('M').get('imt')
+                    #         # log.debug(f"m_itm: {m_itm} {m_itm.get('S')}")
+
+                    #         if m_itm:
+
+                    #             vals.append(
+                    #                 IMTValuesAttribute(
+                    #                     imt=m_itm.get('imt'),
+                    #                     lvls=ListAttribute(m_itm.get('lvls')),
+                    #                     vals=ListAttribute(m_itm.get('values')),
+                    #                 )
+                    #             )
+                    #         else:
+                    #             vals.append(LevelValuePairAttribute(lvl=itm['M']['lvl']['N'], val=itm['M']['val']['N']))
+                    #     else:
+                    #         raise ValueError("HUH")
+                    # d[name] = vals
+
+                    # log.debug(f'LIST: {name}')
+                    # log.debug(d[name])
 
                 # unicode set conversion
                 if attr.attr_type == 'SS':
@@ -189,7 +215,12 @@ def put_models(
 
 def _get_sql_field_value(model_args, value):
     field = model_args.get(value.attr_name)
+
     log.debug(f'_get_sql_field_value: {value} {field}')
+
+    # log.debug(f"serialize: {value.serialize(value)}")
+    # assert 0
+
     if field is None:  # optional fields may not have been set, save `Null` instead
         return 'Null'
 
@@ -226,6 +257,9 @@ def _insert_into_sql(model_instance: _T):
     _sql = "INSERT INTO %s \n" % safe_table_name(model_instance.__class__)  # model_class)
     _sql += "\t("
     # add attribute names
+    # log.debug(dir(model_instance))
+    # assert 0
+
     for name, value in model_instance.get_attributes().items():
         _sql += f'"{name}", '
     _sql = _sql[:-2] + ")\nVALUES ("
@@ -359,9 +393,9 @@ def ensure_table_exists(conn: sqlite3.Connection, model_class: Type[_T]):
         _sql: str = "CREATE TABLE IF NOT EXISTS %s (\n" % safe_table_name(model_class)
 
         for name, attr in model_class.get_attributes().items():
-            if attr.attr_type not in TYPE_MAP.keys():
-                raise ValueError(f"Unupported type: {attr.attr_type} for attribute {attr.attr_name}")
-            _sql += f'\t"{name}" {TYPE_MAP[attr.attr_type]},\n'
+            # if attr.attr_type not in TYPE_MAP.keys():
+            #     raise ValueError(f"Unupported type: {attr.attr_type} for attribute {attr.attr_name}")
+            _sql += f'\t"{name}" string,\n'
 
         # now add the primary key
         if model_class._range_key_attribute() and model_class._hash_key_attribute():
@@ -374,15 +408,16 @@ def ensure_table_exists(conn: sqlite3.Connection, model_class: Type[_T]):
             return _sql + f"\tPRIMARY KEY {model_class._hash_key_attribute().attr_name}\n)"
         raise ValueError()
 
-    # print('model_class', model_class)
+    log.debug(f'model_class {model_class}')
     create_sql = create_table_sql(model_class)
 
-    # print(create_sql)
+    log.debug(create_sql)
+
     try:
         conn.execute(create_sql)
     except Exception as e:
         print("EXCEPTION", e)
-
+        raise
 
 def execute_sql(conn: sqlite3.Connection, model_class: Type[_T], sql_statement: str):
     """

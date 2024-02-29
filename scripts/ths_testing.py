@@ -25,6 +25,7 @@ from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
 from toshi_hazard_store.model import openquake_models
 
 if USE_SQLITE_ADAPTER:
+    print("CONFIGURING")
     configure_adapter(adapter_model=SqliteAdapter)
 
 NZ_01_GRID = load_grid('NZ_0_1_NB_1_1')
@@ -67,7 +68,7 @@ log.addHandler(count_cost_handler)
 logging.getLogger('pynamodb').setLevel(logging.DEBUG)  # must be DEBUG for query cost calculations
 # logging.getLogger('botocore').setLevel(logging.DEBUG)
 logging.getLogger('toshi_hazard_store').setLevel(logging.INFO)
-# logging.getLogger('toshi_hazard_store.db_adapter.sqlite').setLevel(logging.DEBUG)
+logging.getLogger('toshi_hazard_store.db_adapter.sqlite').setLevel(logging.DEBUG)
 
 
 formatter = logging.Formatter(fmt='%(asctime)s %(name)s %(levelname)-8s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
@@ -193,7 +194,7 @@ def get_hazard_curves(model_id, num_aggs, num_vs30s, num_imts, num_locations):
     '--model_id',
     '-M',
     default='NSHM_v1.0.4',
-    type=click.Choice(['SLT_v8_gmm_v2_FINAL', 'SLT_v5_gmm_v0_SRWG', 'NSHM_1.0.0', 'NSHM_v1.0.4']),
+    type=str # click.Choice(['SLT_v8_gmm_v2_FINAL', 'SLT_v5_gmm_v0_SRWG', 'NSHM_1.0.0', 'NSHM_v1.0.4']),
 )
 def get_hazard_curve(model_id, agg, vs30, imt, location):
 
