@@ -39,7 +39,6 @@ python = ">=3.10,<3.13"
 pandas = "~2.0.3"
 numpy = "^1.26.4"
 nzshm-common = "^0.6.1"
-pynamodb-attributes = "^0.4.0"
 # openquake-engine = {version = "^3.18.0", optional = true}
 openquake-engine = {git = "https://github.com/gem/oq-engine.git", rev = "45286b8bb5a4523659c365ea8144780b132c8336", optional = true, extras = ["openquake"]}
 fiona = {version = "^1.9.5", optional = true, extras = ["openquake"]}
@@ -47,6 +46,7 @@ networkx = {version = "^3.2.1", optional = true, extras = ["openquake"]}
 numba = {version = "^0.59.0", optional = true, extras = ["openquake"]}
 python-dotenv = "^1.0.1"
 pynamodb = "^6.0.0"
+pynamodb-attributes = "^0.4.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.2.0"

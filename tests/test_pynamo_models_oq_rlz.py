@@ -18,7 +18,7 @@ class TestOpenquakeRealizationModel:
         assert isinstance(rlz, pynamodb.models.Model)
         assert isinstance(rlz, toshi_hazard_store.model.openquake_models.OpenquakeRealization )
 
-    @pytest.mark.skip('WIP, maybe belongs in db_adapter')
+    @pytest.mark.skip('WIP: maybe belongs in db_adapter')
     def test_model_methods(self, adapted_rlz_model, get_one_rlz):
         rlz = get_one_rlz()
         # print(dir(rlz))
@@ -33,6 +33,10 @@ class TestOpenquakeRealizationModel:
         for name, attr in mRLZ.get_attributes().items():
             if isinstance(attr, pynamodb.attributes.VersionAttribute):
                 continue # these cannot be serialized yet
+
+            print(dir(attr))
+
+            # if mRLZ._range_key_attribute() and model_class._hash_key_attribute()
 
             # print(name, attr, getattr(rlz, name))
             json_str = json.dumps(attr.serialize(getattr(rlz, name)))

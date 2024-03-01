@@ -4,6 +4,7 @@ sqlite helpers to manage caching tables
 
 import base64
 import json
+import pickle
 import logging
 import pathlib
 import sqlite3
@@ -49,6 +50,9 @@ def get_model(
     _sql = "SELECT * FROM %s \n" % safe_table_name(model_class)
 
     # first, the compulsory hash key
+    # val = f"{{'S': '{hash_key}'}}"
+    # log.info(val)
+    # assert 0
     _sql += f"\tWHERE {get_hash_key(model_class)}='{hash_key}'"
 
     # add the optional range_key_condition
@@ -76,70 +80,18 @@ def get_model(
             for name, attr in model_class.get_attributes().items():
 
                 log.debug(f"DESERIALIZE: {name} {attr}")
-                log.debug(f"{d[name]}")
-                # log.debug(f"BOOM: {attr.deserialize(str(d[name]))}")
-
-                if d[name] is None:
-                    del d[name]
-                    continue
-
-                # string conversion
-                if attr.attr_type == 'S':
-                    d[name] = str(d[name])
-
-                # list conversion
-                if attr.attr_type == 'L':
-                    # log.debug(f"{attr.deserialize(d[name])}")
-                    # assert 0
-
-                    val = base64.b64decode(str(d[name])).decode('ascii')
-                    d[name] = json.loads(val)
-                    log.debug(f"LIST CONVERSION: {name}")
-                    log.debug(f"loads: {json.loads(val)}")
-
-                    # log.debug(f"{attr.deserialize(d[name])}")
-                    log.debug(f"{attr.deserialize(json.loads(val))}")
-
-                    d[name] = attr.deserialize(json.loads(val))
-                    continue
-
-                    # # TODO: this is only good for THS_HAZARDAGGREGATION
-                    # # WHY are we doing anything special here?? it should be handled here as it is in pynamodb
-                    # vals: List[Union[IMTValuesAttribute, LevelValuePairAttribute]] = list()
-                    # for itm in d[name]:
-                    #     # print(itm)
-                    #     log.debug(f"itm: {itm}")
-                    #     if itm.get('M'):
-                    #         m_itm = itm.get('M').get('imt')
-                    #         # log.debug(f"m_itm: {m_itm} {m_itm.get('S')}")
-
-                    #         if m_itm:
-
-                    #             vals.append(
-                    #                 IMTValuesAttribute(
-                    #                     imt=m_itm.get('imt'),
-                    #                     lvls=ListAttribute(m_itm.get('lvls')),
-                    #                     vals=ListAttribute(m_itm.get('values')),
-                    #                 )
-                    #             )
-                    #         else:
-                    #             vals.append(LevelValuePairAttribute(lvl=itm['M']['lvl']['N'], val=itm['M']['val']['N']))
-                    #     else:
-                    #         raise ValueError("HUH")
-                    # d[name] = vals
-
-                    # log.debug(f'LIST: {name}')
-                    # log.debug(d[name])
-
-                # unicode set conversion
-                if attr.attr_type == 'SS':
-                    # print("VALUE:", str(d[name]))
-                    val = base64.b64decode(d[name]).decode()
-                    d[name] = set(json.loads(val))
-
-                # datetime conversion
-                if isinstance(attr, TimestampAttribute):
-                    d[name] = dt.fromtimestamp(d[name]).replace(tzinfo=timezone.utc)
+                log.debug(f"{d[name]}, {type(d[name])}")
+                if d[name]:
+                    if attr.is_hash_key or attr.is_range_key:
+                        continue
+                    upk = pickle.loads(base64.b64decode(d[name]))
+                    log.debug(upk)
+                    log.debug(f"{attr.attr_name} {attr.attr_type} {upk} {type(upk)}")
+                    # log.debug(f"{attr.get_value(upk)}")
+                    if isinstance(upk, float):
+                        d[name] = upk
+                    else:
+                        d[name] = attr.deserialize(upk)
 
             yield model_class(**d)
     except Exception as e:
@@ -147,17 +99,52 @@ def get_model(
         raise
 
 
+def _attribute_value(simple_serialized, attr):
+
+    value = simple_serialized.get(attr.attr_name)
+
+    if value is None:
+        return
+
+    if attr.is_hash_key or attr.is_range_key:
+        return value
+
+    pkld = pickle.dumps(value)
+    return base64.b64encode(pkld).decode('ascii')
+
 def _attribute_values(model_instance: _T, exclude=None) -> str:
-    model_args = model_instance.get_save_kwargs_from_instance()['Item']
+    # model_args = model_instance.get_save_kwargs_from_instance()['Item']
     _sql = ""
 
     exclude = exclude or []
 
+    simple_serialized = model_instance.to_simple_dict(force=True)
+    pynamodb_serialized = model_instance.to_dynamodb_dict()
+
+    log.debug(f'SMP-SER: {simple_serialized}')
+    log.debug(f'DYN-SER: {pynamodb_serialized}')
     for name, attr in model_instance.get_attributes().items():
+        log.debug(f'attr {attr} {name}')
+
         if attr in exclude:
             continue
-        log.debug(f'attr {attr} {name}')
-        _sql += f'{_get_sql_field_value(model_args, attr)}, '
+
+        # if attr.is_hash_key or attr.is_range_key:
+        #     _sql += f'"{getattr(model_instance, name)}", '
+        #     continue
+
+        # log.debug(f"PYN-PKL {pynamodb_serialized.get(name)}")
+        # log.debug(f"SMP-PKL {simple_serialized.get(name)}")
+
+        # value = simple_serialized.get(name)
+        # pkld = pickle.dumps(value)
+        # sqlsafe = base64.b64encode(pkld).decode('ascii')
+
+        value = _attribute_value(simple_serialized, attr)
+        # assert v == sqlsafe
+        _sql += f'"{value}", ' if value else 'NULL, '
+
+    log.debug(_sql)
     return _sql[:-2]
 
 
@@ -185,8 +172,9 @@ def put_models(
 
     unique_put_items = {}
     for model_instance in put_items:
-        model_args = model_instance.get_save_kwargs_from_instance()['Item']
-        uniq_key = ":".join([f'{_get_sql_field_value(model_args, attr)}' for attr in unique_on])
+        simple_serialized = model_instance.to_simple_dict(force=True)
+        # model_args = model_instance.get_save_kwargs_from_instance()['Item']
+        uniq_key = ":".join([f'{_attribute_value(simple_serialized, attr)}' for attr in unique_on])
         unique_put_items[uniq_key] = model_instance
 
     for item in unique_put_items.values():
@@ -194,7 +182,7 @@ def put_models(
 
     _sql = _sql[:-2] + ";"
 
-    log.debug('SQL: %s' % _sql)
+    log.info('SQL: %s' % _sql)
 
     try:
         cursor = conn.cursor()
@@ -213,38 +201,38 @@ def put_models(
         raise
 
 
-def _get_sql_field_value(model_args, value):
-    field = model_args.get(value.attr_name)
+# def _get_sql_field_value(model_args, value):
+#     field = model_args.get(value.attr_name)
 
-    log.debug(f'_get_sql_field_value: {value} {field}')
+#     log.debug(f'_get_sql_field_value: {value} {field}')
 
-    # log.debug(f"serialize: {value.serialize(value)}")
-    # assert 0
+#     # log.debug(f"serialize: {value.serialize(value)}")
+#     # assert 0
 
-    if field is None:  # optional fields may not have been set, save `Null` instead
-        return 'Null'
+#     if field is None:  # optional fields may not have been set, save `Null` instead
+#         return 'Null'
 
-    if isinstance(value, JSONAttribute):
-        b64_bytes = json.dumps(field["S"]).encode('ascii')
-        return f'"{base64.b64encode(b64_bytes).decode("ascii")}"'
+#     if isinstance(value, JSONAttribute):
+#         b64_bytes = json.dumps(field["S"]).encode('ascii')
+#         return f'"{base64.b64encode(b64_bytes).decode("ascii")}"'
 
-    if field.get('SS'):  # SET
-        b64_bytes = json.dumps(field["SS"]).encode('ascii')
-        return f'"{base64.b64encode(b64_bytes).decode("ascii")}"'
+#     if field.get('SS'):  # SET
+#         b64_bytes = json.dumps(field["SS"]).encode('ascii')
+#         return f'"{base64.b64encode(b64_bytes).decode("ascii")}"'
 
-    if field.get('S'):  # String or JSONstring
-        return f'"{field["S"]}"'
+#     if field.get('S'):  # String or JSONstring
+#         return f'"{field["S"]}"'
 
-    if field.get('N'):
-        return f'{float(field["N"])}'
+#     if field.get('N'):
+#         return f'{float(field["N"])}'
 
-    if field.get('L'):  # LIST
-        b64_bytes = json.dumps(field["L"]).encode('ascii')
-        return f'"{base64.b64encode(b64_bytes).decode("ascii")}"'
+#     if field.get('L'):  # LIST
+#         b64_bytes = json.dumps(field["L"]).encode('ascii')
+#         return f'"{base64.b64encode(b64_bytes).decode("ascii")}"'
 
-    # handle empty string field
-    if field.get('S') == "":
-        return '""'
+#     # handle empty string field
+#     if field.get('S') == "":
+#         return '""'
 
 
 def _get_version_attribute(model_instance: _T):
@@ -272,29 +260,36 @@ def _update_sql(
     model_instance: _T,
 ):
     key_fields = []
-    model_args = model_instance.get_save_kwargs_from_instance()['Item']
+
+    simple_serialized = model_instance.to_simple_dict(force=True)
+
     _sql = "UPDATE %s \n" % safe_table_name(model_instance.__class__)  # model_class)
     _sql += "SET "
 
     # add non-key attribute pairs
-    for name, value in model_instance.get_attributes().items():
-        if value.is_hash_key or value.is_range_key:
-            key_fields.append(value)
+    for name, attr in model_instance.get_attributes().items():
+        if attr.is_hash_key or attr.is_range_key:
+            key_fields.append(attr)
             continue
-        _sql += f'\t{name} = {_get_sql_field_value(model_args, value)}, \n'
+        value = _attribute_value(simple_serialized, attr)
+        if value:
+            _sql += f'\t{name} = "{value}", \n'
+        else:
+            _sql += f'\t{name} = NULL, \n'
+
     _sql = _sql[:-3] + "\n"
 
     _sql += "WHERE "
 
-    for item in key_fields:
-        field = model_args.get(item.attr_name)
-        print(field)
-        _sql += f'\t{item.attr_name} = "{field["S"]}" AND\n'
+    for attr in key_fields:
+        #field = simple.get(item.attr_name)
+        #print(field)
+        _sql += f'\t{attr.attr_name} = "{_attribute_value(simple_serialized, attr)}" AND\n'
 
     version_attr = _get_version_attribute(model_instance)
     if version_attr:
         # add constraint
-        _sql += f'\t{version_attr.attr_name} = {int(float(_get_sql_field_value(model_args, version_attr))-1)};\n'
+        _sql += f'\t{version_attr.attr_name} = {int(float(_attribute_value(simple_serialized, version_attr))-1)};\n'
     else:
         _sql = _sql[:-4] + ";\n"
     log.debug('SQL: %s' % _sql)
