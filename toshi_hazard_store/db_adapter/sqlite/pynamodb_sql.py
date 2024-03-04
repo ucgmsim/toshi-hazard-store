@@ -27,6 +27,8 @@ import json
 import pynamodb.models
 from pynamodb.attributes import JSONAttribute, ListAttribute, VersionAttribute, NumberAttribute, UnicodeAttribute
 
+# import toshi_hazard_store.model.attributes
+from toshi_hazard_store.model.attributes import EnumConstrainedUnicodeAttribute, EnumConstrainedIntegerAttribute
 from pynamodb.constants import DELETE, PUT
 from pynamodb.expressions.condition import Condition
 
@@ -39,7 +41,9 @@ log = logging.getLogger(__name__)
 QUERY_ARG_ATTRIBUTES = [
     pynamodb.attributes.UnicodeAttribute,
     pynamodb.attributes.VersionAttribute,
-    pynamodb.attributes.NumberAttribute
+    pynamodb.attributes.NumberAttribute,
+    EnumConstrainedUnicodeAttribute,
+    EnumConstrainedIntegerAttribute
     ]
 
 
@@ -179,7 +183,7 @@ class SqlWriteAdapter:
                 key_fields.append(attr)
                 continue
             value = self._attribute_value(simple_serialized, dynamo_serialized, attr)
-            if value:
+            if value is not None:
                 _sql += f'\t{name} = "{value}", \n'
             else:
                 _sql += f'\t{name} = NULL, \n'
