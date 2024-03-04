@@ -1,58 +1,10 @@
+from datetime import datetime, timezone
+
 import pytest
 from moto import mock_dynamodb
-import json, base64
-import pickle
 from pytest_lazyfixture import lazy_fixture
-from datetime import datetime, timezone
-from pynamodb.models import Model
-from enum import Enum
 
-from pynamodb_attributes import IntegerAttribute, TimestampAttribute
-
-from pynamodb.attributes import UnicodeAttribute, ListAttribute, MapAttribute, NumberAttribute
-
-from toshi_hazard_store.model.attributes import EnumConstrainedUnicodeAttribute, EnumConstrainedIntegerAttribute
-
-from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
-
-
-class CustomMapAttribute(MapAttribute):
-    fldA = UnicodeAttribute()
-    fldB = ListAttribute(of=NumberAttribute)
-
-
-class SomeEnum(Enum):
-    PGA = 'PGA'
-    SA_0_1 = 'SA(0.1)'
-
-
-class NumericEnum(Enum):
-    _0 = 0  # indicates that this value is not used
-    _150 = 150
-    _175 = 175
-
-
-class FieldsMixin:
-    hash_key = UnicodeAttribute(hash_key=True)
-    range_key = UnicodeAttribute(range_key=True)
-    # custom_field = CustomMapAttribute()
-    custom_list_field = ListAttribute(of=CustomMapAttribute)
-    created = TimestampAttribute(default=datetime.now(tz=timezone.utc))
-    number = NumberAttribute(null=True)
-
-    enum = EnumConstrainedUnicodeAttribute(SomeEnum, null=True)
-    enum_numeric = EnumConstrainedIntegerAttribute(NumericEnum, null=True)
-
-
-class CustomFieldsSqliteModel(FieldsMixin, SqliteAdapter, Model):
-    class Meta:
-        table_name = "MySQLITEModel"
-
-
-class CustomFieldsPynamodbModel(FieldsMixin, Model):
-    class Meta:
-        table_name = "MyPynamodbModel"
-        region = "us-east-1"
+from .model_fixtures import CustomFieldsPynamodbModel, CustomFieldsSqliteModel, CustomMapAttribute
 
 
 @pytest.fixture()

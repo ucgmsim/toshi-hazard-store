@@ -7,14 +7,23 @@ from typing import Iterable
 from pynamodb.expressions.condition import Condition
 
 from toshi_hazard_store.config import DEPLOYMENT_STAGE, LOCAL_CACHE_FOLDER
-from toshi_hazard_store.db_adapter.sqlite.sqlite_store import (  # noqa
-    ensure_table_exists,
-    execute_sql,
-    get_model,
-    put_model,
-    safe_table_name,
-    sql_from_pynamodb_condition,
-)
+
+# from toshi_hazard_store.db_adapter.sqlite.sqlite_store import (  # noqa
+#     ensure_table_exists,
+#     execute_sql,
+#     get_model,
+#     put_model,
+#     safe_table_name,
+
+# )
+
+# from toshi_hazard_store.db_adapter.sqlite.pynamodb_sql import (
+#     safe_table_name,
+#     get_version_attribute,
+#     SqlWriteAdapter,
+#     SqlReadAdapter,
+# )
+
 
 log = logging.getLogger(__name__)
 

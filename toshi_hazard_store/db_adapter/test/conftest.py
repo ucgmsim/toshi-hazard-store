@@ -5,14 +5,12 @@ import tempfile
 from functools import partial
 
 import pytest
-from pynamodb.attributes import UnicodeAttribute, UnicodeSetAttribute, VersionAttribute
-from pynamodb.models import Model
-from pynamodb_attributes import FloatAttribute
 
 import toshi_hazard_store.config
 import toshi_hazard_store.db_adapter.sqlite.sqlite_adapter
-from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
 from toshi_hazard_store.db_adapter.sqlite.sqlite_store import safe_table_name
+
+from .model_fixtures import MyPynamodbModel, MySqlModel, VersionedPynamodbModel, VersionedSqlModel
 
 log = logging.getLogger(__name__)
 
@@ -42,30 +40,6 @@ def default_session_fixture(request, monkeypatch):
     )
 
 
-class FieldsMixin:
-    my_hash_key = UnicodeAttribute(hash_key=True)
-    my_range_key = UnicodeAttribute(range_key=True)
-    my_unicode_set = UnicodeSetAttribute()
-    my_float = FloatAttribute(null=True)
-    my_payload = UnicodeAttribute(null=True)
-
-
-class VersionedFieldsMixin(FieldsMixin):
-    version = VersionAttribute()
-
-
-class MySqlModel(FieldsMixin, SqliteAdapter, Model):
-    class Meta:
-        table_name = "MySQLITEModel"
-        # region = "us-east-1"
-
-
-class MyPynamodbModel(FieldsMixin, Model):
-    class Meta:
-        table_name = "MyPynamodbModel"
-        region = "us-east-1"
-
-
 @pytest.fixture(scope="module")
 def sqlite_adapter_test_table():
     yield MySqlModel
@@ -74,18 +48,6 @@ def sqlite_adapter_test_table():
 @pytest.fixture(scope="module")
 def pynamodb_adapter_test_table():
     yield MyPynamodbModel
-
-
-# below are the versioned test fixtures
-class VersionedSqlModel(VersionedFieldsMixin, SqliteAdapter, Model):
-    class Meta:
-        table_name = "VersionedSqlModel"
-
-
-class VersionedPynamodbModel(VersionedFieldsMixin, Model):
-    class Meta:
-        table_name = "VersionedPynamodbModel"
-        region = "us-east-1"
 
 
 @pytest.fixture(scope="module")

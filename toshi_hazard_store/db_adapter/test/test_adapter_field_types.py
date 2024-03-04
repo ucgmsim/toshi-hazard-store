@@ -1,8 +1,9 @@
+import base64
+import pickle
+
 import pytest
 from moto import mock_dynamodb
 from pytest_lazyfixture import lazy_fixture
-import json, base64
-import pickle
 
 
 def test_field_encode():

@@ -3,36 +3,37 @@
 A class to handle storing/retrieving pynamodb models into sqlite3
 
  - take a pynamodb model instance (6.0.0)
-    - serialise / deserialise basic attributes
-    - custom atrtibutes
+    - [X] serialise / deserialise basic attributes so they're queryable
+    - custom attributes MAY be queryable (configuration) TODO make this more that a list QUERY_ARG_ATTRIBUTES
     - extended attributes from pynamodo_attributes Timestamp etc
 
  - buld valid SQL for
-    - CREATE TABLE SQL
-    - UPDATE WHERE SQL
-    - INSERT INTO (single and MULTI)
-    - SELECT WHERE
+    - [x] CREATE TABLE
+    - [x] UPDATE WHERE
+    - [x] INSERT INTO
+    - [x] SELECT WHERE
 
  - Queries must produce original Pynamodb Model
  - Queries should support types for querying on STRING and Numeric fields but NOT on lists, custom / complex types
 """
 
-import logging
-from typing import Generator, Iterable, List, Type, TypeVar, Union
-
-import sqlite3
-import pickle
 import base64
 import json
+import logging
+import pickle
+import sqlite3
+from typing import Generator, Iterable, List, Type, TypeVar, Union
+
 import pynamodb.models
-from pynamodb.attributes import JSONAttribute, ListAttribute, VersionAttribute, NumberAttribute, UnicodeAttribute
+from nzshm_common.util import compress_string
+from pynamodb.attributes import VersionAttribute
+
+# from pynamodb.constants import DELETE, PUT
+from pynamodb.expressions.condition import Condition
+from pynamodb_attributes import IntegerAttribute
 
 # import toshi_hazard_store.model.attributes
-from toshi_hazard_store.model.attributes import EnumConstrainedUnicodeAttribute, EnumConstrainedIntegerAttribute
-from pynamodb.constants import DELETE, PUT
-from pynamodb.expressions.condition import Condition
-
-from nzshm_common.util import compress_string, decompress_string
+from toshi_hazard_store.model.attributes import EnumConstrainedIntegerAttribute, EnumConstrainedUnicodeAttribute
 
 _T = TypeVar('_T', bound='pynamodb.models.Model')
 
@@ -40,10 +41,11 @@ log = logging.getLogger(__name__)
 
 QUERY_ARG_ATTRIBUTES = [
     pynamodb.attributes.UnicodeAttribute,
-    pynamodb.attributes.VersionAttribute,
+    # pynamodb.attributes.VersionAttribute,
     pynamodb.attributes.NumberAttribute,
     EnumConstrainedUnicodeAttribute,
     EnumConstrainedIntegerAttribute,
+    IntegerAttribute,
 ]
 
 
@@ -64,7 +66,7 @@ def get_version_attribute(model_instance: _T):
 
 class SqlReadAdapter:
 
-    def __init__(self, model_class: 'pynamodb.models.Model'):
+    def __init__(self, model_class: Type[_T]):
         self.model_class = model_class
 
     def query_statement(
@@ -96,7 +98,7 @@ class SqlReadAdapter:
 
 class SqlWriteAdapter:
 
-    def __init__(self, model_class: _T):
+    def __init__(self, model_class: Type[_T]):
         self.model_class = model_class
 
     def _attribute_value(self, simple_serialized, dynamo_serialized, attr):
@@ -121,8 +123,10 @@ class SqlWriteAdapter:
         if type(attr) == pynamodb.attributes.JSONAttribute:
             return compress_string(json.dumps(value))
 
-        if type(attr) in QUERY_ARG_ATTRIBUTES:
-            return value
+        for query_arg_type in QUERY_ARG_ATTRIBUTES:
+            # type(attr) == query_arg_type
+            if isinstance(attr, query_arg_type):
+                return value
 
         # if attr.attr_type in ['S', 'N']:
         #     return value
@@ -159,10 +163,35 @@ class SqlWriteAdapter:
                 _sql += f'"{value}", ' if value else '0, '
                 continue
 
-            _sql += f'"{value}", ' if value else 'NULL, '
+            _sql += 'NULL, ' if value is None else f'"{value}", '
 
         log.debug(_sql)
         return _sql[:-2]
+
+    def create_statement(self) -> str:
+
+        # TEXT, NUMERIC, INTEGER, REAL, BLOB
+        # print(name, _type, _type.attr_type)
+        # print(dir(_type))
+        _sql: str = "CREATE TABLE IF NOT EXISTS %s (\n" % safe_table_name(self.model_class)
+
+        for name, attr in self.model_class.get_attributes().items():
+            # if attr.attr_type not in TYPE_MAP.keys():
+            #     raise ValueError(f"Unupported type: {attr.attr_type} for attribute {attr.attr_name}")
+            field_type = 'NUMERIC' if attr.attr_type == 'N' else 'STRING'
+
+            _sql += f'\t"{name}" {field_type},\n'
+
+        # now add the primary key
+        if self.model_class._range_key_attribute() and self.model_class._hash_key_attribute():
+            return (
+                _sql
+                + f"\tPRIMARY KEY ({self.model_class._hash_key_attribute().attr_name}, "
+                + f"{self.model_class._range_key_attribute().attr_name})\n)"
+            )
+        if self.model_class._hash_key_attribute():
+            return _sql + f"\tPRIMARY KEY {self.model_class._hash_key_attribute().attr_name}\n)"
+        raise ValueError()
 
     def update_statement(
         self,

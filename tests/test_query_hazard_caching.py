@@ -11,6 +11,7 @@ from pynamodb.models import Model
 import toshi_hazard_store.model.openquake_models
 from toshi_hazard_store import model, query
 from toshi_hazard_store.db_adapter import ensure_class_bases_begin_with
+from toshi_hazard_store.db_adapter.sqlite import sqlite_store
 from toshi_hazard_store.model.caching import cache_store
 
 HAZARD_MODEL_ID = 'MODEL_THE_FIRST'
@@ -93,7 +94,7 @@ def test_cache_put():
         hazard_model_id="HAZ_MODEL_ONE",
     ).set_location(loc)
 
-    cache_store.put_model(conn, m)
+    sqlite_store.put_model(conn, m)
 
     # now query
     hash_key = '-43.2~177.3'
@@ -101,7 +102,7 @@ def test_cache_put():
     filter_condition = mHAG.vs30.is_in(700) & mHAG.imt.is_in('PGA') & mHAG.hazard_model_id.is_in('HAZ_MODEL_ONE')
 
     m2 = next(
-        cache_store.get_model(
+        sqlite_store.get_model(
             conn,
             model_class=mHAG,
             hash_key=hash_key,
@@ -155,7 +156,7 @@ class TestCacheStoreWithOptionalAttribute(unittest.TestCase):
         mHAG = model.HazardAggregation
         mHAG.create_table(wait=True)
         conn = cache_store.get_connection(model_class=mHAG)
-        cache_store.put_model(conn, self.m)
+        sqlite_store.put_model(conn, self.m)
 
         # now query
         hash_key = '-43.2~177.3'
@@ -163,7 +164,7 @@ class TestCacheStoreWithOptionalAttribute(unittest.TestCase):
         filter_condition = mHAG.vs30.is_in(0) & mHAG.imt.is_in('PGA') & mHAG.hazard_model_id.is_in('HAZ_MODEL_ONE')
 
         m2 = next(
-            cache_store.get_model(
+            sqlite_store.get_model(
                 conn,
                 model_class=mHAG,
                 hash_key=hash_key,

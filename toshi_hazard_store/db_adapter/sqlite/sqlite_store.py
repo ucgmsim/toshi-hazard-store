@@ -4,32 +4,19 @@ sqlite helpers to manage caching tables
 
 import base64
 import json
-import pickle
 import logging
 import pathlib
+import pickle
 import sqlite3
-from datetime import datetime as dt
-from datetime import timezone
-from typing import Generator, Iterable, List, Type, TypeVar, Union
-
-from nzshm_common.util import compress_string, decompress_string
+from typing import Iterable, List, Type, TypeVar, Union
 
 import pynamodb.models
-from pynamodb.attributes import JSONAttribute, ListAttribute, VersionAttribute
+from nzshm_common.util import decompress_string
 from pynamodb.expressions.condition import Condition
-from pynamodb_attributes import TimestampAttribute
 
 from toshi_hazard_store.config import DEPLOYMENT_STAGE, LOCAL_CACHE_FOLDER
-from toshi_hazard_store.model.attributes import IMTValuesAttribute, LevelValuePairAttribute
 
-from .pynamodb_sql import (
-    safe_table_name,
-    sql_from_pynamodb_condition,
-    get_version_attribute,
-    get_hash_key,
-    SqlWriteAdapter,
-    SqlReadAdapter,
-)
+from .pynamodb_sql import SqlReadAdapter, SqlWriteAdapter, get_version_attribute, safe_table_name
 
 _T = TypeVar('_T', bound='pynamodb.models.Model')
 
@@ -53,6 +40,7 @@ def get_model(
     sra = SqlReadAdapter(model_class)
     sql = sra.query_statement(hash_key, range_key_condition, filter_condition)
 
+    log.debug(sql)
     # TODO: push this conversion into the SqlReadAdapter class
     try:
         conn.row_factory = sqlite3.Row
@@ -137,7 +125,7 @@ def put_models(
     conn: sqlite3.Connection,
     put_items: List[_T],
 ):
-    model_class = put_items[0].__class__
+    model_class = type(put_items[0])  # .__class__
     swa = SqlWriteAdapter(model_class)
     swa.insert_into(conn, put_items)
 
@@ -155,7 +143,7 @@ def put_model(
     log.debug(f"model: {model_instance}")
     unique_failure = False
 
-    model_class = model_instance.__class__
+    model_class = type(model_instance)
     swa = SqlWriteAdapter(model_class)
     statement = swa.insert_statement([model_instance])
 
@@ -182,10 +170,9 @@ def put_model(
         log.error(e)
         raise
 
-    update_statement = swa.update_statement(model_instance)
-
     if unique_failure:
         # try update query
+        update_statement = swa.update_statement(model_instance)
         cursor = conn.cursor()
         cursor.execute(update_statement)
         conn.commit()
@@ -232,36 +219,14 @@ def ensure_table_exists(conn: sqlite3.Connection, model_class: Type[_T]):
     :return:
     """
 
-    def create_table_sql(model_class: Type[_T]) -> str:
-
-        # TEXT, NUMERIC, INTEGER, REAL, BLOB
-        # print(name, _type, _type.attr_type)
-        # print(dir(_type))
-        _sql: str = "CREATE TABLE IF NOT EXISTS %s (\n" % safe_table_name(model_class)
-
-        for name, attr in model_class.get_attributes().items():
-            # if attr.attr_type not in TYPE_MAP.keys():
-            #     raise ValueError(f"Unupported type: {attr.attr_type} for attribute {attr.attr_name}")
-            _sql += f'\t"{name}" string,\n'
-
-        # now add the primary key
-        if model_class._range_key_attribute() and model_class._hash_key_attribute():
-            return (
-                _sql
-                + f"\tPRIMARY KEY ({model_class._hash_key_attribute().attr_name}, "
-                + f"{model_class._range_key_attribute().attr_name})\n)"
-            )
-        if model_class._hash_key_attribute():
-            return _sql + f"\tPRIMARY KEY {model_class._hash_key_attribute().attr_name}\n)"
-        raise ValueError()
+    swa = SqlWriteAdapter(model_class)
+    statement = swa.create_statement()
 
     log.debug(f'model_class {model_class}')
-    create_sql = create_table_sql(model_class)
-
-    log.debug(create_sql)
+    log.debug(statement)
 
     try:
-        conn.execute(create_sql)
+        conn.execute(statement)
     except Exception as e:
         print("EXCEPTION", e)
         raise
