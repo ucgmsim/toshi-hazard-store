@@ -9,29 +9,28 @@ from enum import Enum
 
 from pynamodb_attributes import IntegerAttribute, TimestampAttribute
 
-from pynamodb.attributes import (
-    UnicodeAttribute,
-    ListAttribute,
-    MapAttribute,
-    NumberAttribute
-    )
+from pynamodb.attributes import UnicodeAttribute, ListAttribute, MapAttribute, NumberAttribute
 
 from toshi_hazard_store.model.attributes import EnumConstrainedUnicodeAttribute, EnumConstrainedIntegerAttribute
 
 from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
 
+
 class CustomMapAttribute(MapAttribute):
     fldA = UnicodeAttribute()
     fldB = ListAttribute(of=NumberAttribute)
+
 
 class SomeEnum(Enum):
     PGA = 'PGA'
     SA_0_1 = 'SA(0.1)'
 
+
 class NumericEnum(Enum):
     _0 = 0  # indicates that this value is not used
     _150 = 150
     _175 = 175
+
 
 class FieldsMixin:
     hash_key = UnicodeAttribute(hash_key=True)
@@ -49,21 +48,26 @@ class CustomFieldsSqliteModel(FieldsMixin, SqliteAdapter, Model):
     class Meta:
         table_name = "MySQLITEModel"
 
+
 class CustomFieldsPynamodbModel(FieldsMixin, Model):
     class Meta:
         table_name = "MyPynamodbModel"
         region = "us-east-1"
 
+
 @pytest.fixture()
 def sqlite_adapter_test_table():
     yield CustomFieldsSqliteModel
+
 
 @pytest.fixture()
 def pynamodb_adapter_test_table():
     yield CustomFieldsPynamodbModel
 
+
 @pytest.mark.parametrize(
-    'custom_fields_test_table', [(lazy_fixture('sqlite_adapter_test_table')), (lazy_fixture('pynamodb_adapter_test_table'))]
+    'custom_fields_test_table',
+    [(lazy_fixture('sqlite_adapter_test_table')), (lazy_fixture('pynamodb_adapter_test_table'))],
 )
 @mock_dynamodb
 def test_timestamp_serialization(custom_fields_test_table):
@@ -73,10 +77,7 @@ def test_timestamp_serialization(custom_fields_test_table):
 
     created = datetime(2020, 1, 1, 11, tzinfo=timezone.utc)
     m = custom_fields_test_table(
-        hash_key="0A",
-        range_key="XX",
-        custom_list_field=[dict(fldA="ABC", fldB=[0,2,3])],
-        created=created
+        hash_key="0A", range_key="XX", custom_list_field=[dict(fldA="ABC", fldB=[0, 2, 3])], created=created
     )
 
     print(custom_fields_test_table.created.serialize(created))
@@ -88,7 +89,8 @@ def test_timestamp_serialization(custom_fields_test_table):
 
 
 @pytest.mark.parametrize(
-    'custom_fields_test_table', [(lazy_fixture('sqlite_adapter_test_table')), (lazy_fixture('pynamodb_adapter_test_table'))]
+    'custom_fields_test_table',
+    [(lazy_fixture('sqlite_adapter_test_table')), (lazy_fixture('pynamodb_adapter_test_table'))],
 )
 @mock_dynamodb
 def test_filter_condition_on_numeric_attribute(custom_fields_test_table):
@@ -100,11 +102,7 @@ def test_filter_condition_on_numeric_attribute(custom_fields_test_table):
 
     created = datetime(2020, 1, 1, 11, tzinfo=timezone.utc)
     m = custom_fields_test_table(
-        hash_key="0B",
-        range_key="XX",
-        custom_list_field=[dict(fldA="ABC", fldB=[0,2,3])],
-        created=created,
-        number = 42
+        hash_key="0B", range_key="XX", custom_list_field=[dict(fldA="ABC", fldB=[0, 2, 3])], created=created, number=42
     )
 
     m.save()
@@ -112,7 +110,7 @@ def test_filter_condition_on_numeric_attribute(custom_fields_test_table):
     res = custom_fields_test_table.query(
         hash_key="0B",
         range_key_condition=custom_fields_test_table.range_key == "XX",
-        filter_condition=custom_fields_test_table.number == 42
+        filter_condition=custom_fields_test_table.number == 42,
     )
 
     result = list(res)
@@ -121,7 +119,8 @@ def test_filter_condition_on_numeric_attribute(custom_fields_test_table):
 
 
 @pytest.mark.parametrize(
-    'custom_fields_test_table', [(lazy_fixture('sqlite_adapter_test_table')), (lazy_fixture('pynamodb_adapter_test_table'))]
+    'custom_fields_test_table',
+    [(lazy_fixture('sqlite_adapter_test_table')), (lazy_fixture('pynamodb_adapter_test_table'))],
 )
 @mock_dynamodb
 def test_filter_condition_on_custom_str_enum(custom_fields_test_table):
@@ -132,11 +131,7 @@ def test_filter_condition_on_custom_str_enum(custom_fields_test_table):
 
     created = datetime(2020, 1, 1, 11, tzinfo=timezone.utc)
     m = custom_fields_test_table(
-        hash_key="0B",
-        range_key="XX",
-        custom_list_field=[dict(fldA="ABC", fldB=[0,2,3])],
-        created=created,
-        enum = 'PGA'
+        hash_key="0B", range_key="XX", custom_list_field=[dict(fldA="ABC", fldB=[0, 2, 3])], created=created, enum='PGA'
     )
 
     m.save()
@@ -144,7 +139,7 @@ def test_filter_condition_on_custom_str_enum(custom_fields_test_table):
     res = custom_fields_test_table.query(
         hash_key="0B",
         range_key_condition=custom_fields_test_table.range_key == "XX",
-        filter_condition=custom_fields_test_table.enum == "PGA"
+        filter_condition=custom_fields_test_table.enum == "PGA",
     )
 
     result = list(res)
@@ -162,7 +157,8 @@ def test_filter_condition_on_custom_str_enum(custom_fields_test_table):
     ],
 )
 @pytest.mark.parametrize(
-    'custom_fields_test_table', [(lazy_fixture('sqlite_adapter_test_table')), (lazy_fixture('pynamodb_adapter_test_table'))]
+    'custom_fields_test_table',
+    [(lazy_fixture('sqlite_adapter_test_table')), (lazy_fixture('pynamodb_adapter_test_table'))],
 )
 @mock_dynamodb
 def test_filter_condition_on_custom_numeric_enum(payload, expected, custom_fields_test_table):
@@ -175,9 +171,9 @@ def test_filter_condition_on_custom_numeric_enum(payload, expected, custom_field
     m = custom_fields_test_table(
         hash_key="0B",
         range_key="XX",
-        custom_list_field=[dict(fldA="ABC", fldB=[0,2,3])],
+        custom_list_field=[dict(fldA="ABC", fldB=[0, 2, 3])],
         # created=created,
-        enum_numeric = payload
+        enum_numeric=payload,
     )
 
     m.save()
@@ -185,7 +181,7 @@ def test_filter_condition_on_custom_numeric_enum(payload, expected, custom_field
     res = custom_fields_test_table.query(
         hash_key="0B",
         range_key_condition=custom_fields_test_table.range_key == "XX",
-        filter_condition=custom_fields_test_table.enum_numeric == payload
+        filter_condition=custom_fields_test_table.enum_numeric == payload,
     )
 
     result = list(res)
@@ -195,9 +191,9 @@ def test_filter_condition_on_custom_numeric_enum(payload, expected, custom_field
     assert result[0].enum_numeric == expected
 
 
-
 @pytest.mark.parametrize(
-    'custom_fields_test_table', [(lazy_fixture('sqlite_adapter_test_table')), (lazy_fixture('pynamodb_adapter_test_table'))]
+    'custom_fields_test_table',
+    [(lazy_fixture('sqlite_adapter_test_table')), (lazy_fixture('pynamodb_adapter_test_table'))],
 )
 @mock_dynamodb
 def test_roundtrip_custom_list_of_map(custom_fields_test_table):
@@ -207,19 +203,13 @@ def test_roundtrip_custom_list_of_map(custom_fields_test_table):
 
     created = datetime(2020, 1, 1, 11, tzinfo=timezone.utc)
     m = custom_fields_test_table(
-        hash_key="0A",
-        range_key="XX",
-        custom_list_field=[dict(fldA="ABC", fldB=[0,2,3])],
-        created=created
+        hash_key="0A", range_key="XX", custom_list_field=[dict(fldA="ABC", fldB=[0, 2, 3])], created=created
     )
 
     # print("TO:", m.to_dynamodb_dict())
     m.save()
 
-    res = custom_fields_test_table.query(
-        hash_key="0A",
-        range_key_condition=custom_fields_test_table.range_key == "XX"
-    )
+    res = custom_fields_test_table.query(hash_key="0A", range_key_condition=custom_fields_test_table.range_key == "XX")
 
     result = list(res)
     assert len(result) == 1
@@ -229,7 +219,5 @@ def test_roundtrip_custom_list_of_map(custom_fields_test_table):
 
     assert result[0].custom_list_field[0].__class__ == CustomMapAttribute
     assert result[0].custom_list_field[0].fldA == "ABC"
-    assert result[0].custom_list_field[0].fldB == [0,2,3]
+    assert result[0].custom_list_field[0].fldB == [0, 2, 3]
     assert result[0].created == created
-
-

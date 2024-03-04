@@ -43,8 +43,8 @@ QUERY_ARG_ATTRIBUTES = [
     pynamodb.attributes.VersionAttribute,
     pynamodb.attributes.NumberAttribute,
     EnumConstrainedUnicodeAttribute,
-    EnumConstrainedIntegerAttribute
-    ]
+    EnumConstrainedIntegerAttribute,
+]
 
 
 def safe_table_name(model_class: Type[_T]):
@@ -117,8 +117,6 @@ class SqlWriteAdapter:
             log.debug(attr.__class__)
             log.debug(value)
             log.debug(dynamo_serialized.get(attr.attr_name))
-
-
 
         if type(attr) == pynamodb.attributes.JSONAttribute:
             return compress_string(json.dumps(value))
@@ -236,7 +234,9 @@ class SqlWriteAdapter:
             simple_serialized = model_instance.to_simple_dict(force=True)
             dynamo_serialized = model_instance.to_dynamodb_dict()
             # model_args = model_instance.get_save_kwargs_from_instance()['Item']
-            uniq_key = ":".join([f'{self._attribute_value(simple_serialized, dynamo_serialized, attr)}' for attr in unique_on])
+            uniq_key = ":".join(
+                [f'{self._attribute_value(simple_serialized, dynamo_serialized, attr)}' for attr in unique_on]
+            )
             unique_put_items[uniq_key] = model_instance
 
         for item in unique_put_items.values():

@@ -125,7 +125,7 @@ def get_model(
 
             log.debug(f"d {d}")
 
-            #yield model_class().from_simple_dict(d)
+            # yield model_class().from_simple_dict(d)
             yield model_class(**d)
 
     except Exception as e:
