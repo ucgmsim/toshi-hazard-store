@@ -314,4 +314,3 @@ def build_hazagg_models(adapted_hazagg_model, build_hazard_aggregation_models):
     with adapted_hazagg_model.HazardAggregation.batch_write() as batch:
         for item in build_hazard_aggregation_models():
             batch.save(item)
-

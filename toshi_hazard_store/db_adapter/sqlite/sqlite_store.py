@@ -23,13 +23,18 @@ from toshi_hazard_store.config import DEPLOYMENT_STAGE, LOCAL_CACHE_FOLDER
 from toshi_hazard_store.model.attributes import IMTValuesAttribute, LevelValuePairAttribute
 
 from .pynamodb_sql import (
-    safe_table_name, sql_from_pynamodb_condition, get_version_attribute,
-    get_hash_key, SqlWriteAdapter,SqlReadAdapter
-    )
+    safe_table_name,
+    sql_from_pynamodb_condition,
+    get_version_attribute,
+    get_hash_key,
+    SqlWriteAdapter,
+    SqlReadAdapter,
+)
 
 _T = TypeVar('_T', bound='pynamodb.models.Model')
 
 log = logging.getLogger(__name__)
+
 
 def get_model(
     conn: sqlite3.Connection,
@@ -48,7 +53,7 @@ def get_model(
     sra = SqlReadAdapter(model_class)
     sql = sra.query_statement(hash_key, range_key_condition, filter_condition)
 
-    #TODO: push this conversion into the SqlReadAdapter class
+    # TODO: push this conversion into the SqlReadAdapter class
     try:
         conn.row_factory = sqlite3.Row
         for row in conn.execute(sql):
@@ -71,27 +76,31 @@ def get_model(
                     #     continue
 
                     if type(attr) == pynamodb.attributes.JSONAttribute:
-                        d[name] =json.loads(decompress_string(d[name]))
+                        d[name] = json.loads(decompress_string(d[name]))
                         continue
 
                     try:
-                        #May not pickled, maybe just standard serialisation
-                        upk = pickle.loads(base64.b64decode(d[name]))
-                        log.debug(upk)
-                        log.debug(f"{attr.attr_name} {attr.attr_type} {upk} {type(upk)}")
-                        d[name] = upk
-                        continue
-                    except (Exception) as exc:
+                        # May not pickled, maybe just standard serialisation
+                        d[name] = pickle.loads(base64.b64decode(d[name]))
+                        log.debug(d[name])
+                        # log.debug(f"{attr.attr_name} {attr.attr_type} {upk} {type(upk)}")
+
+                        # if isinstance(upk, float):
+                        #     d[name] = upk
+                        # else:
+                        #     d[name] = attr.deserialize(upk)
+                        # continue
+                    except Exception as exc:
                         log.debug(f"{attr.attr_name} {attr.attr_type} {exc}")
 
                     try:
-                        #maybe not serialized
-                        d[name] = attr.deserialize(d[name])
+                        # maybe not serialized
+                        d[name] = attr.deserialize(attr.get_value(d[name]))
                         continue
-                    except (Exception) as exc:
+                    except Exception as exc:
                         log.debug(f"{attr.attr_name} {attr.attr_type} {exc}")
 
-                    #Dont do anything
+                    # Dont do anything
                     continue
 
                     # if "pynamodb_attributes.timestamp.TimestampAttribute" in str(attr):
@@ -114,7 +123,11 @@ def get_model(
                     # else:
                     #     d[name] = upk #
 
+            log.debug(f"d {d}")
+
+            #yield model_class().from_simple_dict(d)
             yield model_class(**d)
+
     except Exception as e:
         print(e)
         raise
@@ -127,6 +140,7 @@ def put_models(
     model_class = put_items[0].__class__
     swa = SqlWriteAdapter(model_class)
     swa.insert_into(conn, put_items)
+
 
 def put_model(
     conn: sqlite3.Connection,
@@ -252,6 +266,7 @@ def ensure_table_exists(conn: sqlite3.Connection, model_class: Type[_T]):
         print("EXCEPTION", e)
         raise
 
+
 def execute_sql(conn: sqlite3.Connection, model_class: Type[_T], sql_statement: str):
     """
     :param conn: Connection object
@@ -263,6 +278,3 @@ def execute_sql(conn: sqlite3.Connection, model_class: Type[_T], sql_statement: 
     except Exception as e:
         print("EXCEPTION", e)
     return res
-
-
-

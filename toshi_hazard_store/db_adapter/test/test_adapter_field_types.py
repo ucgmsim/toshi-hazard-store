@@ -5,10 +5,9 @@ import json, base64
 import pickle
 
 
-
 def test_field_encode():
     d = {'SS': ['PGA']}
-    pk = pickle.dumps(d,protocol=0)
+    pk = pickle.dumps(d, protocol=0)
     print(pk)
     assert pickle.loads(pk) == d
 
@@ -16,7 +15,6 @@ def test_field_encode():
 
     assert pickle.loads(base64.b64decode(d2)) == d
 
-    # assert 0
 
 @mock_dynamodb
 @pytest.mark.parametrize(
