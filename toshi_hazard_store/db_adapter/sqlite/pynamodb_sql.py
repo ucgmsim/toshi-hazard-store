@@ -273,7 +273,7 @@ class SqlWriteAdapter:
 
         _sql = _sql[:-2] + ";"
 
-        log.info('SQL: %s' % _sql)
+        log.debug('SQL: %s' % _sql)
 
         return _sql
 

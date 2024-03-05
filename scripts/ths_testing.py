@@ -194,7 +194,7 @@ def get_hazard_curves(model_id, num_aggs, num_vs30s, num_imts, num_locations):
     '--model_id',
     '-M',
     default='NSHM_v1.0.4',
-    type=str # click.Choice(['SLT_v8_gmm_v2_FINAL', 'SLT_v5_gmm_v0_SRWG', 'NSHM_1.0.0', 'NSHM_v1.0.4']),
+    type=str,  # click.Choice(['SLT_v8_gmm_v2_FINAL', 'SLT_v5_gmm_v0_SRWG', 'NSHM_1.0.0', 'NSHM_v1.0.4']),
 )
 def get_hazard_curve(model_id, agg, vs30, imt, location):
 
