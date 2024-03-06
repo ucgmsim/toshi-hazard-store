@@ -1,5 +1,10 @@
 # Changelog
 
+
+## [0.9.0] - 2024-03
+### Added
+ - V4 epic tables:
+
 ## [0.8.0] - 2024-02
 ### Added
  - db_adapter architecture
