@@ -18,6 +18,10 @@
   - refactor tests to use temporary folders correctly
   - migrated to pynamodb>=6.0
 
+## [0.7.9] - 2024-02-26
+### Changed
+ - dependencies for compatibility with openquake-engine v3.19
+
 ## [0.7.8] - 2024-01-31
 ### Added
  - 0.5% in 50 years PoE for disaggregations
