@@ -20,7 +20,7 @@ from .openquake_models import vs30_nloc001_gt_rlz_index
 # from .openquake_models import tables as oqv3_tables
 # from .openquake_v2_model import
 
-from .revision_4 import CompatibleHazardCalculation
+from .revision_4 import CompatibleHazardCalculation, HazardCurveProducerConfig, HazardRealizationMeta
 from .revision_4 import migrate as migrate_r4
 from .revision_4 import drop_tables as drop_r4
 

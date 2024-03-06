@@ -11,6 +11,8 @@ from pynamodb_attributes import TimestampAttribute
 
 from toshi_hazard_store.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION
 from toshi_hazard_store.model.caching import ModelCacheMixin
+from ..location_indexed_model import datetime_now  # VS30_KEYLEN, LocationIndexedModel,
+
 
 log = logging.getLogger(__name__)
 
@@ -34,45 +36,59 @@ class CompatibleHazardCalculation(Model):
     notes = UnicodeAttribute(null=True)
 
 
-def get_tables():
-    """table classes may be rebased, this makes sure we always get the latest class definition."""
-    for cls in [
-        globals()['CompatibleHazardCalculation'],
-    ]:
-        yield cls
+class HazardCurveProducerConfig(Model):
+    """Records characteristics of Hazard Curve producers/engines for compatablitiy tracking"""
+
+    __metaclass__ = type
+
+    class Meta:
+        billing_mode = 'PAY_PER_REQUEST'
+        table_name = f"THS_R4_HazardCurveProducerConfig-{DEPLOYMENT_STAGE}"
+        region = REGION
+        if IS_OFFLINE:
+            host = "http://localhost:8000"  # pragma: no cover
+
+    partition_key = UnicodeAttribute(hash_key=True)  # a static value as we actually don't want to partition our data
+    range_key = UnicodeAttribute(range_key=True)  # combination of the unique configuration identifiers
+    compat_calc_fk = UnicodeAttribute(
+        null=False
+    )  # must map to a valid CompatibleHazardCalculation.uniq_id (maybe wrap in transaction)
+
+    producer_software = UnicodeAttribute()
+    producer_version_id = UnicodeAttribute()
+    configuration_hash = UnicodeAttribute()
+    configuration_data = UnicodeAttribute(null=True)
+
+    notes = UnicodeAttribute(null=True)
 
 
-def migrate():
-    """Create the tables, unless they exist already."""
-    for table in get_tables():
-        if not table.exists():  # pragma: no cover
-            table.create_table(wait=True)
-            log.info(f"Migrate created table: {table}")
+class HazardRealizationMeta(Model):
+    """Stores metadata from a hazard calculation run - nothing OQ specific here please."""
+
+    __metaclass__ = type
+
+    class Meta:
+        """DynamoDB Metadata."""
+
+        billing_mode = 'PAY_PER_REQUEST'
+        table_name = f"THS_R4_HazardRealizationMeta-{DEPLOYMENT_STAGE}"
+        region = REGION
+        if IS_OFFLINE:
+            host = "http://localhost:8000"  # pragma: no cover
+
+    partition_key = UnicodeAttribute(hash_key=True)  # a static value as we actually don't want to partition our data
+    range_key = UnicodeAttribute(range_key=True)
+    compat_calc_fk = UnicodeAttribute(
+        null=False
+    )  # must map to a valid CompatibleHazardCalculation.unique_id (maybe wrap in transaction)
+    config_fk = UnicodeAttribute(
+        null=False
+    )  # must map to a valid HazardCurveProducerConfig.unique_id (maybe wrap in transaction)
+
+    created = TimestampAttribute(default=datetime_now)
+    vs30 = NumberAttribute()  # vs30 value
 
 
-def drop_tables():
-    """Drop the tables, if they exist."""
-    for table in get_tables():
-        if table.exists():  # pragma: no cover
-            table.delete_table()
-            log.info(f'deleted table: {table}')
-
-
-# class ToshiOpenquakeMeta(Model):
-#     """Stores metadata from the job configuration and the oq HDF5."""
-
-#     __metaclass__ = type
-
-#     class Meta:
-#         """DynamoDB Metadata."""
-
-#         billing_mode = 'PAY_PER_REQUEST'
-#         table_name = f"THS_WIP_OpenquakeMeta-{DEPLOYMENT_STAGE}"
-#         region = REGION
-#         if IS_OFFLINE:
-#             host = "http://localhost:8000"  # pragma: no cover
-
-#     partition_key = UnicodeAttribute(hash_key=True)  # a static value as we actually don't want to partition our data
 #     hazsol_vs30_rk = UnicodeAttribute(range_key=True)
 
 #     created = TimestampAttribute(default=datetime_now)
@@ -91,3 +107,29 @@ def drop_tables():
 #     src_lt = JSONAttribute()  # sources meta as DataFrame JSON
 #     gsim_lt = JSONAttribute()  # gmpe meta as DataFrame JSON
 #     rlz_lt = JSONAttribute()  # realization meta as DataFrame JSON
+
+
+def get_tables():
+    """table classes may be rebased, this makes sure we always get the latest class definition."""
+    for cls in [
+        globals()['CompatibleHazardCalculation'],
+        globals()['HazardCurveProducerConfig'],
+        globals()['HazardRealizationMeta'],
+    ]:
+        yield cls
+
+
+def migrate():
+    """Create the tables, unless they exist already."""
+    for table in get_tables():
+        if not table.exists():  # pragma: no cover
+            table.create_table(wait=True)
+            log.info(f"Migrate created table: {table}")
+
+
+def drop_tables():
+    """Drop the tables, if they exist."""
+    for table in get_tables():
+        if table.exists():  # pragma: no cover
+            table.delete_table()
+            log.info(f'deleted table: {table}')

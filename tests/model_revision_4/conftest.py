@@ -29,7 +29,7 @@ def pytest_generate_tests(metafunc):
 @pytest.fixture
 def adapted_model(request, tmp_path):
     """This fixture reconfigures adaption of all table in the hazard_models module"""
-    models = [hazard_models.CompatibleHazardCalculation]
+    models = hazard_models.get_tables()
 
     def set_adapter(model_klass, adapter):
         ensure_class_bases_begin_with(
