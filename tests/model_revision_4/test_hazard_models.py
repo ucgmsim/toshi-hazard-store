@@ -8,7 +8,7 @@ from moto import mock_dynamodb
 from toshi_hazard_store.model import (
     CompatibleHazardCalculation,
     HazardCurveProducerConfig,
-    HazardRealizationMeta,
+    HazardRealizationCurve,
     migrate_r4,
     drop_r4,
 )
@@ -21,8 +21,7 @@ class TestRevisionFourModelCreation_PynamoDB:
         migrate_r4()
         assert CompatibleHazardCalculation.exists()
         assert HazardCurveProducerConfig.exists()
-        assert HazardRealizationMeta.exists()
-
+        assert HazardRealizationCurve.exists()
         drop_r4()
 
 
@@ -36,11 +35,11 @@ class TestRevisionFourModelCreation_WithAdaption:
         print(adapted_model.HazardCurveProducerConfig)
         assert adapted_model.HazardCurveProducerConfig.exists()
 
-    def test_HazardRealizationMeta_table_exists(self, adapted_model):
-        print(adapted_model.HazardRealizationMeta)
-        assert adapted_model.HazardRealizationMeta.exists()
+    def test_HazardRealizationCurve_table_exists(self, adapted_model):
+        print(adapted_model.HazardRealizationCurve)
+        assert adapted_model.HazardRealizationCurve.exists()
 
-    def test_CompatibleHazardConfig_table_save_get(self, adapted_model):
+    def test_CompatibleHazardCalculation_table_save_get(self, adapted_model):
         mCHC = adapted_model.CompatibleHazardCalculation
         m = mCHC(partition_key='A', uniq_id="AAA", notes='hello world')
         m.save()
@@ -54,9 +53,10 @@ class TestRevisionFourModelCreation_WithAdaption:
         m = mHCPC(
             partition_key='A',
             range_key="openquake:3.16:#hashcode#",  # combination of the unique configuration identifiers
-            compat_calc_fk="AAA",  # must map to a valid CompatibleHazardCalculation.uniq_id (maybe wrap in transaction)
-            producer_software='openquake',
-            producer_version_id='3.16',  # could also be a git rev
+            compatible_calc_fk="AAA",  # must map to a valid CompatibleHazardCalculation.uniq_id (maybe wrap in transaction)
+
+            producer_software='openquake', # needs to be immutable ref and long-lived
+            producer_version_id='3.16',    # could also be a git rev
             configuration_hash='#hashcode#',
             configuration_data=None,
             notes='the original NSHM_v1.0.4 producer',
@@ -64,7 +64,7 @@ class TestRevisionFourModelCreation_WithAdaption:
         m.save()
         res = next(
             mHCPC.query(
-                'A', mHCPC.range_key == "openquake:3.16:#hashcode#", mHCPC.compat_calc_fk == "AAA"  # filter_condition
+                'A', mHCPC.range_key == "openquake:3.16:#hashcode#", mHCPC.compatible_calc_fk == "AAA"  # filter_condition
             )
         )
         assert res.partition_key == "A"
@@ -72,25 +72,26 @@ class TestRevisionFourModelCreation_WithAdaption:
         assert res.notes == m.notes
         assert res.producer_software == m.producer_software
 
-    def test_HazardRealizationMeta_table_save_get(self, adapted_model):
-        mHRM = adapted_model.HazardRealizationMeta
+
+    def test_HazardRealizationCurve_table_save_get(self, adapted_model):
+        mHRC = adapted_model.HazardRealizationCurve
         created = datetime(2020, 1, 1, 11, tzinfo=timezone.utc)
-        m = mHRM(
+        m = mHRC(
             partition_key='A',
             range_key="HOW TO SET THIS??",  # how do we want to identify these (consider URIs as these are suitable for ANY setting)
-            compat_calc_fk="AAA",  # must map to a valid CompatibleHazardCalculation.unique_id (maybe wrap in transaction)
-            config_fk="openquake:3.16:#hashcode#",  # must map to a valid HazardCurveProducerConfig.unique_id (maybe wrap in transaction)
+            compatible_calc_fk="AAA",       # must map to a valid CompatibleHazardCalculation.unique_id (maybe wrap in transaction)
+            producer_config_fk = "CFG",     # must map to a valid HazardCurveProducerConfig.unique_id (maybe wrap in transaction)
             created=created,
             vs30=999,  # vs30 value
         )
         m.save()
         res = next(
-            mHRM.query(
+            mHRC.query(
                 'A',
-                mHRM.range_key == m.range_key,
-                (mHRM.compat_calc_fk == "AAA")
-                & (mHRM.config_fk == "openquake:3.16:#hashcode#")
-                & (mHRM.vs30 == 999),  # filter_condition
+                mHRC.range_key == m.range_key,
+                (mHRC.compatible_calc_fk == m.compatible_calc_fk)
+                & (mHRC.producer_config_fk == m.producer_config_fk)
+                & (mHRC.vs30 == 999),  # filter_condition
             )
         )
 

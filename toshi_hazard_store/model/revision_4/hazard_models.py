@@ -49,10 +49,11 @@ class HazardCurveProducerConfig(Model):
             host = "http://localhost:8000"  # pragma: no cover
 
     partition_key = UnicodeAttribute(hash_key=True)  # a static value as we actually don't want to partition our data
-    range_key = UnicodeAttribute(range_key=True)  # combination of the unique configuration identifiers
-    compat_calc_fk = UnicodeAttribute(
-        null=False
-    )  # must map to a valid CompatibleHazardCalculation.uniq_id (maybe wrap in transaction)
+    range_key = UnicodeAttribute(range_key=True)     # combination of the unique configuration identifiers
+
+    compatible_calc_fk = UnicodeAttribute(
+        null=False, # attr_name='compat_calc_fk'
+    )  # must map to a valid CompatibleHazardCalculation.unique_id (maybe wrap in transaction)
 
     producer_software = UnicodeAttribute()
     producer_version_id = UnicodeAttribute()
@@ -62,8 +63,60 @@ class HazardCurveProducerConfig(Model):
     notes = UnicodeAttribute(null=True)
 
 
-class HazardRealizationMeta(Model):
-    """Stores metadata from a hazard calculation run - nothing OQ specific here please."""
+# class HazardRealizationMeta(Model):
+#     """Stores metadata from a hazard calculation run - nothing OQ specific here please."""
+
+#     __metaclass__ = type
+
+#     class Meta:
+#         """DynamoDB Metadata."""
+
+#         billing_mode = 'PAY_PER_REQUEST'
+#         table_name = f"THS_R4_HazardRealizationMeta-{DEPLOYMENT_STAGE}"
+#         region = REGION
+#         if IS_OFFLINE:
+#             host = "http://localhost:8000"  # pragma: no cover
+
+#     partition_key = UnicodeAttribute(hash_key=True)  # a static value as we actually don't want to partition our data
+#     range_key = UnicodeAttribute(range_key=True)
+
+#     compatible_calc_fk = UnicodeAttribute(
+#         null=False, attr_name='compat_calc_fk'
+#     )  # must map to a valid CompatibleHazardCalculation.unique_id (maybe wrap in transaction)
+
+#     producer_config_fk = UnicodeAttribute(
+#         null=False, attr_name="prod_conf_fk"
+#     )  # must map to a valid HazardCurveProducerConfig.unique_id (maybe wrap in transaction)
+
+#     created = TimestampAttribute(default=datetime_now)
+#     vs30 = NumberAttribute()  # vs30 value
+
+
+
+#     ## OLD v3 Meta fields below
+#     ## TODO: consider what is a) not OQ specific and B) needed/useful
+
+#     # hazsol_vs30_rk = UnicodeAttribute(range_key=True)
+
+#     # created = TimestampAttribute(default=datetime_now)
+
+#     # general_task_id = UnicodeAttribute()
+#     # vs30 = NumberAttribute()  # vs30 value
+
+#     # imts = UnicodeSetAttribute()  # list of IMTs
+#     # locations_id = UnicodeAttribute()  # Location codes identifier (ENUM?)
+#     # source_ids = UnicodeSetAttribute()
+#     # source_tags = UnicodeSetAttribute()
+#     # inv_time = NumberAttribute()  # Investigation time in years
+
+#     # extracted from the OQ HDF5 - used by THP needs GMM from here
+#     # src_lt = JSONAttribute()  # sources meta as DataFrame JSON
+#     # gsim_lt = JSONAttribute()  # gmpe meta as DataFrame JSON
+#     # rlz_lt = JSONAttribute()  # realization meta as DataFrame JSON
+
+
+class HazardRealizationCurve(Model):
+    """Stores hazard curve realizations."""
 
     __metaclass__ = type
 
@@ -71,42 +124,25 @@ class HazardRealizationMeta(Model):
         """DynamoDB Metadata."""
 
         billing_mode = 'PAY_PER_REQUEST'
-        table_name = f"THS_R4_HazardRealizationMeta-{DEPLOYMENT_STAGE}"
+        table_name = f"THS_R4_HazardRealizationCurve-{DEPLOYMENT_STAGE}"
         region = REGION
         if IS_OFFLINE:
             host = "http://localhost:8000"  # pragma: no cover
 
-    partition_key = UnicodeAttribute(hash_key=True)  # a static value as we actually don't want to partition our data
-    range_key = UnicodeAttribute(range_key=True)
-    compat_calc_fk = UnicodeAttribute(
-        null=False
-    )  # must map to a valid CompatibleHazardCalculation.unique_id (maybe wrap in transaction)
-    config_fk = UnicodeAttribute(
-        null=False
-    )  # must map to a valid HazardCurveProducerConfig.unique_id (maybe wrap in transaction)
+    partition_key = UnicodeAttribute(hash_key=True)  # a lot of these, let's look at our indexing
+    range_key = UnicodeAttribute(range_key=True)  # e.g ProducerID:MetaID
 
+    compatible_calc_fk = UnicodeAttribute(null=False)  # attr_name='compat_calc_fk')
+    producer_config_fk = UnicodeAttribute(null=False)  # attr_name="prod_conf_fk")
     created = TimestampAttribute(default=datetime_now)
     vs30 = NumberAttribute()  # vs30 value
 
+    hazard_solution_id = UnicodeAttribute(null=True) # a way to refer to where/how this calc done (URI URL, http://nshm-blah-blah/api-ref (simple REST API provides same as graphql find by -d))
 
-#     hazsol_vs30_rk = UnicodeAttribute(range_key=True)
+    branch_sources = UnicodeAttribute(null=True)  # we need this as a sorted string for searching (NSHM will use nrml/source_id for now)
+    branch_gmms = UnicodeAttribute(null=True)     #
 
-#     created = TimestampAttribute(default=datetime_now)
-
-#     hazard_solution_id = UnicodeAttribute()
-#     general_task_id = UnicodeAttribute()
-#     vs30 = NumberAttribute()  # vs30 value
-
-#     imts = UnicodeSetAttribute()  # list of IMTs
-#     locations_id = UnicodeAttribute()  # Location codes identifier (ENUM?)
-#     source_ids = UnicodeSetAttribute()
-#     source_tags = UnicodeSetAttribute()
-#     inv_time = NumberAttribute()  # Invesigation time in years
-
-#     # extracted from the OQ HDF5
-#     src_lt = JSONAttribute()  # sources meta as DataFrame JSON
-#     gsim_lt = JSONAttribute()  # gmpe meta as DataFrame JSON
-#     rlz_lt = JSONAttribute()  # realization meta as DataFrame JSON
+    # values = ListAttribute(of=IMTValuesAttribute)
 
 
 def get_tables():
@@ -114,7 +150,8 @@ def get_tables():
     for cls in [
         globals()['CompatibleHazardCalculation'],
         globals()['HazardCurveProducerConfig'],
-        globals()['HazardRealizationMeta'],
+        # globals()['HazardRealizationMeta'],
+        globals()['HazardRealizationCurve'],
     ]:
         yield cls
 
