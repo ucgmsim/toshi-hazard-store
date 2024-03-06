@@ -9,8 +9,9 @@ watch:
 nav:
   - Home: index.md
   - Installation: installation.md
-  - Cloud configuration: usage.md
-  - Local configuration: sqlite_adapter_usage.md
+  - Configuration: configuration.md
+  - Usage: usage.md
+  # - Local configuration: sqlite_adapter_usage.md
   - CLI tools: cli.md
   - Query API:
       - Hazard: hazard_query_api.md

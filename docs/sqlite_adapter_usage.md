@@ -13,7 +13,7 @@ SQLITE_ADAPTER_FOLDER={YYY}      # valid path to a local storage folder}
 USE_SQLITE_ADAPTER=TRUE
 
 ```
-## CLI for testing
+## Local useage examples
 
 Some examples using the CLI scripts
 
