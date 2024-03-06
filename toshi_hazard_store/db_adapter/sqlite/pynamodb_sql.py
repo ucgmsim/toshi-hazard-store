@@ -180,7 +180,7 @@ class SqlWriteAdapter:
             #     raise ValueError(f"Unupported type: {attr.attr_type} for attribute {attr.attr_name}")
             field_type = 'NUMERIC' if attr.attr_type == 'N' else 'STRING'
 
-            _sql += f'\t"{name}" {field_type},\n'
+            _sql += f'\t"{attr.attr_name}" {field_type},\n'
 
         # now add the primary key
         if self.model_class._range_key_attribute() and self.model_class._hash_key_attribute():
@@ -211,9 +211,9 @@ class SqlWriteAdapter:
                 continue
             value = self._attribute_value(simple_serialized, dynamo_serialized, attr)
             if value is not None:
-                _sql += f'\t{name} = "{value}", \n'
+                _sql += f'\t{attr.attr_name} = "{value}", \n'
             else:
-                _sql += f'\t{name} = NULL, \n'
+                _sql += f'\t{attr.attr_name} = NULL, \n'
 
         _sql = _sql[:-3] + "\n"
 
@@ -245,8 +245,8 @@ class SqlWriteAdapter:
         _sql += "("
 
         # add attribute names, taking first model
-        for name in put_items[0].get_attributes().keys():
-            _sql += f'"{name}", '
+        for _, attr in put_items[0].get_attributes().items():
+            _sql += f'"{attr.attr_name}", '
 
         _sql = _sql[:-2]
         _sql += ")\nVALUES \n"

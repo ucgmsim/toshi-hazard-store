@@ -24,6 +24,7 @@ class FieldsMixin:
     my_unicode_set = UnicodeSetAttribute()
     my_float = FloatAttribute(null=True)
     my_payload = UnicodeAttribute(null=True)
+    # my_renamed = UnicodeAttribute(null=True, attr_name="ren_and_stimpy")
 
 
 class VersionedFieldsMixin(FieldsMixin):
