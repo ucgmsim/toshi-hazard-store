@@ -4,7 +4,9 @@ from toshi_hazard_store import configure_adapter
 from toshi_hazard_store.config import USE_SQLITE_ADAPTER  # noqa TODO
 from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
 from toshi_hazard_store.model import openquake_models
+from toshi_hazard_store.model.revision_4 import hazard_models
 
+hazard_models.HazardRealizationCurve
 if USE_SQLITE_ADAPTER:
     configure_adapter(SqliteAdapter)
 
@@ -58,6 +60,10 @@ class DynamoBatchWorker(multiprocessing.Process):
         #     query.batch_save_hcurve_rlzs_v2(self.toshi_id, models=models)
         if self.model == openquake_models.OpenquakeRealization:
             with openquake_models.OpenquakeRealization.batch_write() as batch:
+                for item in models:
+                    batch.save(item)
+        if self.model == hazard_models.HazardRealizationCurve:
+            with hazard_models.HazardRealizationCurve.batch_write() as batch:
                 for item in models:
                     batch.save(item)
         else:

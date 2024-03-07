@@ -1,3 +1,4 @@
+# TODO: these were the first adapter tests implemented, and now this is done in conftest.py - consider porting these.
 import os
 from unittest import mock
 

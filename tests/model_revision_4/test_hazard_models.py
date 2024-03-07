@@ -13,6 +13,7 @@ from toshi_hazard_store.model import (
     drop_r4,
 )
 
+
 @mock_dynamodb
 class TestRevisionFourModelCreation_PynamoDB:
 
@@ -89,7 +90,7 @@ class TestRevisionFourModelCreation_WithAdaption:
         )
 
         print(res)
-        assert res.created.timestamp == m.created.timestamp # approx
-        assert res.vs30.timestamp == m.vs30
+        assert res.created.timestamp() == int(m.created.timestamp())  # approx
+        assert res.vs30 == m.vs30
         # assert res.rlz == m.rlz TODO: need string coercion for sqladapter!
         # assert 0

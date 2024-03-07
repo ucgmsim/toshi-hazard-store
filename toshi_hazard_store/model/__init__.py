@@ -44,6 +44,7 @@ def drop_tables():
 
 
 def configure_adapter(adapter_model: Type[PynamodbAdapterInterface]):
+    print("Configure adapter:", adapter_model)
     ensure_class_bases_begin_with(
         namespace=openquake_models.__dict__,
         class_name=str('ToshiOpenquakeMeta'),  # `str` type differs on Python 2 vs. 3.
@@ -60,5 +61,21 @@ def configure_adapter(adapter_model: Type[PynamodbAdapterInterface]):
     ensure_class_bases_begin_with(
         namespace=openquake_models.__dict__,
         class_name=str('HazardAggregation'),
+        base_class=adapter_model,
+    )
+    ### New Rev 4 tables
+    ensure_class_bases_begin_with(
+        namespace=revision_4.hazard_models.__dict__,
+        class_name=str('HazardRealizationCurve'),
+        base_class=adapter_model,
+    )
+    ensure_class_bases_begin_with(
+        namespace=revision_4.hazard_models.__dict__,
+        class_name=str('HazardCurveProducerConfig'),
+        base_class=adapter_model,
+    )
+    ensure_class_bases_begin_with(
+        namespace=revision_4.hazard_models.__dict__,
+        class_name=str('CompatibleHazardCalculation'),
         base_class=adapter_model,
     )

@@ -5,7 +5,7 @@ from pathlib import Path
 from moto import mock_dynamodb
 
 from toshi_hazard_store import model
-from toshi_hazard_store.oq_import import export_meta_v3, export_rlzs_v3
+from toshi_hazard_store.oq_import import export_meta_v3, export_rlzs_v3, export_rlzs_rev4
 
 try:
     import openquake  # noqa
@@ -22,9 +22,9 @@ class OqImportTest(unittest.TestCase):
 
         from openquake.calculators.extract import Extractor
 
-        self._hdf5_filepath = Path(Path(__file__).parent, 'fixtures/oq_import', 'calc_9.hdf5')
-        self.meta_filepath = Path(Path(__file__).parent, 'fixtures/oq_import', 'meta')
-        self.rlzs_filepath = Path(Path(__file__).parent, 'fixtures/oq_import', 'rlzs')
+        self._hdf5_filepath = Path(Path(__file__).parent.parent, 'fixtures/oq_import', 'calc_9.hdf5')
+        self.meta_filepath = Path(Path(__file__).parent.parent, 'fixtures/oq_import', 'meta')
+        self.rlzs_filepath = Path(Path(__file__).parent.parent, 'fixtures/oq_import', 'rlzs')
         self.extractor = Extractor(str(self._hdf5_filepath))
         # self.dframe = datastore.DataStore(str(self._hdf5_filepath))
 
@@ -65,7 +65,7 @@ class OqImportTest(unittest.TestCase):
         self.assertEqual(meta.model.source_ids, meta.model.source_ids)
         self.assertEqual(meta.model.inv_time, meta.model.inv_time)
 
-    def test_export_rlzs(self):
+    def test_export_rlzs_v3(self):
 
         with open(self.meta_filepath, 'rb') as metafile:
             meta = pickle.load(metafile)
@@ -90,3 +90,36 @@ class OqImportTest(unittest.TestCase):
         self.assertEqual(rlzs[0].hazard_solution_id, expected[0].hazard_solution_id)
         self.assertEqual(rlzs[0].source_tags, expected[0].source_tags)
         self.assertEqual(rlzs[0].source_ids, expected[0].source_ids)
+
+    def test_export_rlzs_rev4(self):
+
+        # Signature is different for rev4,
+        rlzs = list(
+            export_rlzs_rev4(
+                self.extractor,
+                compatible_calc_fk="A:BB",
+                producer_config_fk="CCC:openquake:3.16:#hashcode#",
+                vs30=400,
+                return_rlz=True,
+            )
+        )
+
+        with open(self.rlzs_filepath, 'rb') as rlzsfile:
+            expected = pickle.load(rlzsfile)
+
+        assert rlzs[0].partition_key == '-41.3~174.8'
+        assert rlzs[0].sort_key == '-41.300~174.780:400:000000:A:BB:CCC:openquake:3.16:#hashcode#'
+
+        self.assertEqual(len(rlzs), len(expected))
+        self.assertEqual(len(rlzs[0].values), 1)
+
+        self.assertEqual(rlzs[0].values[0].imt, expected[0].values[0].imt)
+        self.assertEqual(rlzs[0].values[0].vals, expected[0].values[0].vals)
+        self.assertEqual(rlzs[0].values[0].lvls, expected[0].values[0].lvls)
+
+        self.assertEqual(rlzs[0].rlz, expected[0].rlz)
+        self.assertEqual(rlzs[0].vs30, expected[0].vs30)
+
+        # self.assertEqual(rlzs[0].hazard_solution_id, expected[0].hazard_solution_id)
+        # self.assertEqual(rlzs[0].source_tags, expected[0].source_tags)
+        # self.assertEqual(rlzs[0].source_ids, expected[0].source_ids)
