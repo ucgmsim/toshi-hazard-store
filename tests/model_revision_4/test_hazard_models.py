@@ -13,7 +13,6 @@ from toshi_hazard_store.model import (
     drop_r4,
 )
 
-
 @mock_dynamodb
 class TestRevisionFourModelCreation_PynamoDB:
 
@@ -78,18 +77,7 @@ class TestRevisionFourModelCreation_WithAdaption:
         m = next(generate_rev4_rlz_models())
         print(m)
         mHRC = adapted_model.HazardRealizationCurve
-        # created = datetime(2020, 1, 1, 11, tzinfo=timezone.utc)
-        # m = mHRC(
-        #     partition_key='A',
-        #     range_key="HOW TO SET THIS??",  # how do we want to identify these (consider URIs as these are suitable for ANY setting)
-        #     compatible_calc_fk="AAA",       # must map to a valid CompatibleHazardCalculation.unique_id (maybe wrap in transaction)
-        #     producer_config_fk = "CFG",     # must map to a valid HazardCurveProducerConfig.unique_id (maybe wrap in transaction)
-        #     created=created,
-        #     rlz="1",
-        #     vs30=999,  # vs30 value
-        # )
         m.save()
-
         res = next(
             mHRC.query(
                 m.partition_key,
@@ -101,7 +89,7 @@ class TestRevisionFourModelCreation_WithAdaption:
         )
 
         print(res)
-        # assert res.created == m.created # approx
-        assert res.vs30 == m.vs30
+        assert res.created.timestamp == m.created.timestamp # approx
+        assert res.vs30.timestamp == m.vs30
         # assert res.rlz == m.rlz TODO: need string coercion for sqladapter!
         # assert 0
