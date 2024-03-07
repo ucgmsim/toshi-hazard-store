@@ -50,10 +50,10 @@ class HazardCurveProducerConfig(Model):
             host = "http://localhost:8000"  # pragma: no cover
 
     partition_key = UnicodeAttribute(hash_key=True)  # a static value as we actually don't want to partition our data
-    range_key = UnicodeAttribute(range_key=True)     # combination of the unique configuration identifiers
+    range_key = UnicodeAttribute(range_key=True)  # combination of the unique configuration identifiers
 
     compatible_calc_fk = UnicodeAttribute(
-        null=False, # attr_name='compat_calc_fk'
+        null=False,  # attr_name='compat_calc_fk'
     )  # must map to a valid CompatibleHazardCalculation.unique_id (maybe wrap in transaction)
 
     producer_software = UnicodeAttribute()
@@ -62,8 +62,6 @@ class HazardCurveProducerConfig(Model):
     configuration_data = UnicodeAttribute(null=True)
 
     notes = UnicodeAttribute(null=True)
-
-
 
 
 class HazardRealizationCurve(Model):
@@ -91,10 +89,14 @@ class HazardRealizationCurve(Model):
     rlz = UnicodeAttribute()  # identifier for the realization in the calcluation
     values = ListAttribute(of=IMTValuesAttribute)
 
-    calculation_id = UnicodeAttribute(null=True) # a way to refer to where/how this calc done (URI URL, http://nshm-blah-blah/api-ref (simple REST API provides same as graphql find by -d))
+    calculation_id = UnicodeAttribute(
+        null=True
+    )  # a way to refer to where/how this calc done (URI URL, http://nshm-blah-blah/api-ref (simple REST API provides same as graphql find by -d))
 
-    branch_sources = UnicodeAttribute(null=True)  # we need this as a sorted string for searching (NSHM will use nrml/source_id for now)
-    branch_gmms = UnicodeAttribute(null=True)     #
+    branch_sources = UnicodeAttribute(
+        null=True
+    )  # we need this as a sorted string for searching (NSHM will use nrml/source_id for now)
+    branch_gmms = UnicodeAttribute(null=True)  #
 
     # Secondary Index attributes
     # index1 = vs30_nloc1_gt_rlz_index()
@@ -113,6 +115,7 @@ class HazardRealizationCurve(Model):
         self.sort_key = f'{self.nloc_001}:{vs30s}:{rlzs}:{self.compatible_calc_fk}:{self.producer_config_fk}'
         # self.index1_rk = f'{self.nloc_1}:{vs30s}:{rlzs}:{self.hazard_solution_id}'
         return self
+
 
 def get_tables():
     """table classes may be rebased, this makes sure we always get the latest class definition."""
@@ -168,7 +171,6 @@ def drop_tables():
 
 #     created = TimestampAttribute(default=datetime_now)
 #     vs30 = NumberAttribute()  # vs30 value
-
 
 
 #     ## OLD v3 Meta fields below

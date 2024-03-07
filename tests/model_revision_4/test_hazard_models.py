@@ -54,9 +54,8 @@ class TestRevisionFourModelCreation_WithAdaption:
             partition_key='A',
             range_key="openquake:3.16:#hashcode#",  # combination of the unique configuration identifiers
             compatible_calc_fk="AAA",  # must map to a valid CompatibleHazardCalculation.uniq_id (maybe wrap in transaction)
-
-            producer_software='openquake', # needs to be immutable ref and long-lived
-            producer_version_id='3.16',    # could also be a git rev
+            producer_software='openquake',  # needs to be immutable ref and long-lived
+            producer_version_id='3.16',  # could also be a git rev
             configuration_hash='#hashcode#',
             configuration_data=None,
             notes='the original NSHM_v1.0.4 producer',
@@ -64,7 +63,9 @@ class TestRevisionFourModelCreation_WithAdaption:
         m.save()
         res = next(
             mHCPC.query(
-                'A', mHCPC.range_key == "openquake:3.16:#hashcode#", mHCPC.compatible_calc_fk == "AAA"  # filter_condition
+                'A',
+                mHCPC.range_key == "openquake:3.16:#hashcode#",
+                mHCPC.compatible_calc_fk == "AAA",  # filter_condition
             )
         )
         assert res.partition_key == "A"
@@ -72,9 +73,7 @@ class TestRevisionFourModelCreation_WithAdaption:
         assert res.notes == m.notes
         assert res.producer_software == m.producer_software
 
-
     def test_HazardRealizationCurve_table_save_get(self, adapted_model, generate_rev4_rlz_models):
-
 
         m = next(generate_rev4_rlz_models())
         print(m)

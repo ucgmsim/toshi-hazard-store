@@ -69,8 +69,9 @@ def test_table_save_and_query_unicode_set_renamed(adapter_test_table):
     print("TO:", m.to_dynamodb_dict())
     m.save()
     res = adapter_test_table.query(
-        hash_key="ABD123", range_key_condition=adapter_test_table.my_range_key == "qwerty123",
-        filter_condition = adapter_test_table.my_renamed == "moi"
+        hash_key="ABD123",
+        range_key_condition=adapter_test_table.my_range_key == "qwerty123",
+        filter_condition=adapter_test_table.my_renamed == "moi",
     )
 
     result = list(res)

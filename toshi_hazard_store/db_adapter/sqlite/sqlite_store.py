@@ -111,9 +111,6 @@ def get_model(
                     # else:
                     #     d[name] = upk #
 
-
-
-
             log.debug(f"d {d}")
 
             # yield model_class().from_simple_dict(d)

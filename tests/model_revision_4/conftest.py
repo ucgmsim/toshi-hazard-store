@@ -64,7 +64,6 @@ def adapted_model(request, tmp_path):
         raise ValueError("invalid internal test config")
 
 
-
 @pytest.fixture
 def many_rlz_args():
     yield dict(
@@ -74,6 +73,7 @@ def many_rlz_args():
         locs=[CodedLocation(o['latitude'], o['longitude'], 0.001) for o in list(LOCATIONS_BY_ID.values())[-5:]],
         rlzs=[str(x) for x in range(5)],
     )
+
 
 @pytest.fixture(scope='function')
 def generate_rev4_rlz_models(many_rlz_args, adapted_model):
