@@ -1,24 +1,20 @@
+import itertools
 import logging
 import os
 from unittest import mock
 
 import pytest
-import itertools
 from moto import mock_dynamodb
+from nzshm_common.location.code_location import CodedLocation
+from nzshm_common.location.location import LOCATIONS_BY_ID
 
 # from pynamodb.attributes import UnicodeAttribute
 from pynamodb.models import Model
 
-from nzshm_common.location.code_location import CodedLocation
-from nzshm_common.location.location import LOCATIONS_BY_ID
-
 from toshi_hazard_store.db_adapter import ensure_class_bases_begin_with
 from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
-
-from toshi_hazard_store.model.revision_4 import hazard_models  # the module containing adaptable model(s)
-
 from toshi_hazard_store.model.attributes import IMTValuesAttribute
-
+from toshi_hazard_store.model.revision_4 import hazard_models  # the module containing adaptable model(s)
 
 log = logging.getLogger(__name__)
 

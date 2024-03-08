@@ -1,8 +1,7 @@
-from .hazard_models import (
+from .hazard_models import (  # HazardRealizationMeta,
     CompatibleHazardCalculation,
     HazardCurveProducerConfig,
     HazardRealizationCurve,
-    # HazardRealizationMeta,
-    migrate,
     drop_tables,
+    migrate,
 )

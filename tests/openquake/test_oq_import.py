@@ -5,7 +5,7 @@ from pathlib import Path
 from moto import mock_dynamodb
 
 from toshi_hazard_store import model
-from toshi_hazard_store.oq_import import export_meta_v3, export_rlzs_v3, export_rlzs_rev4
+from toshi_hazard_store.oq_import import export_meta_v3, export_rlzs_rev4, export_rlzs_v3
 
 try:
     import openquake  # noqa

@@ -3,14 +3,15 @@ Basic model migration, structure
 """
 
 from datetime import datetime, timezone
+
 from moto import mock_dynamodb
 
 from toshi_hazard_store.model import (
     CompatibleHazardCalculation,
     HazardCurveProducerConfig,
     HazardRealizationCurve,
-    migrate_r4,
     drop_r4,
+    migrate_r4,
 )
 
 

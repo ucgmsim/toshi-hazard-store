@@ -1,9 +1,10 @@
 """Console script for loading openquake hazard to new REV4 tables."""
 
+import datetime as dt
 import logging
 import pathlib
 import sys
-import datetime as dt
+
 import click
 
 try:

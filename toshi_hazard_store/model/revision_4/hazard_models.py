@@ -11,9 +11,10 @@ from pynamodb_attributes import TimestampAttribute
 
 from toshi_hazard_store.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION
 from toshi_hazard_store.model.caching import ModelCacheMixin
-from ..location_indexed_model import datetime_now, LocationIndexedModel, VS30_KEYLEN
+
 from ..attributes import EnumConstrainedUnicodeAttribute, IMTValuesAttribute, LevelValuePairAttribute
 from ..constraints import AggregationEnum, IntensityMeasureTypeEnum
+from ..location_indexed_model import VS30_KEYLEN, LocationIndexedModel, datetime_now
 
 log = logging.getLogger(__name__)
 

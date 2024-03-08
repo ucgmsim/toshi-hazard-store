@@ -2,6 +2,7 @@ import json
 import math
 import random
 from dataclasses import dataclass
+from typing import Any, Iterator
 
 import pandas as pd
 
@@ -9,12 +10,10 @@ from toshi_hazard_store import configure_adapter, model
 from toshi_hazard_store.config import NUM_BATCH_WORKERS, USE_SQLITE_ADAPTER
 from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
 from toshi_hazard_store.model import openquake_models
+from toshi_hazard_store.model.revision_4 import hazard_models
 from toshi_hazard_store.multi_batch import save_parallel
 from toshi_hazard_store.transform import parse_logic_tree_branches
 from toshi_hazard_store.utils import normalise_site_code
-
-from typing import Iterator, Any
-from toshi_hazard_store.model.revision_4 import hazard_models
 
 # (
 #     CompatibleHazardCalculation,

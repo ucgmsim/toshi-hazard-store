@@ -26,6 +26,7 @@ from toshi_hazard_store.db_adapter import ensure_class_bases_begin_with
 from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
 from toshi_hazard_store.db_adapter.sqlite.sqlite_store import safe_table_name
 from toshi_hazard_store.model import openquake_models
+from toshi_hazard_store.model.revision_4 import hazard_models
 
 log = logging.getLogger(__name__)
 
@@ -58,6 +59,7 @@ def default_session_fixture(request, monkeypatch):
 
     # NB using environment variables doesn't work
     # monkeypatch.setenv("NZSHM22_HAZARD_STORE_LOCAL_CACHE", str(cache_folder.name))
+
     monkeypatch.setattr(toshi_hazard_store.config, "LOCAL_CACHE_FOLDER", str(cache_folder))
     monkeypatch.setattr(toshi_hazard_store.config, "SQLITE_ADAPTER_FOLDER", str(adapter_folder))
     monkeypatch.setattr(
@@ -74,9 +76,12 @@ def default_session_fixture(request, monkeypatch):
 
 
 @pytest.fixture(scope="function", autouse=True)
-def force_model_reload():
+def force_model_reload(monkeypatch):
+    # monkeypatch.setattr(toshi_hazard_store.config, "USE_SQLITE_ADAPTER", False)
     importlib.reload(sys.modules['toshi_hazard_store.model'])
+    importlib.reload(sys.modules['toshi_hazard_store.model.revision_4.hazard_models'])
     from toshi_hazard_store.model import openquake_models  # noqa
+    from toshi_hazard_store.model.revision_4 import hazard_models
 
 
 # ref https://docs.pytest.org/en/7.3.x/example/parametrize.html#deferring-the-setup-of-parametrized-resources
