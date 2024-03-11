@@ -1,4 +1,5 @@
 import json
+import logging
 import math
 import random
 from dataclasses import dataclass
@@ -16,9 +17,7 @@ from toshi_hazard_store.utils import normalise_site_code
 NUM_BATCH_WORKERS = 1 if USE_SQLITE_ADAPTER else NUM_BATCH_WORKERS
 BATCH_SIZE = 1000 if USE_SQLITE_ADAPTER else random.randint(15, 50)
 
-if USE_SQLITE_ADAPTER:
-    configure_adapter(SqliteAdapter)
-
+log = logging.getLogger(__name__)
 
 @dataclass
 class OpenquakeMeta:
@@ -39,14 +38,14 @@ def export_meta_v3(extractor, toshi_hazard_id, toshi_gt_id, locations_id, source
     df_len += len(rlz_lt.to_json())
 
     if df_len >= 300e3:
-        print('WARNING: Dataframes for this job may be too large to store on DynamoDB.')
+        log.warning('WARNING: Dataframes for this job may be too large to store on DynamoDB.')
 
     vs30 = oq['reference_vs30_value']
 
     if math.isnan(vs30):
         vs30 = 0
 
-    print('vs30: ', vs30)
+    log.debug(f'vs30: {vs30}')
 
     obj = openquake_models.ToshiOpenquakeMeta(
         partition_key="ToshiOpenquakeMeta",
@@ -77,19 +76,15 @@ def export_rlzs_v3(extractor, oqmeta: OpenquakeMeta, return_rlz=False):
     rlz_keys = [k for k in rlzs.keys() if 'rlz-' in k]
     imtls = oq['hazard_imtls']  # dict of imt and the levels used at each imt e.g {'PGA': [0.011. 0.222]}
 
-    print('rlz', oqmeta.rlz_lt)
-    print()
-    print('src', oqmeta.source_lt)
-    print()
-    print('gsim', oqmeta.gsim_lt)
-    print()
-
+    log.debug(f'rlz {oqmeta.rlz_lt}')
+    log.debug(f'src {oqmeta.source_lt}')
+    log.debug(f'gsim {oqmeta.gsim_lt}')
+    
     def generate_models():
+        count = 0
         for i_site in range(len(sites)):
             loc = normalise_site_code((sites.loc[i_site, 'lon'], sites.loc[i_site, 'lat']), True)
-            # print(f'loc: {loc}')
             for i_rlz, rlz in enumerate(rlz_keys):
-
                 values = []
                 for i_imt, imt in enumerate(imtls.keys()):
                     values.append(
@@ -110,6 +105,9 @@ def export_rlzs_v3(extractor, oqmeta: OpenquakeMeta, return_rlz=False):
                 if oqmeta.model.vs30 == 0:
                     oq_realization.site_vs30 = sites.loc[i_site, 'vs30']
                 yield oq_realization.set_location(loc)
+                count +=1 
+
+        log.debug(f'generate_models() produced {count} models.')
 
     # used for testing
     if return_rlz:
