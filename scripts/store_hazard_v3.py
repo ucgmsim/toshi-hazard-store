@@ -17,12 +17,12 @@ except (ModuleNotFoundError, ImportError):
     print("WARNING: the transform module uses the optional openquake dependencies - h5py, pandas and openquake.")
 
 
-if USE_SQLITE_ADAPTER:
-    configure_adapter(adapter_model=SqliteAdapter)
+# if USE_SQLITE_ADAPTER:
+#     configure_adapter(adapter_model=SqliteAdapter)
 
 
 log = logging.getLogger()
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logging.getLogger('nshm_toshi_client.toshi_client_base').setLevel(logging.INFO)
 logging.getLogger('urllib3').setLevel(logging.INFO)
 logging.getLogger('botocore').setLevel(logging.INFO)
@@ -32,8 +32,8 @@ formatter = logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)s %(messag
 root_handler = log.handlers[0]
 root_handler.setFormatter(formatter)
 
-log.debug('DEBUG message')
-log.info('INFO message')
+# log.debug('DEBUG message')
+# log.info('INFO message')
 
 
 def extract_and_save(args):
