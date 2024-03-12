@@ -2,7 +2,7 @@ from typing import Type
 
 from toshi_hazard_store.db_adapter import PynamodbAdapterInterface, ensure_class_bases_begin_with
 
-from . import location_indexed_model, openquake_models
+from . import location_indexed_model, openquake_models, revision_4
 from .attributes import IMTValuesAttribute, LevelValuePairAttribute
 from .constraints import AggregationEnum, IntensityMeasureTypeEnum, ProbabilityEnum, VS30Enum
 from .disagg_models import DisaggAggregationExceedance, DisaggAggregationOccurence

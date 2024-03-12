@@ -26,7 +26,7 @@ from toshi_hazard_store.db_adapter import ensure_class_bases_begin_with
 from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
 from toshi_hazard_store.db_adapter.sqlite.sqlite_store import safe_table_name
 from toshi_hazard_store.model import openquake_models
-from toshi_hazard_store.model.revision_4 import hazard_models
+from toshi_hazard_store.model.revision_4 import hazard_models  # noqa we need this for adaptation
 
 log = logging.getLogger(__name__)
 
@@ -81,7 +81,7 @@ def force_model_reload(monkeypatch):
     importlib.reload(sys.modules['toshi_hazard_store.model'])
     importlib.reload(sys.modules['toshi_hazard_store.model.revision_4.hazard_models'])
     from toshi_hazard_store.model import openquake_models  # noqa
-    from toshi_hazard_store.model.revision_4 import hazard_models
+    from toshi_hazard_store.model.revision_4 import hazard_models  # noqa
 
 
 # ref https://docs.pytest.org/en/7.3.x/example/parametrize.html#deferring-the-setup-of-parametrized-resources

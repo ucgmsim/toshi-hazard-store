@@ -5,9 +5,7 @@ import datetime as dt
 import logging
 from pathlib import Path
 
-from toshi_hazard_store import configure_adapter, model
-from toshi_hazard_store.config import USE_SQLITE_ADAPTER  # noqa TODO
-from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
+from toshi_hazard_store import model
 
 try:
     from openquake.calculators.extract import Extractor
@@ -16,17 +14,12 @@ try:
 except (ModuleNotFoundError, ImportError):
     print("WARNING: the transform module uses the optional openquake dependencies - h5py, pandas and openquake.")
 
-
-# if USE_SQLITE_ADAPTER:
-#     configure_adapter(adapter_model=SqliteAdapter)
-
-
 log = logging.getLogger()
 logging.basicConfig(level=logging.DEBUG)
-logging.getLogger('nshm_toshi_client.toshi_client_base').setLevel(logging.INFO)
-logging.getLogger('urllib3').setLevel(logging.INFO)
-logging.getLogger('botocore').setLevel(logging.INFO)
-logging.getLogger('gql.transport.requests').setLevel(logging.WARN)
+# logging.getLogger('nshm_toshi_client.toshi_client_base').setLevel(logging.INFO)
+# logging.getLogger('urllib3').setLevel(logging.INFO)
+# logging.getLogger('botocore').setLevel(logging.INFO)
+# logging.getLogger('gql.transport.requests').setLevel(logging.WARN)
 
 formatter = logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 root_handler = log.handlers[0]

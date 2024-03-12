@@ -2,14 +2,12 @@
 Basic model migration, structure
 """
 
-from datetime import datetime, timezone
+# from datetime import datetime, timezone
 
 from moto import mock_dynamodb
 
 from toshi_hazard_store.model import (
-    CompatibleHazardCalculation,
-    HazardCurveProducerConfig,
-    HazardRealizationCurve,
+    # CompatibleHazardCalculation,; HazardCurveProducerConfig,; HazardRealizationCurve,
     drop_r4,
     migrate_r4,
 )
@@ -18,11 +16,11 @@ from toshi_hazard_store.model import (
 @mock_dynamodb
 class TestRevisionFourModelCreation_PynamoDB:
 
-    def test_tables_exists(self):
+    def test_tables_exists(self, adapted_model):
         migrate_r4()
-        assert CompatibleHazardCalculation.exists()
-        assert HazardCurveProducerConfig.exists()
-        assert HazardRealizationCurve.exists()
+        assert adapted_model.CompatibleHazardCalculation.exists()
+        assert adapted_model.HazardCurveProducerConfig.exists()
+        assert adapted_model.HazardRealizationCurve.exists()
         drop_r4()
 
 
@@ -54,7 +52,10 @@ class TestRevisionFourModelCreation_WithAdaption:
         m = mHCPC(
             partition_key='A',
             range_key="openquake:3.16:#hashcode#",  # combination of the unique configuration identifiers
-            compatible_calc_fk="AAA",  # must map to a valid CompatibleHazardCalculation.uniq_id (maybe wrap in transaction)
+            compatible_calc_fk=(
+                "A",
+                "AA",
+            ),  # must map to a valid CompatibleHazardCalculation.uniq_id (maybe wrap in transaction)
             producer_software='openquake',  # needs to be immutable ref and long-lived
             producer_version_id='3.16',  # could also be a git rev
             configuration_hash='#hashcode#',
@@ -66,7 +67,7 @@ class TestRevisionFourModelCreation_WithAdaption:
             mHCPC.query(
                 'A',
                 mHCPC.range_key == "openquake:3.16:#hashcode#",
-                mHCPC.compatible_calc_fk == "AAA",  # filter_condition
+                mHCPC.compatible_calc_fk == ("A", "AA"),  # filter_condition
             )
         )
         assert res.partition_key == "A"

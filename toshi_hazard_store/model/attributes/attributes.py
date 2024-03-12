@@ -3,7 +3,7 @@
 import json
 import pickle
 import zlib
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Tuple, Union
 
 from nzshm_common.util import compress_string, decompress_string
 from pynamodb.attributes import (
@@ -15,6 +15,25 @@ from pynamodb.attributes import (
     UnicodeAttribute,
 )
 from pynamodb.constants import BINARY, STRING
+
+
+class ForeignKeyAttribute(Attribute):
+    """
+    A string representation of a (hash_key, range_key) tuple.
+    """
+
+    attr_type = STRING
+    value_type = Tuple[str, str]
+
+    def serialize(self, value: Tuple[str, str]) -> str:
+        assert len(value) == 2
+        return "_".join(value)
+
+    def deserialize(self, value: str) -> Tuple[str, str]:
+        tup = value.split("_")
+        if not len(tup) == 2:
+            raise ValueError(f"Invalid value cannot be deserialised: {value}")
+        return (tup[0], tup[1])
 
 
 class IMTValuesAttribute(MapAttribute):

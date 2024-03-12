@@ -7,8 +7,6 @@ import pytest
 from moto import mock_dynamodb
 from nzshm_common.location.code_location import CodedLocation
 from nzshm_common.location.location import LOCATIONS_BY_ID
-
-# from pynamodb.attributes import UnicodeAttribute
 from pynamodb.models import Model
 
 from toshi_hazard_store.db_adapter import ensure_class_bases_begin_with
@@ -34,11 +32,21 @@ def adapted_model(request, tmp_path):
     models = hazard_models.get_tables()
 
     def set_adapter(model_klass, adapter):
-        ensure_class_bases_begin_with(
-            namespace=hazard_models.__dict__,
-            class_name=model_klass.__name__,  # `str` type differs on Python 2 vs. 3.
-            base_class=adapter,
-        )
+        if model_klass == hazard_models.HazardRealizationCurve:
+            ensure_class_bases_begin_with(
+                namespace=hazard_models.__dict__, class_name=str('LocationIndexedModel'), base_class=adapter
+            )
+            ensure_class_bases_begin_with(
+                namespace=hazard_models.__dict__,
+                class_name=str('HazardRealizationCurve'),  # `str` type differs on Python 2 vs. 3.
+                base_class=hazard_models.LocationIndexedModel,
+            )
+        else:
+            ensure_class_bases_begin_with(
+                namespace=hazard_models.__dict__,
+                class_name=model_klass.__name__,  # `str` type differs on Python 2 vs. 3.
+                base_class=adapter,
+            )
 
     if request.param == 'pynamodb':
         with mock_dynamodb():
@@ -89,8 +97,8 @@ def generate_rev4_rlz_models(many_rlz_args, adapted_model):
                 )
             for loc, vs30 in itertools.product(many_rlz_args["locs"][:5], many_rlz_args["vs30s"]):
                 yield hazard_models.HazardRealizationCurve(
-                    compatible_calc_fk="A",
-                    producer_config_fk="BBB",
+                    compatible_calc_fk=("A", "AA"),
+                    producer_config_fk=("B", "BB"),
                     values=values,
                     rlz=rlz,
                     vs30=vs30,

@@ -33,7 +33,11 @@ from pynamodb.expressions.condition import Condition
 from pynamodb_attributes import IntegerAttribute
 
 # import toshi_hazard_store.model.attributes
-from toshi_hazard_store.model.attributes import EnumConstrainedIntegerAttribute, EnumConstrainedUnicodeAttribute
+from toshi_hazard_store.model.attributes import (
+    EnumConstrainedIntegerAttribute,
+    EnumConstrainedUnicodeAttribute,
+    ForeignKeyAttribute,
+)
 
 _T = TypeVar('_T', bound='pynamodb.models.Model')
 
@@ -46,6 +50,7 @@ QUERY_ARG_ATTRIBUTES = [
     EnumConstrainedUnicodeAttribute,
     EnumConstrainedIntegerAttribute,
     IntegerAttribute,
+    ForeignKeyAttribute,
 ]
 
 

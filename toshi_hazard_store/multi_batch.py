@@ -1,16 +1,11 @@
 import logging
 import multiprocessing
 
-import random
-
-from toshi_hazard_store import configure_adapter
-from toshi_hazard_store.config import USE_SQLITE_ADAPTER  # noqa TODO
-from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
 from toshi_hazard_store.model import openquake_models
 from toshi_hazard_store.model.revision_4 import hazard_models
 
-
 log = logging.getLogger(__name__)
+
 
 class DynamoBatchWorker(multiprocessing.Process):
     """A worker that batches and saves records to DynamoDB.
@@ -61,13 +56,13 @@ class DynamoBatchWorker(multiprocessing.Process):
         #     query.batch_save_hcurve_rlzs_v2(self.toshi_id, models=models)
         try:
             if self.model == openquake_models.OpenquakeRealization:
-                    with openquake_models.OpenquakeRealization.batch_write() as batch:
-                        for item in models:
-                            batch.save(item)
+                with openquake_models.OpenquakeRealization.batch_write() as batch:
+                    for item in models:
+                        batch.save(item)
             elif self.model == hazard_models.HazardRealizationCurve:
                 with hazard_models.HazardRealizationCurve.batch_write() as batch:
-                 for item in models:
-                     batch.save(item)
+                    for item in models:
+                        batch.save(item)
             else:
                 raise ValueError("WHATT!")
         except Exception as err:
@@ -87,7 +82,7 @@ def save_parallel(toshi_id: str, model_generator, model, num_workers, batch_size
     task_count = 0
     for t in model_generator:
         tasks.put(t)
-        task_count +=1
+        task_count += 1
 
     # Add a poison pill for each to signal we've done everything
     for i in range(num_workers):
@@ -96,4 +91,3 @@ def save_parallel(toshi_id: str, model_generator, model, num_workers, batch_size
     # Wait for all of the tasks to finish
     tasks.join()
     log.info(f'save_parallel completed {task_count} tasks.')
-
