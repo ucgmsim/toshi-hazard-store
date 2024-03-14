@@ -24,6 +24,7 @@ class TestRevisionFourModelCreation_PynamoDB:
         drop_r4()
 
 
+
 class TestRevisionFourModelCreation_WithAdaption:
 
     def test_CompatibleHazardCalculation_table_exists(self, adapted_model):
@@ -56,11 +57,13 @@ class TestRevisionFourModelCreation_WithAdaption:
                 "A",
                 "AA",
             ),  # must map to a valid CompatibleHazardCalculation.uniq_id (maybe wrap in transaction)
-            producer_software='openquake',  # needs to be immutable ref and long-lived
+            producer_software='openquake',  # needs to be a long-lived, immutable ref
             producer_version_id='3.16',  # could also be a git rev
             configuration_hash='#hashcode#',
             configuration_data=None,
             notes='the original NSHM_v1.0.4 producer',
+            imts=['PGA', 'SA(0.5)'],
+            imt_levels = list(map(lambda x: x / 1e3, range(1,51)))
         )
         m.save()
         res = next(
@@ -84,15 +87,19 @@ class TestRevisionFourModelCreation_WithAdaption:
         res = next(
             mHRC.query(
                 m.partition_key,
-                mHRC.sort_key == m.sort_key,
-                (mHRC.compatible_calc_fk == m.compatible_calc_fk)
-                & (mHRC.producer_config_fk == m.producer_config_fk)
-                & (mHRC.vs30 == m.vs30),  # filter_condition
+                mHRC.sort_key == m.sort_key
+                # (mHRC.compatible_calc_fk == m.compatible_calc_fk)
+                # & (mHRC.producer_config_fk == m.producer_config_fk)
+                # & (mHRC.vs30 == m.vs30),  # filter_condition
             )
         )
 
         print(res)
         assert res.created.timestamp() == int(m.created.timestamp())  # approx
         assert res.vs30 == m.vs30
+        assert res.imt == m.imt
+        # assert res.values[0] == m.values[0]
+        assert res.sort_key == '-38.160~178.247:0250:PGA:A_AA:s08cb60591a:g88f44e3a4e'
+        assert res.sources_hash() == '08cb60591a'
         # assert res.rlz == m.rlz TODO: need string coercion for sqladapter!
         # assert 0

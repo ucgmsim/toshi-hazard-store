@@ -61,6 +61,8 @@ def export_rlzs_rev4(
     producer_config_fk: Tuple[str, str],
     vs30: int,
     hazard_calc_id: str,
+    imts: List[str],
+    imt_levels: List[float],
     return_rlz=True,
 ) -> Union[List[hazard_models.HazardRealizationCurve], None]:
 
@@ -92,6 +94,9 @@ def export_rlzs_rev4(
     rlz_keys = [k for k in rlzs.keys() if 'rlz-' in k]
     imtls = oq['hazard_imtls']  # dict of imt and the levels used at each imt e.g {'PGA': [0.011. 0.222]}
 
+    if not imts == list(imtls.keys()):
+        log.error(f'imts do not align {imtls.keys()} =/=  {imts}')
+        raise ValueError('bad IMT configuration')
     # oq = json.loads(extractor.get('oqparam').json)
     source_lt, gsim_lt, rlz_lt = parse_logic_tree_branches(extractor)
 
@@ -106,27 +111,26 @@ def export_rlzs_rev4(
             loc = normalise_site_code((sites.loc[i_site, 'lon'], sites.loc[i_site, 'lat']), True)
             # print(f'loc: {loc}')
             for i_rlz, rlz in enumerate(rlz_keys):
-
-                values = []
+                # values = []
                 for i_imt, imt in enumerate(imtls.keys()):
-                    values.append(
-                        model.IMTValuesAttribute(
-                            imt=imt,
-                            lvls=imtls[imt],
-                            vals=rlzs[rlz][i_site][i_imt].tolist(),
-                        )
+                    values = rlzs[rlz][i_site][i_imt].tolist()
+                    # assert len(values) == len(imtls[imt])
+                    if not len(values) == len(imt_levels):
+                        log.error(f'count of imt_levels: {len(imt_levels)} and values: {len(values)} do not align.')
+                        raise ValueError('bad IMT levels configuration')
+                    oq_realization = hazard_models.HazardRealizationCurve(
+                        compatible_calc_fk=compatible_calc_fk,
+                        producer_config_fk=producer_config_fk,
+                        calculation_id=hazard_calc_id,
+                        values=values,
+                        imt=imt,
+                        vs30=vs30,
+                        source_branch='A',
+                        gmm_branch='B'
                     )
-                oq_realization = hazard_models.HazardRealizationCurve(
-                    compatible_calc_fk=compatible_calc_fk,
-                    producer_config_fk=producer_config_fk,
-                    calculation_id=hazard_calc_id,
-                    values=values,
-                    rlz=rlz,
-                    vs30=vs30,
-                )
-                # if oqmeta.model.vs30 == 0:
-                #    oq_realization.site_vs30 = sites.loc[i_site, 'vs30']
-                yield oq_realization.set_location(loc)
+                    # if oqmeta.model.vs30 == 0:
+                    #    oq_realization.site_vs30 = sites.loc[i_site, 'vs30']
+                    yield oq_realization.set_location(loc)
 
     # used for testing
     if return_rlz:

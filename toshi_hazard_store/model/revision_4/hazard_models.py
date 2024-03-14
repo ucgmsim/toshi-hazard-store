@@ -2,15 +2,17 @@
 
 import logging
 import uuid
+import hashlib
 
 from nzshm_common.location.code_location import CodedLocation
-from pynamodb.attributes import ListAttribute, UnicodeAttribute
+from pynamodb.attributes import ListAttribute, UnicodeAttribute, NumberAttribute
 from pynamodb.models import Model
 from pynamodb_attributes import TimestampAttribute
 
 from toshi_hazard_store.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION
 
-from ..attributes import ForeignKeyAttribute, IMTValuesAttribute
+from ..attributes import EnumConstrainedUnicodeAttribute, LevelValuePairAttribute, ForeignKeyAttribute
+from ..constraints import IntensityMeasureTypeEnum
 from ..location_indexed_model import VS30_KEYLEN, LocationIndexedModel, datetime_now
 
 # from toshi_hazard_store.model.caching import ModelCacheMixin
@@ -18,6 +20,7 @@ from ..location_indexed_model import VS30_KEYLEN, LocationIndexedModel, datetime
 
 log = logging.getLogger(__name__)
 
+VS30_KEYLEN = 4
 
 class CompatibleHazardCalculation(Model):
     """Provides a unique identifier for compatabile Hazard Calculations"""
@@ -33,7 +36,7 @@ class CompatibleHazardCalculation(Model):
 
     partition_key = UnicodeAttribute(hash_key=True)  # a static value as we actually don't want to partition our data
     uniq_id = UnicodeAttribute(
-        range_key=True, default=str(uuid.uuid4())
+        range_key=True
     )  # maybe this can be user-defined. a UUID might be too unfriendly for our needs
     notes = UnicodeAttribute(null=True)
 
@@ -62,6 +65,8 @@ class HazardCurveProducerConfig(Model):
     configuration_hash = UnicodeAttribute()
     configuration_data = UnicodeAttribute(null=True)
 
+    imts = ListAttribute(of=UnicodeAttribute) # EnumConstrainedUnicodeAttribute(IntensityMeasureTypeEnum))
+    imt_levels = ListAttribute(of=NumberAttribute)
     notes = UnicodeAttribute(null=True)
 
 
@@ -82,41 +87,39 @@ class HazardRealizationCurve(LocationIndexedModel):
     partition_key = UnicodeAttribute(hash_key=True)  # a lot of these, let's look at our indexing
     sort_key = UnicodeAttribute(range_key=True)  # e.g ProducerID:MetaID
 
-    compatible_calc_fk = ForeignKeyAttribute(null=False)  # attr_name='compat_calc_fk')
-    producer_config_fk = ForeignKeyAttribute(null=False)  # attr_name="prod_conf_fk")
+    compatible_calc_fk = ForeignKeyAttribute()
+    source_branch = UnicodeAttribute()
+    gmm_branch = UnicodeAttribute()
+    imt = EnumConstrainedUnicodeAttribute(IntensityMeasureTypeEnum)
 
     created = TimestampAttribute(default=datetime_now)
-    # vs30 = NumberAttribute()  # vs30 value
-    rlz = UnicodeAttribute()  # identifier for the realization in the calculation
-    values = ListAttribute(of=IMTValuesAttribute)
+    producer_config_fk = ForeignKeyAttribute()  # attr_name="prod_conf_fk")
+
+    values = ListAttribute(of=NumberAttribute)  # corresponding IMT levels are stored in the related HazardCurveProducerConfig
 
     # a reference to where/how this calc done (URI URL, http://nshm-blah-blah/api-ref
     calculation_id = UnicodeAttribute(null=True)
 
-    branch_sources = UnicodeAttribute(
-        null=True
-    )  # we need this as a sorted string for searching (NSHM will use nrml/source_id for now)
-    branch_gmms = UnicodeAttribute(null=True)  #
+    def sources_hash(self):
+        return hashlib.shake_128(self.source_branch.encode()).hexdigest(5)
 
-    # Secondary Index attributes
-    # index1 = vs30_nloc1_gt_rlz_index()
-    # index1_rk = UnicodeAttribute()
+    def gmm_hash(self):
+        return hashlib.shake_128(self.gmm_branch.encode()).hexdigest(5)
+
+    def build_sort_key(self):
+        vs30s = str(self.vs30).zfill(VS30_KEYLEN)
+        sort_key = f'{self.nloc_001}:{vs30s}:{self.imt}:'
+        sort_key += f'{ForeignKeyAttribute().serialize(self.compatible_calc_fk)}:'
+        sort_key += 's' + self.sources_hash() + ':'
+        sort_key += 'g' + self.gmm_hash()
+        return sort_key
 
     def set_location(self, location: CodedLocation):
         """Set internal fields, indices etc from the location."""
-        # print(type(self).__bases__)
         LocationIndexedModel.set_location(self, location)
-        # super(LocationIndexedModel, self).set_location(location)
-
         # update the indices
-        rlzs = str(self.rlz).zfill(6)
-
-        vs30s = str(self.vs30).zfill(VS30_KEYLEN)
         self.partition_key = self.nloc_1
-        self.sort_key = f'{self.nloc_001}:{vs30s}:{rlzs}:'
-        self.sort_key += f'{ForeignKeyAttribute().serialize(self.compatible_calc_fk)}:'
-        self.sort_key += f'{ForeignKeyAttribute().serialize(self.producer_config_fk)}'
-        # self.index1_rk = f'{self.nloc_1}:{vs30s}:{rlzs}:{self.hazard_solution_id}'
+        self.sort_key = self.build_sort_key()
         return self
 
 

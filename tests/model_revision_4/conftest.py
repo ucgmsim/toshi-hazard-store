@@ -11,7 +11,7 @@ from pynamodb.models import Model
 
 from toshi_hazard_store.db_adapter import ensure_class_bases_begin_with
 from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
-from toshi_hazard_store.model.attributes import IMTValuesAttribute
+from toshi_hazard_store.model.attributes import IMTValuesAttribute, LevelValuePairAttribute
 from toshi_hazard_store.model.revision_4 import hazard_models  # the module containing adaptable model(s)
 
 log = logging.getLogger(__name__)
@@ -72,10 +72,11 @@ def adapted_model(request, tmp_path):
 def many_rlz_args():
     yield dict(
         # TOSHI_ID='FAk3T0sHi1D==',
-        vs30s=[250, 500, 1000, 1500],
+        vs30s=[250, 1500],
         imts=['PGA', 'SA(0.5)'],
         locs=[CodedLocation(o['latitude'], o['longitude'], 0.001) for o in list(LOCATIONS_BY_ID.values())[-5:]],
-        rlzs=[str(x) for x in range(5)],
+        sources=["SourceA", "SourceB"],
+        gmms=["GMM_A", "GMM_B"]
     )
 
 
@@ -85,27 +86,27 @@ def generate_rev4_rlz_models(many_rlz_args, adapted_model):
     n_lvls = 29
 
     def model_generator():
-        for rlz in many_rlz_args['rlzs']:
-            values = []
-            for imt, val in enumerate(many_rlz_args['imts']):
-                values.append(
-                    IMTValuesAttribute(
-                        imt=val,
-                        lvls=[x / 1e3 for x in range(1, n_lvls)],
-                        vals=[x / 1e6 for x in range(1, n_lvls)],
-                    )
-                )
-            for loc, vs30 in itertools.product(many_rlz_args["locs"][:5], many_rlz_args["vs30s"]):
-                yield hazard_models.HazardRealizationCurve(
-                    compatible_calc_fk=("A", "AA"),
-                    producer_config_fk=("B", "BB"),
-                    values=values,
-                    rlz=rlz,
-                    vs30=vs30,
-                    # site_vs30=vs30,
-                    # hazard_solution_id=many_rlz_args["TOSHI_ID"],
-                    # source_tags=['TagOne'],
-                    # source_ids=['Z', 'XX'],
-                ).set_location(loc)
+        # values = list(map(lambda x: LevelValuePairAttribute(lvl=x / 1e3, val=(x / 1e6)), range(1, 51)))
+        values = list(map(lambda x: x / 1e6, range(1,51)))
+        for loc, vs30, imt, source, gmm in itertools.product(
+            many_rlz_args["locs"][:5],
+            many_rlz_args["vs30s"],
+            many_rlz_args["imts"],
+            many_rlz_args["sources"],
+            many_rlz_args["gmms"]
+            ):
+            yield hazard_models.HazardRealizationCurve(
+                compatible_calc_fk=("A", "AA"),
+                producer_config_fk=("B", "BB"),
+                values=values,
+                imt=imt,
+                vs30=vs30,
+                source_branch=source,
+                gmm_branch=gmm
+                # site_vs30=vs30,
+                # hazard_solution_id=many_rlz_args["TOSHI_ID"],
+                # source_tags=['TagOne'],
+                # source_ids=['Z', 'XX'],
+            ).set_location(loc)
 
     yield model_generator
