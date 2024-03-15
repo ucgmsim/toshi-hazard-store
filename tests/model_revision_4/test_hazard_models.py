@@ -6,11 +6,7 @@ Basic model migration, structure
 
 from moto import mock_dynamodb
 
-from toshi_hazard_store.model import (
-    # CompatibleHazardCalculation,; HazardCurveProducerConfig,; HazardRealizationCurve,
-    drop_r4,
-    migrate_r4,
-)
+from toshi_hazard_store.model import drop_r4, migrate_r4
 
 
 @mock_dynamodb
@@ -22,7 +18,6 @@ class TestRevisionFourModelCreation_PynamoDB:
         assert adapted_model.HazardCurveProducerConfig.exists()
         assert adapted_model.HazardRealizationCurve.exists()
         drop_r4()
-
 
 
 class TestRevisionFourModelCreation_WithAdaption:
@@ -63,7 +58,7 @@ class TestRevisionFourModelCreation_WithAdaption:
             configuration_data=None,
             notes='the original NSHM_v1.0.4 producer',
             imts=['PGA', 'SA(0.5)'],
-            imt_levels = list(map(lambda x: x / 1e3, range(1,51)))
+            imt_levels=list(map(lambda x: x / 1e3, range(1, 51))),
         )
         m.save()
         res = next(
@@ -87,7 +82,7 @@ class TestRevisionFourModelCreation_WithAdaption:
         res = next(
             mHRC.query(
                 m.partition_key,
-                mHRC.sort_key == m.sort_key
+                mHRC.sort_key == m.sort_key,
                 # (mHRC.compatible_calc_fk == m.compatible_calc_fk)
                 # & (mHRC.producer_config_fk == m.producer_config_fk)
                 # & (mHRC.vs30 == m.vs30),  # filter_condition

@@ -9,15 +9,12 @@ from nzshm_common.location.code_location import CodedLocation
 from nzshm_common.location.location import LOCATIONS_BY_ID
 from pynamodb.models import Model
 
+from toshi_hazard_store import model  # noqa
 from toshi_hazard_store.db_adapter import ensure_class_bases_begin_with
 from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
-from toshi_hazard_store.model.attributes import IMTValuesAttribute, LevelValuePairAttribute
-from toshi_hazard_store.model.revision_4 import hazard_models  # the module containing adaptable model(s)
+from toshi_hazard_store.model.revision_4 import hazard_models  # noqa
 
 log = logging.getLogger(__name__)
-
-# cache_folder = tempfile.TemporaryDirectory()
-# adapter_folder = tempfile.TemporaryDirectory()
 
 
 # ref https://docs.pytest.org/en/7.3.x/example/parametrize.html#deferring-the-setup-of-parametrized-resources
@@ -76,25 +73,22 @@ def many_rlz_args():
         imts=['PGA', 'SA(0.5)'],
         locs=[CodedLocation(o['latitude'], o['longitude'], 0.001) for o in list(LOCATIONS_BY_ID.values())[-5:]],
         sources=["SourceA", "SourceB"],
-        gmms=["GMM_A", "GMM_B"]
+        gmms=["GMM_A", "GMM_B"],
     )
 
 
 @pytest.fixture(scope='function')
 def generate_rev4_rlz_models(many_rlz_args, adapted_model):
-
-    n_lvls = 29
-
     def model_generator():
         # values = list(map(lambda x: LevelValuePairAttribute(lvl=x / 1e3, val=(x / 1e6)), range(1, 51)))
-        values = list(map(lambda x: x / 1e6, range(1,51)))
+        values = list(map(lambda x: x / 1e6, range(1, 51)))
         for loc, vs30, imt, source, gmm in itertools.product(
             many_rlz_args["locs"][:5],
             many_rlz_args["vs30s"],
             many_rlz_args["imts"],
             many_rlz_args["sources"],
-            many_rlz_args["gmms"]
-            ):
+            many_rlz_args["gmms"],
+        ):
             yield hazard_models.HazardRealizationCurve(
                 compatible_calc_fk=("A", "AA"),
                 producer_config_fk=("B", "BB"),
@@ -102,7 +96,7 @@ def generate_rev4_rlz_models(many_rlz_args, adapted_model):
                 imt=imt,
                 vs30=vs30,
                 source_branch=source,
-                gmm_branch=gmm
+                gmm_branch=gmm,
                 # site_vs30=vs30,
                 # hazard_solution_id=many_rlz_args["TOSHI_ID"],
                 # source_tags=['TagOne'],

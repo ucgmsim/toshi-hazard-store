@@ -181,7 +181,7 @@ def put_model(
 
 
 def get_connection(model_class: Type[_T]) -> sqlite3.Connection:
-    log.info(f"get connection for {model_class} using path {LOCAL_CACHE_FOLDER}/{DEPLOYMENT_STAGE}")
+    log.debug(f"get connection for {model_class} using path {LOCAL_CACHE_FOLDER}/{DEPLOYMENT_STAGE}")
     return sqlite3.connect(pathlib.Path(str(LOCAL_CACHE_FOLDER), DEPLOYMENT_STAGE))
 
 
@@ -189,7 +189,7 @@ def check_exists(conn: sqlite3.Connection, model_class: Type[_T]) -> bool:
     table_name = safe_table_name(model_class)
     sql = f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table_name}';"
 
-    log.info(f"check_exists sql: {sql}")
+    log.debug(f"check_exists sql: {sql}")
     try:
         res = conn.execute(sql)
         table_found = next(res)[0] == table_name

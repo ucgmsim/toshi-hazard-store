@@ -24,8 +24,8 @@ packages = [
 ]
 
 [tool.poetry.scripts]
-store_hazard = 'scripts.store_hazard:main'
 store_hazard_v3 = 'scripts.store_hazard_v3:main'
+store_hazard_v4 = 'scripts.store_hazard_v4:main'
 get_hazard = 'scripts.get_hazard:main'
 query_meta = 'scripts.query_meta:main'
 ths_cache = 'scripts.ths_cache:cli'

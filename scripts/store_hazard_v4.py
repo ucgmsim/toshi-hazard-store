@@ -3,7 +3,6 @@
 import datetime as dt
 import logging
 import pathlib
-import sys
 
 import click
 
@@ -16,37 +15,33 @@ except (ModuleNotFoundError, ImportError):
     raise
 
 import toshi_hazard_store
-from toshi_hazard_store.oq_import import create_producer_config, export_rlzs_rev4
-
-
-class PyanamodbConsumedHandler(logging.Handler):
-    def __init__(self, level=0) -> None:
-        super().__init__(level)
-        self.consumed = 0
-
-    def reset(self):
-        self.consumed = 0
-
-    def emit(self, record):
-        if "pynamodb/connection/base.py" in record.pathname and record.msg == "%s %s consumed %s units":
-            self.consumed += record.args[2]
-            # print("CONSUMED:",  self.consumed)
-
+from toshi_hazard_store.oq_import import (
+    create_producer_config,
+    export_rlzs_rev4,
+    get_compatible_calc,
+    get_producer_config,
+)
 
 log = logging.getLogger()
 
-# pyconhandler = PyanamodbConsumedHandler(logging.DEBUG)
-# log.addHandler(pyconhandler)
-
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logging.getLogger('pynamodb').setLevel(logging.INFO)
 logging.getLogger('botocore').setLevel(logging.INFO)
-# logging.getLogger('toshi_hazard_store').setLevel(logging.INFO)
 
-formatter = logging.Formatter(fmt='%(asctime)s %(name)s %(levelname)-8s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-screen_handler = logging.StreamHandler(stream=sys.stdout)
-screen_handler.setFormatter(formatter)
-log.addHandler(screen_handler)
+
+def get_extractor(calc_id: str):
+    """return an extractor for given calc_id or path to hdf5"""
+    hdf5_path = pathlib.Path(calc_id)
+    try:
+        if hdf5_path.exists():
+            # we have a file path to work with
+            extractor = Extractor(str(hdf5_path))
+        else:
+            extractor = Extractor(int(calc_id))
+    except Exception as err:
+        log.info(err)
+        return None
+    return extractor
 
 
 #  _ __ ___   __ _(_)_ __
@@ -61,7 +56,7 @@ def main():
 @main.command()
 @click.option('--partition', '-P', required=True, help="partition key")
 @click.option('--uniq', '-U', required=False, default=None, help="uniq_id, if not specified a UUID will be used")
-@click.option('--notes', '-N', required=False, default=None, help="uniq_id")
+@click.option('--notes', '-N', required=False, default=None, help="optional notes about the this calc compatability")
 @click.option('-c', '--create-tables', is_flag=True, default=False, help="Ensure tables exist.")
 @click.option(
     '-d',
@@ -97,7 +92,13 @@ def compat(partition, uniq, notes, create_tables, dry_run):
 
 @main.command()
 @click.option('--partition', '-P', required=True, help="partition key")
-@click.option('--compatible-calc-fk', '-F', required=True, help="key of the compatible_calc_fk")
+@click.option('--compatible-calc-fk', '-CC', required=True, help="foreign key of the compatible_calc in form `A_B`")
+@click.option(
+    '--calc-id',
+    '-CI',
+    required=False,
+    help='either an openquake calculation id OR filepath to the hdf5 file. Used to obtain IMTs and levels',
+)
 @click.option('--software', '-S', required=True, help="name of the producer software")
 @click.option('--version', '-V', required=True, help="version of the producer software")
 @click.option('--hashed', '-H', required=True, help="hash of the producer configuration")
@@ -105,18 +106,34 @@ def compat(partition, uniq, notes, create_tables, dry_run):
 @click.option('--notes', '-N', required=False, help="user notes")
 @click.option('-c', '--create-tables', is_flag=True, default=False, help="Ensure tables exist.")
 @click.option(
+    '-v',
+    '--verbose',
+    is_flag=True,
+    default=False,
+    help="Increase output verbosity.",
+)
+@click.option(
     '-d',
     '--dry-run',
     is_flag=True,
     default=False,
     help="dont actually do anything.",
 )
-def producer(partition, compatible_calc_fk, software, version, hashed, config, notes, create_tables, dry_run):
-    """create a new hazard producer config"""
+def producer(
+    partition, compatible_calc_fk, calc_id, software, version, hashed, config, notes, create_tables, verbose, dry_run
+):
+    """create a new hazard producer config. May use calc-id to get template IMT and IMT_LEVELS"""
+
+    extractor = get_extractor(calc_id)
+
+    compatible_calc = get_compatible_calc(compatible_calc_fk.split("_"))
+    if compatible_calc is None:
+        raise ValueError(f'compatible_calc: {compatible_calc.foreign_key()} was not found')
 
     model = create_producer_config(
         partition_key=partition,
-        compatible_calc_fk=compatible_calc_fk.split("_"),
+        compatible_calc=compatible_calc,
+        extractor=extractor,
         producer_software=software,
         producer_version_id=version,
         configuration_hash=hashed,
@@ -124,7 +141,8 @@ def producer(partition, compatible_calc_fk, software, version, hashed, config, n
         notes=notes,
         dry_run=dry_run,
     )
-    click.echo(f"Model {model} has foreign key ({model.partition_key}, {model.range_key})")
+    if verbose:
+        click.echo(f"Model {model} has foreign key ({model.partition_key}, {model.range_key})")
 
 
 @main.command()
@@ -160,7 +178,7 @@ def producer(partition, compatible_calc_fk, software, version, hashed, config, n
     help="dont actually do anything.",
 )
 def rlz(calc_id, compatible_calc_fk, producer_config_fk, hazard_calc_id, create_tables, verbose, dry_run):
-    """store openquake hazard realizations to THS"""
+    """store openquake hazard revision 4 realizations to THS"""
 
     if create_tables:
         if dry_run:
@@ -177,12 +195,22 @@ def rlz(calc_id, compatible_calc_fk, producer_config_fk, hazard_calc_id, create_
         calc_id = int(calc_id)
         extractor = Extractor(calc_id)
 
+    compatible_calc = get_compatible_calc(compatible_calc_fk.split("_"))
+    if compatible_calc is None:
+        click.echo(f'compatible_calc: {compatible_calc_fk} was not found. Load failed')
+        return
+
+    producer_config = get_producer_config(producer_config_fk.split("_"), compatible_calc)
+    if producer_config is None:
+        click.echo(f'producer_config {producer_config_fk} was not found. Load failed')
+        return
+
     if not dry_run:
         t0 = dt.datetime.utcnow()
         export_rlzs_rev4(
             extractor,
-            compatible_calc_fk=compatible_calc_fk.split("_"),  # need a tuple
-            producer_config_fk=producer_config_fk.split("_"),
+            compatible_calc=compatible_calc,
+            producer_config=producer_config,
             hazard_calc_id=hazard_calc_id,
             vs30=400,
             return_rlz=False,

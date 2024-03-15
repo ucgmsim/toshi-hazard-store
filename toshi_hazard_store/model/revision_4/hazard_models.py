@@ -1,19 +1,18 @@
 """This module defines the pynamodb tables used to store  hazard data. revision 4 = Fourth iteration"""
 
-import logging
-import uuid
 import hashlib
+import logging
 
 from nzshm_common.location.code_location import CodedLocation
-from pynamodb.attributes import ListAttribute, UnicodeAttribute, NumberAttribute
+from pynamodb.attributes import ListAttribute, NumberAttribute, UnicodeAttribute
 from pynamodb.models import Model
 from pynamodb_attributes import TimestampAttribute
 
 from toshi_hazard_store.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION
 
-from ..attributes import EnumConstrainedUnicodeAttribute, LevelValuePairAttribute, ForeignKeyAttribute
+from ..attributes import EnumConstrainedUnicodeAttribute, ForeignKeyAttribute
 from ..constraints import IntensityMeasureTypeEnum
-from ..location_indexed_model import VS30_KEYLEN, LocationIndexedModel, datetime_now
+from ..location_indexed_model import LocationIndexedModel, datetime_now
 
 # from toshi_hazard_store.model.caching import ModelCacheMixin
 
@@ -21,6 +20,7 @@ from ..location_indexed_model import VS30_KEYLEN, LocationIndexedModel, datetime
 log = logging.getLogger(__name__)
 
 VS30_KEYLEN = 4
+
 
 class CompatibleHazardCalculation(Model):
     """Provides a unique identifier for compatabile Hazard Calculations"""
@@ -35,10 +35,12 @@ class CompatibleHazardCalculation(Model):
             host = "http://localhost:8000"  # pragma: no cover
 
     partition_key = UnicodeAttribute(hash_key=True)  # a static value as we actually don't want to partition our data
-    uniq_id = UnicodeAttribute(
-        range_key=True
-    )  # maybe this can be user-defined. a UUID might be too unfriendly for our needs
+    uniq_id = UnicodeAttribute(range_key=True)  # user-defined. since a UUID might be too unfriendly for our needs
     notes = UnicodeAttribute(null=True)
+    created = TimestampAttribute(default=datetime_now)
+
+    def foreign_key(self):
+        return (str(self.partition_key), str(self.uniq_id))
 
 
 class HazardCurveProducerConfig(Model):
@@ -60,14 +62,19 @@ class HazardCurveProducerConfig(Model):
         null=False,  # attr_name='compat_calc_fk'
     )  # must map to a valid CompatibleHazardCalculation.unique_id (maybe wrap in transaction)
 
+    created = TimestampAttribute(default=datetime_now)
+
     producer_software = UnicodeAttribute()
     producer_version_id = UnicodeAttribute()
     configuration_hash = UnicodeAttribute()
     configuration_data = UnicodeAttribute(null=True)
 
-    imts = ListAttribute(of=UnicodeAttribute) # EnumConstrainedUnicodeAttribute(IntensityMeasureTypeEnum))
+    imts = ListAttribute(of=UnicodeAttribute)  # EnumConstrainedUnicodeAttribute(IntensityMeasureTypeEnum))
     imt_levels = ListAttribute(of=NumberAttribute)
     notes = UnicodeAttribute(null=True)
+
+    def foreign_key(self):
+        return (str(self.partition_key), str(self.range_key))
 
 
 class HazardRealizationCurve(LocationIndexedModel):
@@ -95,7 +102,9 @@ class HazardRealizationCurve(LocationIndexedModel):
     created = TimestampAttribute(default=datetime_now)
     producer_config_fk = ForeignKeyAttribute()  # attr_name="prod_conf_fk")
 
-    values = ListAttribute(of=NumberAttribute)  # corresponding IMT levels are stored in the related HazardCurveProducerConfig
+    values = ListAttribute(
+        of=NumberAttribute
+    )  # corresponding IMT levels are stored in the related HazardCurveProducerConfig
 
     # a reference to where/how this calc done (URI URL, http://nshm-blah-blah/api-ref
     calculation_id = UnicodeAttribute(null=True)
