@@ -22,11 +22,16 @@ import datetime as dt
 import logging
 import os
 import pathlib
-import nzshm_model
-
 import click
 
-from toshi_hazard_store.model.revision_4 import hazard_models
+
+log = logging.getLogger()
+
+logging.basicConfig(level=logging.INFO)
+logging.getLogger('pynamodb').setLevel(logging.INFO)
+logging.getLogger('botocore').setLevel(logging.INFO)
+logging.getLogger('toshi_hazard_store').setLevel(logging.INFO)
+logging.getLogger('nzshm_model').setLevel(logging.DEBUG)
 
 try:
     from openquake.calculators.extract import Extractor
@@ -34,7 +39,9 @@ except (ModuleNotFoundError, ImportError):
     print("WARNING: the transform module uses the optional openquake dependencies - h5py, pandas and openquake.")
     raise
 
+import nzshm_model
 import toshi_hazard_store
+from toshi_hazard_store.model.revision_4 import hazard_models
 from toshi_hazard_store.oq_import import (
     #create_producer_config,
     #export_rlzs_rev4,
@@ -42,11 +49,27 @@ from toshi_hazard_store.oq_import import (
     get_producer_config,
 )
 
-log = logging.getLogger()
 
-logging.basicConfig(level=logging.INFO)
-logging.getLogger('pynamodb').setLevel(logging.INFO)
-logging.getLogger('botocore').setLevel(logging.INFO)
+# formatter = logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+# root_handler = log.handlers[0]
+# root_handler.setFormatter(formatter)
+
+# Get API key from AWS secrets manager
+API_URL = os.getenv('NZSHM22_TOSHI_API_URL', "http://127.0.0.1:5000/graphql")
+try:
+    if 'TEST' in API_URL.upper():
+        API_KEY = get_secret("NZSHM22_TOSHI_API_SECRET_TEST", "us-east-1").get("NZSHM22_TOSHI_API_KEY_TEST")
+    elif 'PROD' in API_URL.upper():
+        API_KEY = get_secret("NZSHM22_TOSHI_API_SECRET_PROD", "us-east-1").get("NZSHM22_TOSHI_API_KEY_PROD")
+    else:
+        API_KEY = os.getenv('NZSHM22_TOSHI_API_KEY', "")
+except AttributeError as err:
+    print(f"unable to get secret from secretmanager: {err}")
+    API_KEY = os.getenv('NZSHM22_TOSHI_API_KEY', "")
+S3_URL = None
+DEPLOYMENT_STAGE = os.getenv('DEPLOYMENT_STAGE', 'LOCAL').upper()
+REGION = os.getenv('REGION', 'ap-southeast-2')  # SYDNEY
+
 
 
 def get_extractor(calc_id: str):
@@ -134,11 +157,17 @@ def producers(
     current_model = nzshm_model.get_model_version(model_id)
 
     if verbose:
-        click.echo(f"using verbose: {verbose}")
-        click.echo(f"using work_folder: {work_folder}")
-        click.echo(f"using model_id: {current_model.version}")
-        click.echo(f"using gt_id: {gt_id}")
-        click.echo(f"using partition: {partition}")
+        click.echo('\nfrom command line:')
+        click.echo(f"   using verbose: {verbose}")
+        click.echo(f"   using work_folder: {work_folder}")
+        click.echo(f"   using model_id: {current_model.version}")
+        click.echo(f"   using gt_id: {gt_id}")
+        click.echo(f"   using partition: {partition}")
+
+        click.echo('\nfrom environment:')
+        click.echo(f'   using API_URL: {API_URL}')
+        click.echo(f'   using REGION: {REGION}')
+        click.echo(f'   using DEPLOYMENT_STAGE: {DEPLOYMENT_STAGE}')
 
     # slt = current_model.source_logic_tree()
 

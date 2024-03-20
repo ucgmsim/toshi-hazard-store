@@ -1,3 +1,4 @@
+import logging
 from typing import Type
 
 from toshi_hazard_store.db_adapter import PynamodbAdapterInterface, ensure_class_bases_begin_with
@@ -27,6 +28,7 @@ from .revision_4 import migrate as migrate_r4
 # from .openquake_models import tables as oqv3_tables
 # from .openquake_v2_model import
 
+log = logging.getLogger(__name__)
 
 def migrate():
     """Create the tables, unless they exist already."""
@@ -43,7 +45,7 @@ def drop_tables():
 
 
 def configure_adapter(adapter_model: Type[PynamodbAdapterInterface]):
-    print("Configure adapter:", adapter_model)
+    log.info(f"Configure adapter: {adapter_model}")
     ensure_class_bases_begin_with(
         namespace=openquake_models.__dict__,
         class_name=str('ToshiOpenquakeMeta'),  # `str` type differs on Python 2 vs. 3.
