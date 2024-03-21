@@ -4,7 +4,7 @@ import hashlib
 import logging
 
 from nzshm_common.location.code_location import CodedLocation
-from pynamodb.attributes import ListAttribute, NumberAttribute, UnicodeAttribute
+from pynamodb.attributes import ListAttribute, NumberAttribute, UnicodeAttribute, VersionAttribute
 from pynamodb.models import Model
 from pynamodb_attributes import TimestampAttribute
 
@@ -57,12 +57,19 @@ class HazardCurveProducerConfig(Model):
 
     partition_key = UnicodeAttribute(hash_key=True)  # a static value as we actually don't want to partition our data
     range_key = UnicodeAttribute(range_key=True)  # combination of the unique configuration identifiers
+    version = VersionAttribute()
 
     compatible_calc_fk = ForeignKeyAttribute(
         null=False,  # attr_name='compat_calc_fk'
     )  # must map to a valid CompatibleHazardCalculation.unique_id (maybe wrap in transaction)
 
     created = TimestampAttribute(default=datetime_now)
+    modified = TimestampAttribute(default=datetime_now)
+    
+    effective_from = TimestampAttribute(null=True)
+    last_used = TimestampAttribute(null=True)
+
+    tags = ListAttribute(of=UnicodeAttribute, null=True)
 
     producer_software = UnicodeAttribute()
     producer_version_id = UnicodeAttribute()

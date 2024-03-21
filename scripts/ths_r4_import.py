@@ -259,7 +259,8 @@ def producers(
             }
             """
             log.info(f"task {task_id} hash: {config_hash}")
-            yield SubtaskRecord(image=latest_engine_image, config_hash=config_hash)
+            yield SubtaskRecord(image=latest_engine_image, 
+                config_hash=config_hash)
 
     def get_hazard_task_ids(query_res):
         for edge in query_res['children']['edges']:
@@ -269,12 +270,12 @@ def producers(
     for subtask_info in handle_subtasks(gt_id, get_hazard_task_ids(query_res)):
 
         producer_software = f"{ECR_REGISTRY_ID}/{ECR_REPONAME}"
-        producer_version_id = subtask_info.image['imageDigest'][7:27]
+        producer_version_id = subtask_info.image['imageDigest'][7:27] # first 20 bits of hashdigest
         configuration_hash = subtask_info.config_hash
         pc_key = (partition, f"{producer_software}:{producer_version_id}:{configuration_hash}")
 
+        #check for existing
         producer_config = get_producer_config(pc_key, compatible_calc)
-
         if producer_config:
             if verbose:
                 click.echo(f'found producer_config {pc_key} ')
@@ -283,6 +284,9 @@ def producers(
                 partition_key=partition,
                 compatible_calc=compatible_calc,
                 extractor=extractor,
+                tags = subtask_info.image['imageTags'],
+                effective_from = subtask_info.image['imagePushedAt'],
+                last_used = subtask_info.image['lastRecordedPullTime'],
                 producer_software=producer_software,
                 producer_version_id=producer_version_id,
                 configuration_hash=configuration_hash,

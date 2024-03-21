@@ -1,6 +1,7 @@
 import json
 import logging
 import random
+import datetime as dt
 
 # from dataclasses import dataclass
 from typing import List, Optional, Tuple, Union
@@ -24,6 +25,9 @@ def create_producer_config(
     producer_software: str,
     producer_version_id: str,
     configuration_hash: str,
+    tags: Optional[List[str]] = None,
+    effective_from: Optional[dt.datetime] = None,
+    last_used: Optional[dt.datetime] = None,   
     configuration_data: Optional[str] = "",
     notes: Optional[str] = "",
     dry_run: bool = False,
@@ -49,6 +53,9 @@ def create_producer_config(
         compatible_calc_fk=compatible_calc.foreign_key(),
         producer_software=producer_software,
         producer_version_id=producer_version_id,
+        tags = tags,
+        effective_from = effective_from,
+        last_used = last_used,
         configuration_hash=configuration_hash,
         configuration_data=configuration_data,
         imts=imts,
