@@ -25,6 +25,7 @@ import pathlib
 import click
 import requests
 import zipfile
+import collections
 
 from typing import Iterable
 
@@ -47,7 +48,7 @@ import nzshm_model  # noqa: E402
 import toshi_hazard_store  # noqa: E402
 from toshi_hazard_store.model.revision_4 import hazard_models  # noqa: E402
 from toshi_hazard_store.oq_import import (  # noqa: E402
-    # create_producer_config,
+    create_producer_config,
     # export_rlzs_rev4,
     get_compatible_calc,
     get_producer_config,
@@ -61,7 +62,7 @@ from toshi_hazard_store.config import (
     REGION as THS_REGION,
 )
 
-# REGISTRY_ID = '461564345538.dkr.ecr.us-east-1.amazonaws.com'
+ECR_REGISTRY_ID = '461564345538.dkr.ecr.us-east-1.amazonaws.com'
 ECR_REPONAME = "nzshm22/runzi-openquake"
 
 
@@ -107,6 +108,25 @@ def get_extractor(calc_id: str):
         return None
     return extractor
 
+def echo_settings(work_folder, verbose=True):
+    click.echo('\nfrom command line:')
+    click.echo(f"   using verbose: {verbose}")
+    click.echo(f"   using work_folder: {work_folder}")
+
+    try:
+        click.echo('\nfrom API environment:')
+        click.echo(f'   using API_URL: {API_URL}')
+        click.echo(f'   using REGION: {REGION}')
+        click.echo(f'   using DEPLOYMENT_STAGE: {DEPLOYMENT_STAGE}')
+    except:
+        pass
+
+    click.echo('\nfrom THS config:')
+    click.echo(f'   using LOCAL_CACHE_FOLDER: {LOCAL_CACHE_FOLDER}')
+    click.echo(f'   using THS_STAGE: {THS_STAGE}')
+    click.echo(f'   using THS_REGION: {THS_REGION}')
+    click.echo(f'   using USE_SQLITE_ADAPTER: {USE_SQLITE_ADAPTER}')
+
 
 #  _ __ ___   __ _(_)_ __
 # | '_ ` _ \ / _` | | '_ \
@@ -132,24 +152,7 @@ def create_tables(context, verbose, dry_run):
 
     work_folder = context.obj['work_folder']
     if verbose:
-        click.echo('\nfrom command line:')
-        click.echo(f"   using verbose: {verbose}")
-        click.echo(f"   using work_folder: {work_folder}")
-
-        try:
-            click.echo('\nfrom API environment:')
-            click.echo(f'   using API_URL: {API_URL}')
-            click.echo(f'   using REGION: {REGION}')
-            click.echo(f'   using DEPLOYMENT_STAGE: {DEPLOYMENT_STAGE}')
-        except:
-            pass
-
-        click.echo('\nfrom THS config:')
-        click.echo(f'   using LOCAL_CACHE_FOLDER: {LOCAL_CACHE_FOLDER}')
-        click.echo(f'   using THS_STAGE: {THS_STAGE}')
-        click.echo(f'   using THS_REGION: {THS_REGION}')
-        click.echo(f'   using USE_SQLITE_ADAPTER: {USE_SQLITE_ADAPTER}')
-
+        echo_settings(work_folder)
     if dry_run:
         click.echo('SKIP: Ensuring tables exist.')
     else:
@@ -206,26 +209,19 @@ def producers(
     """
 
     work_folder = context.obj['work_folder']
-    current_model = nzshm_model.get_model_version(model_id)
-
-    if verbose:
-        click.echo('\nfrom command line:')
-        click.echo(f"   using verbose: {verbose}")
-        click.echo(f"   using work_folder: {work_folder}")
-        click.echo(f"   using model_id: {current_model.version}")
-        click.echo(f"   using gt_id: {gt_id}")
-        click.echo(f"   using partition: {partition}")
-
-        click.echo('\nfrom environment:')
-        click.echo(f'   using API_URL: {API_URL}')
-        click.echo(f'   using REGION: {REGION}')
-        click.echo(f'   using DEPLOYMENT_STAGE: {DEPLOYMENT_STAGE}')
-
-    # slt = current_model.source_logic_tree()
-    # extractor = get_extractor(calc_id)
 
     headers = {"x-api-key": API_KEY}
     gtapi = toshi_api_client.ApiClient(API_URL, None, with_schema_validation=False, headers=headers)
+
+    current_model = nzshm_model.get_model_version(model_id)
+
+    if verbose:
+        echo_settings(work_folder)
+
+    compatible_calc = get_compatible_calc(compatible_calc_fk.split("_"))
+    if compatible_calc is None:
+        raise ValueError(f'compatible_calc: {compatible_calc_fk} was not found')
+
 
     if verbose:
         click.echo('fetching ECR stash')
@@ -237,6 +233,7 @@ def producers(
         click.echo('fetching General Task subtasks')
     query_res = gtapi.get_gt_subtasks(gt_id)
 
+    SubtaskRecord = collections.namedtuple('SubtaskRecord', 'config_hash, image')
     def handle_subtasks(gt_id: str, subtask_ids: Iterable):
         subtasks_folder = pathlib.Path(work_folder, gt_id, 'subtasks')
         subtasks_folder.mkdir(parents=True, exist_ok=True)
@@ -253,35 +250,48 @@ def producers(
             config_hash = jobconf.compatible_hash_digest()
             latest_engine_image = ecr_repo_stash.active_image_asat(task_created)
             log.info(latest_engine_image)
+            """
+            {'registryId': '461564345538', 'repositoryName': 'nzshm22/runzi-openquake',
+            'imageDigest': 'sha256:8c09bffb9f4cf88bbcc96876b029aa91a638620810d2c0917dfba53454e21ac2', 'imageTags': ['runzi-5b0b3b4_nz_openquake-nightly_20230320'],
+            'imageSizeInBytes': 1187720086, 'imagePushedAt': datetime.datetime(2023, 3, 20, 21, 27, 21, tzinfo=tzlocal()), 'imageManifestMediaType':
+            'application/vnd.docker.distribution.manifest.v2+json', 'artifactMediaType': 'application/vnd.docker.container.image.v1+json',
+            'lastRecordedPullTime': datetime.datetime(2023, 3, 31, 11, 18, 42, 418000, tzinfo=tzlocal())
+            }
+            """
             log.info(f"task {task_id} hash: {config_hash}")
-            break
+            yield SubtaskRecord(image=latest_engine_image, config_hash=config_hash)
 
     def get_hazard_task_ids(query_res):
         for edge in query_res['children']['edges']:
             yield edge['node']['child']['id']
 
-    handle_subtasks(gt_id, get_hazard_task_ids(query_res))
+    extractor=None
+    for subtask_info in handle_subtasks(gt_id, get_hazard_task_ids(query_res)):
 
-    return
+        producer_software = f"{ECR_REGISTRY_ID}/{ECR_REPONAME}"
+        producer_version_id = subtask_info.image['imageDigest'][7:27]
+        configuration_hash = subtask_info.config_hash
+        pc_key = (partition, f"{producer_software}:{producer_version_id}:{configuration_hash}")
 
-    compatible_calc = get_compatible_calc(compatible_calc_fk.split("_"))
-    if compatible_calc is None:
-        raise ValueError(f'compatible_calc: {compatible_calc_fk} was not found')
+        producer_config = get_producer_config(pc_key, compatible_calc)
 
-    # model = create_producer_config(
-    #     partition_key=partition,
-    #     compatible_calc=compatible_calc,
-    #     extractor=extractor,
-    #     producer_software=software,
-    #     producer_version_id=version,
-    #     configuration_hash=hashed,
-    #     configuration_data=config,
-    #     notes=notes,
-    #     dry_run=dry_run,
-    # )
-    # if verbose:
-    #     click.echo(f"Model {model} has foreign key ({model.partition_key}, {model.range_key})")
-
+        if producer_config:
+            if verbose:
+                click.echo(f'found producer_config {pc_key} ')
+        else:
+            model = create_producer_config(
+                partition_key=partition,
+                compatible_calc=compatible_calc,
+                extractor=extractor,
+                producer_software=producer_software,
+                producer_version_id=producer_version_id,
+                configuration_hash=configuration_hash,
+                # configuration_data=config.config_hash,
+                notes="notes",
+                dry_run=dry_run,
+            )
+            if verbose:
+                click.echo(f"New Model {model} has foreign key ({model.partition_key}, {model.range_key})")
 
 if __name__ == "__main__":
     main()

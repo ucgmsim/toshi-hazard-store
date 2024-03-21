@@ -24,8 +24,8 @@ def create_producer_config(
     producer_software: str,
     producer_version_id: str,
     configuration_hash: str,
-    configuration_data: Optional[str],
-    notes: Optional[str],
+    configuration_data: Optional[str] = "",
+    notes: Optional[str] = "",
     dry_run: bool = False,
 ) -> 'hazard_models.HazardCurveProducerConfig':
     # first check the Foreign Key is OK
