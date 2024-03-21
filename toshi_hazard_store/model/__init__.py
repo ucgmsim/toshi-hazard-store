@@ -30,6 +30,7 @@ from .revision_4 import migrate as migrate_r4
 
 log = logging.getLogger(__name__)
 
+
 def migrate():
     """Create the tables, unless they exist already."""
     migrate_openquake()

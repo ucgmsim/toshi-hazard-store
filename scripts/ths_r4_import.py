@@ -23,7 +23,10 @@ import logging
 import os
 import pathlib
 import click
+import requests
+import zipfile
 
+from typing import Iterable
 
 log = logging.getLogger()
 
@@ -32,6 +35,7 @@ logging.getLogger('pynamodb').setLevel(logging.INFO)
 logging.getLogger('botocore').setLevel(logging.INFO)
 logging.getLogger('toshi_hazard_store').setLevel(logging.INFO)
 logging.getLogger('nzshm_model').setLevel(logging.DEBUG)
+logging.getLogger('gql.transport').setLevel(logging.WARNING)
 
 try:
     from openquake.calculators.extract import Extractor
@@ -39,15 +43,33 @@ except (ModuleNotFoundError, ImportError):
     print("WARNING: the transform module uses the optional openquake dependencies - h5py, pandas and openquake.")
     raise
 
-import nzshm_model
-import toshi_hazard_store
-from toshi_hazard_store.model.revision_4 import hazard_models
-from toshi_hazard_store.oq_import import (
-    #create_producer_config,
-    #export_rlzs_rev4,
+import nzshm_model  # noqa: E402
+import toshi_hazard_store  # noqa: E402
+from toshi_hazard_store.model.revision_4 import hazard_models  # noqa: E402
+from toshi_hazard_store.oq_import import (  # noqa: E402
+    # create_producer_config,
+    # export_rlzs_rev4,
     get_compatible_calc,
     get_producer_config,
 )
+from .revision_4 import oq_config, aws_ecr_docker_image as aws_ecr
+
+from toshi_hazard_store.config import (
+    USE_SQLITE_ADAPTER,
+    LOCAL_CACHE_FOLDER,
+    DEPLOYMENT_STAGE as THS_STAGE,
+    REGION as THS_REGION,
+)
+
+# REGISTRY_ID = '461564345538.dkr.ecr.us-east-1.amazonaws.com'
+ECR_REPONAME = "nzshm22/runzi-openquake"
+
+
+from .revision_4 import toshi_api_client
+
+from nzshm_model.logic_tree.source_logic_tree.toshi_api import (
+    get_secret,
+)  # noqa: E402 and this function be in the client !
 
 
 # formatter = logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(name)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
@@ -71,7 +93,6 @@ DEPLOYMENT_STAGE = os.getenv('DEPLOYMENT_STAGE', 'LOCAL').upper()
 REGION = os.getenv('REGION', 'ap-southeast-2')  # SYDNEY
 
 
-
 def get_extractor(calc_id: str):
     """return an extractor for given calc_id or path to hdf5"""
     hdf5_path = pathlib.Path(calc_id)
@@ -91,9 +112,7 @@ def get_extractor(calc_id: str):
 # | '_ ` _ \ / _` | | '_ \
 # | | | | | | (_| | | | | |
 # |_| |_| |_|\__,_|_|_| |_|
-@click.group()
-def main():
-    pass
+
 
 @click.group()
 @click.option('--work_folder', '-W', default=lambda: os.getcwd(), help="defaults to Current Working Directory")
@@ -103,6 +122,39 @@ def main(context, work_folder):
 
     context.ensure_object(dict)
     context.obj['work_folder'] = work_folder
+
+
+@main.command()
+@click.option('-v', '--verbose', is_flag=True, default=False)
+@click.option('-d', '--dry-run', is_flag=True, default=False)
+@click.pass_context
+def create_tables(context, verbose, dry_run):
+
+    work_folder = context.obj['work_folder']
+    if verbose:
+        click.echo('\nfrom command line:')
+        click.echo(f"   using verbose: {verbose}")
+        click.echo(f"   using work_folder: {work_folder}")
+
+        try:
+            click.echo('\nfrom API environment:')
+            click.echo(f'   using API_URL: {API_URL}')
+            click.echo(f'   using REGION: {REGION}')
+            click.echo(f'   using DEPLOYMENT_STAGE: {DEPLOYMENT_STAGE}')
+        except:
+            pass
+
+        click.echo('\nfrom THS config:')
+        click.echo(f'   using LOCAL_CACHE_FOLDER: {LOCAL_CACHE_FOLDER}')
+        click.echo(f'   using THS_STAGE: {THS_STAGE}')
+        click.echo(f'   using THS_REGION: {THS_REGION}')
+        click.echo(f'   using USE_SQLITE_ADAPTER: {USE_SQLITE_ADAPTER}')
+
+    if dry_run:
+        click.echo('SKIP: Ensuring tables exist.')
+    else:
+        click.echo('Ensuring tables exist.')
+        toshi_hazard_store.model.migrate_r4()
 
 
 @main.command()
@@ -170,12 +222,51 @@ def producers(
         click.echo(f'   using DEPLOYMENT_STAGE: {DEPLOYMENT_STAGE}')
 
     # slt = current_model.source_logic_tree()
-
     # extractor = get_extractor(calc_id)
+
+    headers = {"x-api-key": API_KEY}
+    gtapi = toshi_api_client.ApiClient(API_URL, None, with_schema_validation=False, headers=headers)
+
+    if verbose:
+        click.echo('fetching ECR stash')
+    ecr_repo_stash = aws_ecr.ECRRepoStash(
+        ECR_REPONAME, oldest_image_date=dt.datetime(2023, 3, 20, tzinfo=dt.timezone.utc)
+    ).fetch()
+
+    if verbose:
+        click.echo('fetching General Task subtasks')
+    query_res = gtapi.get_gt_subtasks(gt_id)
+
+    def handle_subtasks(gt_id: str, subtask_ids: Iterable):
+        subtasks_folder = pathlib.Path(work_folder, gt_id, 'subtasks')
+        subtasks_folder.mkdir(parents=True, exist_ok=True)
+
+        for task_id in subtask_ids:
+            query_res = gtapi.get_oq_hazard_task(task_id)
+            log.info(query_res)
+            task_created = dt.datetime.fromisoformat(query_res["created"])  # "2023-03-20T09:02:35.314495+00:00",
+            log.info(f"task created: {task_created}")
+
+            oq_config.download_artefacts(gtapi, task_id, query_res, subtasks_folder)
+            jobconf = oq_config.config_from_task(task_id, subtasks_folder)
+
+            config_hash = jobconf.compatible_hash_digest()
+            latest_engine_image = ecr_repo_stash.active_image_asat(task_created)
+            log.info(latest_engine_image)
+            log.info(f"task {task_id} hash: {config_hash}")
+            break
+
+    def get_hazard_task_ids(query_res):
+        for edge in query_res['children']['edges']:
+            yield edge['node']['child']['id']
+
+    handle_subtasks(gt_id, get_hazard_task_ids(query_res))
+
+    return
 
     compatible_calc = get_compatible_calc(compatible_calc_fk.split("_"))
     if compatible_calc is None:
-        raise ValueError(f'compatible_calc: {compatible_calc.foreign_key()} was not found')
+        raise ValueError(f'compatible_calc: {compatible_calc_fk} was not found')
 
     # model = create_producer_config(
     #     partition_key=partition,
