@@ -147,6 +147,7 @@ def put_model(
     swa = SqlWriteAdapter(model_class)
     statement = swa.insert_statement([model_instance])
 
+    version_attr = get_version_attribute(model_instance)
     # swa.insert_into(conn, put_items)
     # custom error handling follows
     try:
@@ -162,7 +163,7 @@ def put_model(
         if 'UNIQUE constraint failed' in msg:
             log.info('attempt to insert a duplicate key failed: ')
         unique_failure = True
-        version_attr = get_version_attribute(model_instance)
+        
         if version_attr:
             raise
     except Exception as e:

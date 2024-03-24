@@ -179,15 +179,28 @@ class SqlWriteAdapter:
         # print(name, _type, _type.attr_type)
         # print(dir(_type))
         _sql: str = "CREATE TABLE IF NOT EXISTS %s (\n" % safe_table_name(self.model_class)
-
+        version_attr = None
         for name, attr in self.model_class.get_attributes().items():
             # if attr.attr_type not in TYPE_MAP.keys():
             #     raise ValueError(f"Unupported type: {attr.attr_type} for attribute {attr.attr_name}")
             field_type = 'NUMERIC' if attr.attr_type == 'N' else 'STRING'
 
             _sql += f'\t"{attr.attr_name}" {field_type},\n'
+            print(name, attr, attr.attr_name, attr.attr_type)
+            if isinstance(attr, VersionAttribute):
+                version_attr = attr
 
         # now add the primary key
+        # TODO clean this up
+        if version_attr and \
+            self.model_class._range_key_attribute() and \
+            self.model_class._hash_key_attribute():
+            return (
+                _sql
+                + f"\tPRIMARY KEY ({self.model_class._hash_key_attribute().attr_name}, "
+                + f"{self.model_class._range_key_attribute().attr_name}, "
+                + f"{version_attr.attr_name})\n)"
+            )
         if self.model_class._range_key_attribute() and self.model_class._hash_key_attribute():
             return (
                 _sql

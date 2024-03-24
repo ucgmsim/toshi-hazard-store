@@ -90,6 +90,31 @@ def test_dynamic_baseclass_reassign():
     assert getattr(instance, 'my_hash_key')  # custom model attibute
 
 
+def test_dynamic_baseclass_reassign_reversed():
+
+    ensure_class_bases_begin_with(
+        namespace=globals(),  # __name__.__dict__,
+        class_name=str('MyModel'),
+        base_class=SqliteAdapter,
+    )
+
+    instance = MyModel(my_hash_key='A', my_range_key='B')    
+    assert isinstance(instance, SqliteAdapter)
+    assert isinstance(instance, Model)
+    assert isinstance(instance, MyModel)
+
+    ensure_class_bases_begin_with(
+        namespace=globals(),  # __name__.__dict__,
+        class_name=str('MyModel'),
+        base_class=Model,
+    )
+
+    instance = MyModel(my_hash_key='A', my_range_key='B')
+    assert isinstance(instance, MyModel)
+    assert isinstance(instance, Model)
+    assert not isinstance(instance, SqliteAdapter)
+
+
 def test_default_subclass():
     instance = MySubclassedModel(my_hash_key='A', my_range_key='B', extra="C")
     assert isinstance(instance, MySubclassedModel)
@@ -168,3 +193,47 @@ def test_dynamic_subclass_reassign():
     assert getattr(instance, 'exists')  # interface method
     assert getattr(instance, 'my_hash_key')  # baseclass attibute
     assert getattr(instance, 'extra')  # subclass attibute
+
+
+def test_dynamic_subclass_reassign_reversed():
+
+    # Configure for SQLIte adapter
+    ensure_class_bases_begin_with(
+        namespace=globals(),  # __name__.__dict__,
+        class_name=str('MyModel'),
+        base_class=SqliteAdapter,
+    )
+    ensure_class_bases_begin_with(
+        namespace=globals(),  # __name__.__dict__,
+        class_name=str('MySubclassedModel'),
+        base_class=MyModel,
+    )
+
+    instance = MySubclassedModel(my_hash_key='A1', my_range_key='B1', extra="C1")
+
+    assert isinstance(instance, MySubclassedModel)
+    assert isinstance(instance, SqliteAdapter)
+    assert isinstance(instance, MyModel)
+    assert isinstance(instance, Model)
+
+    # reconfigure for native Pynamodb Model
+    ensure_class_bases_begin_with(
+        namespace=globals(),  # __name__.__dict__,
+        class_name=str('MyModel'),
+        base_class=Model,
+    )
+    ensure_class_bases_begin_with(
+        namespace=globals(),  # __name__.__dict__,
+        class_name=str('MySubclassedModel'),
+        base_class=MyModel,
+    )
+
+    instance = MySubclassedModel(my_hash_key='A', my_range_key='B', extra="C")
+
+    assert isinstance(instance, MySubclassedModel)
+    assert isinstance(instance, Model)
+    assert isinstance(instance, MyModel)
+    assert not isinstance(instance, SqliteAdapter)
+
+
+

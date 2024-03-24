@@ -26,6 +26,7 @@ class ForeignKeyAttribute(Attribute):
     value_type = Tuple[str, str]
 
     def serialize(self, value: Tuple[str, str]) -> str:
+        print(value)
         assert len(value) == 2
         return "_".join(value)
 

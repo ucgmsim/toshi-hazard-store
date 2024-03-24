@@ -112,6 +112,7 @@ class TestOpenquakeRealizationQuery:
             rlzb = get_one_rlz(adapted_rlz_model.OpenquakeRealization)
             rlzb.save()
 
+    #@pytest.maek.skip("not clear why pynamodb test fails with sqlite3 locked error")
     def test_batch_save_duplicate_wont_raise(self, adapted_rlz_model, get_one_rlz):
         """In Batch mode any duplicate keys will simply overwrite, that's the dynamodb way
 

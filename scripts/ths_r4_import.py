@@ -172,11 +172,11 @@ def create_tables(context, verbose, dry_run):
     help="foreign key of the compatible_calc in form `A_B`",
 )
 @click.option(
-    '--create_new',
-    '-C',
+    '--update',
+    '-U',
     is_flag=True,
     default=False,
-    help="if false, then bail, otherwise create a new producer record.",
+    help="overwrite existing producer record (versioned table).",
 )
 # @click.option('--software', '-S', required=True, help="name of the producer software")
 # @click.option('--version', '-V', required=True, help="version of the producer software")
@@ -192,7 +192,7 @@ def producers(
     gt_id,
     partition,
     compatible_calc_fk,
-    create_new,
+    update,
     # software, version, hashed, config, notes,
     verbose,
     dry_run,
@@ -279,7 +279,11 @@ def producers(
         if producer_config:
             if verbose:
                 click.echo(f'found producer_config {pc_key} ')
-        else:
+            if update:
+                producer_config.notes = "notes 2"
+                producer_config.save()
+                click.echo(f'updated producer_config {pc_key} ')
+        if producer_config is None:
             model = create_producer_config(
                 partition_key=partition,
                 compatible_calc=compatible_calc,

@@ -61,6 +61,8 @@ class TestRevisionFourModelCreation_WithAdaption:
             imt_levels=list(map(lambda x: x / 1e3, range(1, 51))),
         )
         m.save()
+        assert m.version == 1
+
         res = next(
             mHCPC.query(
                 'A',
@@ -72,6 +74,7 @@ class TestRevisionFourModelCreation_WithAdaption:
         assert res.range_key == m.range_key
         assert res.notes == m.notes
         assert res.producer_software == m.producer_software
+        assert res.version == 1
 
     def test_HazardRealizationCurve_table_save_get(self, adapted_model, generate_rev4_rlz_models):
 

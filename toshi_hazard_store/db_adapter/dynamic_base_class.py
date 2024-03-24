@@ -23,7 +23,7 @@ def ensure_class_bases_begin_with(namespace, class_name, base_class):
     assert isinstance(existing_class, type)
 
     # bases = list(existing_class.__bases__)
-    log.debug(f"new baseclass:  {base_class} {base_class.__name__}")
+    log.debug(f"new baseclass:  {base_class} {base_class.__name__} for class: {class_name}")
     log.debug(f"initial bases:  {existing_class.__bases__}")
     # Remove any superclasses that are subclassed from the new class
     bases = [
@@ -51,4 +51,5 @@ def ensure_class_bases_begin_with(namespace, class_name, base_class):
     metaclass = existing_class.__metaclass__
     new_class = metaclass(class_name, tuple(bases), new_class_namespace)
 
+    log.debug(f"new_class bases:  {new_class.__bases__}")
     namespace[class_name] = new_class

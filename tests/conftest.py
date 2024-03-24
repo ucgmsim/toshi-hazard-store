@@ -79,6 +79,7 @@ def default_session_fixture(request, monkeypatch):
 def force_model_reload(monkeypatch):
     # monkeypatch.setattr(toshi_hazard_store.config, "USE_SQLITE_ADAPTER", False)
     importlib.reload(sys.modules['toshi_hazard_store.model'])
+    # importlib.reload(sys.modules['toshi_hazard_store.model.openquake_models'])
     importlib.reload(sys.modules['toshi_hazard_store.model.revision_4.hazard_models'])
     from toshi_hazard_store.model import openquake_models  # noqa
     from toshi_hazard_store.model.revision_4 import hazard_models  # noqa
@@ -135,23 +136,40 @@ def adapted_hazagg_model(request, tmp_path):
 
 @pytest.fixture
 def adapted_rlz_model(request, tmp_path):
+
+    importlib.reload(sys.modules['toshi_hazard_store.model.openquake_models'])
+
     def set_rlz_adapter(adapter):
+        log.debug(f"set_rlz_adapter() called with {adapter} class")
         ensure_class_bases_begin_with(
-            namespace=openquake_models.__dict__, class_name=str('LocationIndexedModel'), base_class=adapter
+            namespace=openquake_models.__dict__,
+            class_name=str('LocationIndexedModel'), base_class=adapter
         )
         ensure_class_bases_begin_with(
             namespace=openquake_models.__dict__,
             class_name=str('OpenquakeRealization'),  # `str` type differs on Python 2 vs. 3.
             base_class=openquake_models.LocationIndexedModel,
         )
+        log.debug(f"<<< set_rlz_adapter() done for {adapter} class")
 
+    log.debug(f"adapted_rlz_model() called with {request.param}")
     if request.param == 'pynamodb':
+        log.debug(f"mock_dynamodb {request.param}")
         with mock_dynamodb():
             set_rlz_adapter(Model)
+            # obj0 = openquake_models.LocationIndexedModel()
+            # assert not isinstance(obj0, SqliteAdapter)
+            # assert isinstance(obj0, Model)            
+            # obj = openquake_models.OpenquakeRealization()
+            # assert not isinstance(obj, SqliteAdapter)
+            # assert isinstance(obj, Model)
+            # log.debug(f'adapted bases {openquake_models.OpenquakeRealization.__bases__}')
             openquake_models.OpenquakeRealization.create_table(wait=True)
             yield openquake_models
             openquake_models.OpenquakeRealization.delete_table()
+    
     elif request.param == 'sqlite':
+        log.debug(f"mock_sqlite {request.param}")
         envvars = {"THS_SQLITE_FOLDER": str(tmp_path), "THS_USE_SQLITE_ADAPTER": "TRUE"}
         with mock.patch.dict(os.environ, envvars, clear=True):
             set_rlz_adapter(SqliteAdapter)
@@ -160,6 +178,7 @@ def adapted_rlz_model(request, tmp_path):
             openquake_models.OpenquakeRealization.delete_table()
     else:
         raise ValueError("invalid internal test config")
+
 
 
 @pytest.fixture
