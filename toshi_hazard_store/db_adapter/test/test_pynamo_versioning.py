@@ -73,7 +73,6 @@ def test_versioned_my_as_writ(adapter_test_table):
     itm0.save()
     assert itm0.version == 1
 
-
     itm0.my_payload = "XXX"
     itm0.save()
     assert itm0.version == 2
@@ -82,3 +81,36 @@ def test_versioned_my_as_writ(adapter_test_table):
     # imt1 = 
     # itm0.save()
 
+
+@pytest.mark.parametrize(
+    'adapter_test_table',
+    [(lazy_fixture('sqlite_adapter_test_table_versioned')), (lazy_fixture('pynamodb_adapter_test_table_versioned'))],
+)
+@mock_dynamodb
+def test_versioned_my_as_writ_query(adapter_test_table):
+
+    if adapter_test_table.exists():
+        adapter_test_table.delete_table()
+    adapter_test_table.create_table()
+
+    itm0 = adapter_test_table(my_hash_key="ABD123", my_range_key="qwerty", my_payload="X")
+    itm0.save()
+    assert itm0.version == 1
+
+    itm0.my_payload = "XXX"
+    itm0.save()
+    assert itm0.version == 2
+    assert itm0.my_payload == "XXX"
+
+    res = adapter_test_table.query(
+        hash_key="ABD123",
+        range_key_condition=adapter_test_table.my_range_key == "qwerty"
+    )
+
+    itm1 = next(res)
+    assert itm1.version == 2
+    assert itm1.my_payload == "XXX"
+
+    itm1.my_payload == "QQQ"
+    itm1.save()
+    assert itm1.version == 3
