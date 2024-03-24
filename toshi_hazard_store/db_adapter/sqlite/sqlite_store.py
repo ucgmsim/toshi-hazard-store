@@ -164,8 +164,8 @@ def put_model(
             log.info('attempt to insert a duplicate key failed: ')
         unique_failure = True
         
-        if version_attr:
-            raise
+        # if version_attr:
+        #     raise
     except Exception as e:
         log.debug(f'SQL: {statement}')
         log.error(e)

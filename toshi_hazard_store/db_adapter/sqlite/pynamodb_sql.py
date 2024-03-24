@@ -192,15 +192,15 @@ class SqlWriteAdapter:
 
         # now add the primary key
         # TODO clean this up
-        if version_attr and \
-            self.model_class._range_key_attribute() and \
-            self.model_class._hash_key_attribute():
-            return (
-                _sql
-                + f"\tPRIMARY KEY ({self.model_class._hash_key_attribute().attr_name}, "
-                + f"{self.model_class._range_key_attribute().attr_name}, "
-                + f"{version_attr.attr_name})\n)"
-            )
+        # if version_attr and \
+        #     self.model_class._range_key_attribute() and \
+        #     self.model_class._hash_key_attribute():
+        #     return (
+        #         _sql
+        #         + f"\tPRIMARY KEY ({self.model_class._hash_key_attribute().attr_name}, "
+        #         + f"{self.model_class._range_key_attribute().attr_name}, "
+        #         + f"{version_attr.attr_name})\n)"
+        #     )
         if self.model_class._range_key_attribute() and self.model_class._hash_key_attribute():
             return (
                 _sql
