@@ -17,24 +17,21 @@ from pynamodb.attributes import (
 from pynamodb.constants import BINARY, STRING
 
 
-class ForeignKeyAttribute(Attribute):
+class ForeignKeyAttribute(UnicodeAttribute):
     """
     A string representation of a (hash_key, range_key) tuple.
     """
 
-    attr_type = STRING
-    value_type = Tuple[str, str]
-
     def serialize(self, value: Tuple[str, str]) -> str:
-        print(value)
+        # print(value)
         assert len(value) == 2
-        return "_".join(value)
+        return super().serialize("_".join(value))
 
     def deserialize(self, value: str) -> Tuple[str, str]:
-        tup = value.split("_")
+        tup = super().deserialize(value).split("_")
         if not len(tup) == 2:
             raise ValueError(f"Invalid value cannot be deserialised: {value}")
-        return (tup[0], tup[1])
+        return tuple(tup)
 
 
 class IMTValuesAttribute(MapAttribute):

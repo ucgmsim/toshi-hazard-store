@@ -18,7 +18,7 @@ from toshi_hazard_store.config import DEPLOYMENT_STAGE, LOCAL_CACHE_FOLDER
 
 from .pynamodb_sql import SqlReadAdapter, SqlWriteAdapter, get_version_attribute, safe_table_name
 from pynamodb_attributes import TimestampAttribute  # IntegerAttribute,
-from pynamodb.attributes import NumberAttribute
+from pynamodb.attributes import NumberAttribute, UnicodeAttribute
 
 _T = TypeVar('_T', bound='pynamodb.models.Model')
 
@@ -49,9 +49,7 @@ def get_model(
         for row in conn.execute(sql):
             d = dict(row)
 
-            # log.info(f"ROW as dict: {d}")
-            # m = model_class().from_dynamodb_dict(d)
-            # log.info(m)
+            log.info(f"ROW as dict: {d}")
 
             for name, attr in model_class.get_attributes().items():
 
@@ -65,28 +63,14 @@ def get_model(
                 if d[name]:
                     if attr.is_hash_key or attr.is_range_key:
                         continue
-
-                    if type(attr) in [NumberAttribute]:
-                        continue
-
-                    if type(attr) in [TimestampAttribute]: #, NumberAttribute]:
-                        log.debug(attr.attr_type)
-                        log.debug(attr.attr_path)
-                        log.debug(attr.__class__)
-                        log.debug(attr.deserialize(d[name]))
-                        d[name] = attr.deserialize(d[name])
-                        continue
-
-                    # if attr.__class__ == pynamodb.attributes.UnicodeAttribute:
-                    #     continue
-
+                    
                     try:
                         # May not pickled, maybe just standard serialisation
                         d[name] = pickle.loads(base64.b64decode(d[name]))
                         log.debug(d[name])
                         continue
                     except Exception as exc:
-                        log.debug(f"{attr.attr_name} {attr.attr_type} {exc}")
+                        log.debug(f"unpickle attempt failed on {attr.attr_name} {attr.attr_type} {exc}")
 
 
                     if type(attr) == pynamodb.attributes.JSONAttribute:
@@ -97,37 +81,15 @@ def get_model(
                         d[name] = json.loads(decompress_string(d[name]))
                         continue
 
-                    # try:
-                    #     # maybe not serialized
-                    #     # d[name] = attr.deserialize(attr.get_value(d[name]))
-                    #     # d[name] = attr.get_value(d[name])
-                    #     continue
-
-                    # except Exception as exc:
-                    #     log.debug(f"{attr.attr_name} {attr.attr_type} {exc}")
-                    #     raise
-
-                    # Dont do anything
-                    continue
-
-
-
-                    # log.debug(f"{attr.get_value(upk)}")
-                    # try to deserialize
-                    # try:
-                    #     d[name] = attr.deserialize(upk)
-                    #     continue
-                    # except (Exception):
-                    #     pass
-
-                    # if isinstance(upk, float):
-                    #     d[name] = upk
-                    # else:
-                    #     d[name] = upk #
+                    # catch-all ...
+                    try: 
+                        d[name] = attr.deserialize(d[name])
+                    except (TypeError, ValueError) as exc:
+                        log.debug(f'attempt to deserialize {attr.attr_name} failed with {exc}')
+                        #leave the field as-is
+                        continue
 
             log.debug(f"d {d}")
-
-            # yield model_class().from_simple_dict(d)
             yield model_class(**d)
 
     except Exception as e:

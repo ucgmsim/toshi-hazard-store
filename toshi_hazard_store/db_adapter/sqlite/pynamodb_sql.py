@@ -118,46 +118,25 @@ class SqlWriteAdapter:
         if attr.is_hash_key or attr.is_range_key:
             return value
 
-        if "pynamodb_attributes.timestamp.TimestampAttribute" in str(attr):
-            log.debug(attr.attr_type)
-            log.debug(attr.attr_path)
-            log.debug(attr.__class__)
-            log.debug(value)
-            log.debug(attr.serialize(value))
-            #log.debug(dynamo_serialized.get(attr.attr_name
-            return attr.serialize(value)
-
         if type(attr) == pynamodb.attributes.JSONAttribute:
+            log.debug("compressing JSONAttribute type {attr.attr_name}")
             return compress_string(json.dumps(value))
 
-        for query_arg_type in QUERY_ARG_ATTRIBUTES:
-            # type(attr) == query_arg_type
-            if isinstance(attr, query_arg_type):
-                return value
+        if type(attr) in [pynamodb.attributes.ListAttribute, pynamodb.attributes.UnicodeSetAttribute]:
+            pkld = pickle.dumps(value)
+            log.debug(f"pickling {attr.attr_name} of {type(attr)} containing {value}")
+            return base64.b64encode(pkld).decode('ascii')
+        # for query_arg_type in QUERY_ARG_ATTRIBUTES:
+        #     # type(attr) == query_arg_type
+        #     if isinstance(attr, query_arg_type):
+        #         return value
 
-        print(attr.serialize(value))
-        #assert 0
-        if attr.attr_type in ['S', 'N']:
-            return attr.serialize(value)
-
-        # if attr.__class__ == pynamodb.attributes.UnicodeAttribute:
-        #     return value
-
-        pkld = pickle.dumps(value)
-        return base64.b64encode(pkld).decode('ascii')
+        return attr.serialize(value)
 
     def _attribute_values(self, model_instance, exclude=None) -> str:
 
         _sql = ""
-
         exclude = exclude or []
-
-        # simple_serialized = model_instance.to_simple_dict(force=True)
-        # dynamo_serialized = model_instance.to_dynamodb_dict()
-
-        # log.debug(f'SMP-SER: {simple_serialized}')
-        # log.debug(f'DYN-SER: {dynamo_serialized}')
-
         version_attr = get_version_attribute(model_instance)
 
         for name, attr in model_instance.get_attributes().items():
@@ -167,16 +146,8 @@ class SqlWriteAdapter:
                 continue
 
             value = self._attribute_value(model_instance, attr)
-            # #value = getattr(model_instance, attr.attr_name)
-            # # assert v == sqlsafe
-            # if attr is version_attr:
-            #     _sql += f'"{value}", ' if value else '0, '
-            #     continue
-
             if value is None:
                 _sql += f'NULL, '
-            # elif attr.attr_type == 'N':
-            #     _sql += f'{value}, '
             else:
                 _sql += f'"{value}", '
 
@@ -196,21 +167,11 @@ class SqlWriteAdapter:
             field_type = 'NUMERIC' if attr.attr_type == 'N' else 'STRING'
 
             _sql += f'\t"{attr.attr_name}" {field_type},\n'
-            print(name, attr, attr.attr_name, attr.attr_type)
+            # print(name, attr, attr.attr_name, attr.attr_type)
             if isinstance(attr, VersionAttribute):
                 version_attr = attr
 
         # now add the primary key
-        # TODO clean this up
-        # if version_attr and \
-        #     self.model_class._range_key_attribute() and \
-        #     self.model_class._hash_key_attribute():
-        #     return (
-        #         _sql
-        #         + f"\tPRIMARY KEY ({self.model_class._hash_key_attribute().attr_name}, "
-        #         + f"{self.model_class._range_key_attribute().attr_name}, "
-        #         + f"{version_attr.attr_name})\n)"
-        #     )
         if self.model_class._range_key_attribute() and self.model_class._hash_key_attribute():
             return (
                 _sql
@@ -226,9 +187,6 @@ class SqlWriteAdapter:
         model_instance: _T,
     ) -> str:
         key_fields = []
-
-        # simple_serialized = model_instance.to_simple_dict(force=True)
-        # dynamo_serialized = model_instance.to_dynamodb_dict()
         _sql = "UPDATE %s \n" % safe_table_name(model_instance.__class__)  # model_class)
         _sql += "SET "
 
@@ -258,14 +216,9 @@ class SqlWriteAdapter:
         if version_attr:
             # add constraint
             version = self._attribute_value(model_instance, version_attr)
-            _sql += f'\t{version_attr.attr_name} = {version-1}\n'
+            _sql += f'\t{version_attr.attr_name} = {int(version)-1}\n'
         else:
             _sql = _sql[:-4] 
-
-
-        # _sql += "RETURNING changes(), "
-        # _sql += ", ".join([attr.attr_name for attr in key_fields
-        #     ]) + ";" 
         _sql += ";"
         log.debug('SQL: %s' % _sql)
         return _sql

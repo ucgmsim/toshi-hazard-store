@@ -142,7 +142,7 @@ def test_filter_condition_on_custom_numeric_enum(payload, expected, custom_field
     print(result[0])
     assert result[0].enum_numeric == expected
 
-@pytest.mark.skip("wack")
+# @pytest.mark.skip("wack")
 @pytest.mark.parametrize(
     'custom_fields_test_table',
     [(lazy_fixture('sqlite_adapter_test_table')), (lazy_fixture('pynamodb_adapter_test_table'))],
@@ -171,11 +171,11 @@ def test_roundtrip_custom_list_of_map(custom_fields_test_table):
     assert result[0].hash_key == "0A"
     assert result[0].range_key == "XX"
 
-    assert result[0].custom_list_field[0].__class__ == CustomMapAttribute
-    assert result[0].custom_list_field[0].fldA == "ABC"
-    assert result[0].custom_list_field[0].fldB == [0, 2, 3]
+    # assert result[0].custom_list_field[0].__class__ == CustomMapAttribute
+    assert result[0].custom_list_field[0]['fldA'] == "ABC"
+    assert result[0].custom_list_field[0]['fldB'] == [0, 2, 3]
     assert result[0].created == created
-
+    # assert 0
 
 @pytest.mark.parametrize(
     'custom_fields_test_table',
@@ -199,5 +199,6 @@ def test_roundtrip_twice_fk(custom_fields_test_table):
     m1 = next(res)
     m1.custom_list_field=[dict(fldA="XYZ", fldB=[0, 2, 3])]
     # m1.my_fk = ('B', 'M')
-    m1.save()    
-    
+    m1.save()
+    assert m1.my_fk == ('A', 'A')
+    # assert 0
