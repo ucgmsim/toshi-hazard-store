@@ -80,21 +80,22 @@ def get_model(
                     # if attr.__class__ == pynamodb.attributes.UnicodeAttribute:
                     #     continue
 
-                    if type(attr) == pynamodb.attributes.JSONAttribute:
-                        log.debug(attr.attr_type)
-                        log.debug(attr.attr_path)
-                        log.debug(attr.__class__)
-                        log.debug(attr.deserialize(d[name]))                        
-                        d[name] = json.loads(decompress_string(d[name]))
-                        continue
                     try:
                         # May not pickled, maybe just standard serialisation
                         d[name] = pickle.loads(base64.b64decode(d[name]))
                         log.debug(d[name])
                         continue
-
                     except Exception as exc:
                         log.debug(f"{attr.attr_name} {attr.attr_type} {exc}")
+
+
+                    if type(attr) == pynamodb.attributes.JSONAttribute:
+                        log.debug(attr.attr_type)
+                        log.debug(attr.attr_path)
+                        log.debug(attr.__class__)
+                        # log.debug(attr.deserialize(d[name]))                        
+                        d[name] = json.loads(decompress_string(d[name]))
+                        continue
 
                     # try:
                     #     # maybe not serialized

@@ -239,11 +239,11 @@ class SqlWriteAdapter:
                 continue
             value = self._attribute_value(model_instance, attr)
             if value is None:
-                _sql += f'\t{attr.attr_name} = NULL, \n'
+                _sql += f'\t"{attr.attr_name}" = NULL, \n'
             elif attr.attr_type == 'N':
-                _sql += f'\t{attr.attr_name} = {value}, \n'
+                _sql += f'\t"{attr.attr_name}" = {value}, \n'
             else:
-                _sql += f'\t{attr.attr_name} = "{value}", \n'
+                _sql += f'\t"{attr.attr_name}" = "{value}", \n'
 
         _sql = _sql[:-3] + "\n"
 
