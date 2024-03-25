@@ -148,7 +148,11 @@ def put_model(
     statement = swa.insert_statement([model_instance])
 
     version_attr = get_version_attribute(model_instance)
-    # swa.insert_into(conn, put_items)
+    # if version_attr:
+    #     version_value = getattr(model_instance, version_attr.attr_name, 0)
+    #     setattr(model_instance, version_attr.attr_name, version_value +1)
+    
+    # # swa.insert_into(conn, put_items)
     # custom error handling follows
     try:
         cursor = conn.cursor()
@@ -176,6 +180,23 @@ def put_model(
         update_statement = swa.update_statement(model_instance)
         cursor = conn.cursor()
         cursor.execute(update_statement)
+        changes = next(cursor.execute("SELECT changes();"))
+        log.debug(f"CHANGES {changes}")
+        if not changes == (1,):
+            conn.rollback()
+            raise sqlite3.IntegrityError()
+
+        # conn.row_factory = sqlite3.Row
+        # changes = 0
+        # for row in conn.execute(update_statement):
+        #     d = dict(row)
+        #     changes += d.get('changes()') 
+        #     log.debug(f"ROW as dict: {d}")
+
+        # if not changes == 1:
+        #     conn.rollback()
+        #     raise sqlite3.IntegrityError()
+
         conn.commit()
         log.debug(f'cursor: {cursor}')
         log.debug("Last row id: %s" % cursor.lastrowid)

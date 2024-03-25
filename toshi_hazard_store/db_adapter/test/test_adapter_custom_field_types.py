@@ -155,7 +155,9 @@ def test_roundtrip_custom_list_of_map(custom_fields_test_table):
 
     created = datetime(2020, 1, 1, 11, tzinfo=timezone.utc)
     m = custom_fields_test_table(
-        hash_key="0A", range_key="XX", custom_list_field=[dict(fldA="ABC", fldB=[0, 2, 3])], created=created
+        hash_key="0A", range_key="XX", 
+        my_fk = ('A', 'A'),
+        custom_list_field=[dict(fldA="ABC", fldB=[0, 2, 3])], created=created
     )
 
     # print("TO:", m.to_dynamodb_dict())
@@ -173,3 +175,29 @@ def test_roundtrip_custom_list_of_map(custom_fields_test_table):
     assert result[0].custom_list_field[0].fldA == "ABC"
     assert result[0].custom_list_field[0].fldB == [0, 2, 3]
     assert result[0].created == created
+
+
+@pytest.mark.parametrize(
+    'custom_fields_test_table',
+    [(lazy_fixture('sqlite_adapter_test_table')), (lazy_fixture('pynamodb_adapter_test_table'))],
+)
+@mock_dynamodb
+def test_roundtrip_twice_fk(custom_fields_test_table):
+    if custom_fields_test_table.exists():
+        custom_fields_test_table.delete_table()
+    custom_fields_test_table.create_table()
+
+    created = datetime(2020, 1, 1, 11, tzinfo=timezone.utc)
+    m = custom_fields_test_table(
+        hash_key="0A", range_key="XX", 
+        my_fk = ('A', 'A'), 
+        custom_list_field=[dict(fldA="ABC", fldB=[0, 2, 3])],
+        created=created
+    )
+    m.save()
+    res = custom_fields_test_table.query(hash_key="0A", range_key_condition=custom_fields_test_table.range_key == "XX")
+    m1 = next(res)
+    m1.custom_list_field=[dict(fldA="XYZ", fldB=[0, 2, 3])]
+    # m1.my_fk = ('B', 'M')
+    m1.save()    
+    

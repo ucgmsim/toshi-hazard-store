@@ -105,25 +105,25 @@ class SqlWriteAdapter:
 
     def __init__(self, model_class: Type[_T]):
         self.model_class = model_class
-
-    def _attribute_value(self, simple_serialized, dynamo_serialized, attr):
+    
+    def _attribute_value(self, model_instance, attr):
         """Take a pynamodb serialized dict
 
         and return the form to be stored to SQL"""
 
-        value = simple_serialized.get(attr.attr_name)
+        value = getattr(model_instance, attr.attr_name)
         if value is None:
             return
 
         if attr.is_hash_key or attr.is_range_key:
             return value
 
-        if "pynamodb_attributes.timestamp.TimestampAttribute" in str(attr):
-            log.debug(attr.attr_type)
-            log.debug(attr.attr_path)
-            log.debug(attr.__class__)
-            log.debug(value)
-            log.debug(dynamo_serialized.get(attr.attr_name))
+        # if "pynamodb_attributes.timestamp.TimestampAttribute" in str(attr):
+        #     log.debug(attr.attr_type)
+        #     log.debug(attr.attr_path)
+        #     log.debug(attr.__class__)
+        #     log.debug(value)
+        #     log.debug(dynamo_serialized.get(attr.attr_name))
 
         if type(attr) == pynamodb.attributes.JSONAttribute:
             return compress_string(json.dumps(value))
@@ -139,7 +139,7 @@ class SqlWriteAdapter:
         # if attr.__class__ == pynamodb.attributes.UnicodeAttribute:
         #     return value
 
-        pkld = pickle.dumps(dynamo_serialized.get(attr.attr_name))
+        pkld = pickle.dumps(value)
         return base64.b64encode(pkld).decode('ascii')
 
     def _attribute_values(self, model_instance, exclude=None) -> str:
@@ -148,11 +148,11 @@ class SqlWriteAdapter:
 
         exclude = exclude or []
 
-        simple_serialized = model_instance.to_simple_dict(force=True)
-        dynamo_serialized = model_instance.to_dynamodb_dict()
+        # simple_serialized = model_instance.to_simple_dict(force=True)
+        # dynamo_serialized = model_instance.to_dynamodb_dict()
 
-        log.debug(f'SMP-SER: {simple_serialized}')
-        log.debug(f'DYN-SER: {dynamo_serialized}')
+        # log.debug(f'SMP-SER: {simple_serialized}')
+        # log.debug(f'DYN-SER: {dynamo_serialized}')
 
         version_attr = get_version_attribute(model_instance)
 
@@ -162,13 +162,19 @@ class SqlWriteAdapter:
             if attr in exclude:
                 continue
 
-            value = self._attribute_value(simple_serialized, dynamo_serialized, attr)
-            # assert v == sqlsafe
-            if attr is version_attr:
-                _sql += f'"{value}", ' if value else '0, '
-                continue
+            value = self._attribute_value(model_instance, attr)
+            # #value = getattr(model_instance, attr.attr_name)
+            # # assert v == sqlsafe
+            # if attr is version_attr:
+            #     _sql += f'"{value}", ' if value else '0, '
+            #     continue
 
-            _sql += 'NULL, ' if value is None else f'"{value}", '
+            if value is None:
+                _sql += f'NULL, '
+            # elif attr.attr_type == 'N':
+            #     _sql += f'{value}, '
+            else:
+                _sql += f'"{value}", '
 
         log.debug(_sql)
         return _sql[:-2]
@@ -217,8 +223,8 @@ class SqlWriteAdapter:
     ) -> str:
         key_fields = []
 
-        simple_serialized = model_instance.to_simple_dict(force=True)
-        dynamo_serialized = model_instance.to_dynamodb_dict()
+        # simple_serialized = model_instance.to_simple_dict(force=True)
+        # dynamo_serialized = model_instance.to_dynamodb_dict()
         _sql = "UPDATE %s \n" % safe_table_name(model_instance.__class__)  # model_class)
         _sql += "SET "
 
@@ -227,11 +233,13 @@ class SqlWriteAdapter:
             if attr.is_hash_key or attr.is_range_key:
                 key_fields.append(attr)
                 continue
-            value = self._attribute_value(simple_serialized, dynamo_serialized, attr)
-            if value is not None:
-                _sql += f'\t{attr.attr_name} = "{value}", \n'
-            else:
+            value = self._attribute_value(model_instance, attr)
+            if value is None:
                 _sql += f'\t{attr.attr_name} = NULL, \n'
+            elif attr.attr_type == 'N':
+                _sql += f'\t{attr.attr_name} = {value}, \n'
+            else:
+                _sql += f'\t{attr.attr_name} = "{value}", \n'
 
         _sql = _sql[:-3] + "\n"
 
@@ -240,18 +248,22 @@ class SqlWriteAdapter:
         for attr in key_fields:
             # field = simple.get(item.attr_name)
             # print(field)
-            _sql += f'\t{attr.attr_name} = "{self._attribute_value(simple_serialized, dynamo_serialized, attr)}" AND\n'
+            _sql += f'\t{attr.attr_name} = "{self._attribute_value(model_instance, attr)}" AND\n'
 
         version_attr = get_version_attribute(model_instance)
         if version_attr:
             # add constraint
-            version = self._attribute_value(simple_serialized, dynamo_serialized, version_attr) or 0
-            _sql += f'\t{version_attr.attr_name} = {int(float(version)-1)};\n'
+            version = self._attribute_value(model_instance, version_attr)
+            _sql += f'\t{version_attr.attr_name} = {version-1}\n'
         else:
-            _sql = _sql[:-4] + ";\n"
+            _sql = _sql[:-4] 
 
+
+        # _sql += "RETURNING changes(), "
+        # _sql += ", ".join([attr.attr_name for attr in key_fields
+        #     ]) + ";" 
+        _sql += ";"
         log.debug('SQL: %s' % _sql)
-
         return _sql
 
     def insert_statement(self, put_items: List[_T]) -> str:
@@ -278,12 +290,14 @@ class SqlWriteAdapter:
 
         unique_put_items = {}
         for model_instance in put_items:
-            simple_serialized = model_instance.to_simple_dict(force=True)
-            dynamo_serialized = model_instance.to_dynamodb_dict()
-            # model_args = model_instance.get_save_kwargs_from_instance()['Item']
+            # simple_serialized = model_instance.to_simple_dict(force=True)
+            # dynamo_serialized = model_instance.to_dynamodb_dict()
+            # # model_args = model_instance.get_save_kwargs_from_instance()['Item']
             uniq_key = ":".join(
-                [f'{self._attribute_value(simple_serialized, dynamo_serialized, attr)}' for attr in unique_on]
+                [f'{self._attribute_value(model_instance, attr)}' for attr in unique_on]
             )
+            # uniq_key = ":".join([f'{getattr(model_instance, attr.attr_name) for attr in unique_on}'])
+            log.debug(f'UNIQ_KEY: {uniq_key}')
             unique_put_items[uniq_key] = model_instance
 
         for item in unique_put_items.values():

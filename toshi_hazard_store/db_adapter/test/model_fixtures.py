@@ -15,8 +15,10 @@ from pynamodb.models import Model
 from pynamodb_attributes import FloatAttribute, TimestampAttribute  # IntegerAttribute,
 
 from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
-from toshi_hazard_store.model.attributes import EnumConstrainedIntegerAttribute, EnumConstrainedUnicodeAttribute
-
+from toshi_hazard_store.model.attributes import ( EnumConstrainedIntegerAttribute, 
+    EnumConstrainedUnicodeAttribute, 
+    ForeignKeyAttribute
+)
 
 class FieldsMixin:
     my_hash_key = UnicodeAttribute(hash_key=True)
@@ -63,7 +65,8 @@ class CustomFieldsMixin:
     hash_key = UnicodeAttribute(hash_key=True)
     range_key = UnicodeAttribute(range_key=True)
     # custom_field = CustomMapAttribute()
-    custom_list_field = ListAttribute(of=CustomMapAttribute)
+    custom_list_field = ListAttribute(of=CustomMapAttribute, null=True)
+    my_fk = ForeignKeyAttribute(null=True)
     created = TimestampAttribute(default=datetime.now(tz=timezone.utc))
     number = NumberAttribute(null=True)
 
