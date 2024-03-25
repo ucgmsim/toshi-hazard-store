@@ -17,6 +17,8 @@ from pynamodb.expressions.condition import Condition
 from toshi_hazard_store.config import DEPLOYMENT_STAGE, LOCAL_CACHE_FOLDER
 
 from .pynamodb_sql import SqlReadAdapter, SqlWriteAdapter, get_version_attribute, safe_table_name
+from pynamodb_attributes import TimestampAttribute  # IntegerAttribute,
+from pynamodb.attributes import NumberAttribute
 
 _T = TypeVar('_T', bound='pynamodb.models.Model')
 
@@ -56,47 +58,58 @@ def get_model(
                 log.debug(f"DESERIALIZE: {name} {attr}")
                 log.debug(f"{d[name]}, {type(d[name])}")
 
+                if d[name] is None:
+                    del d[name]
+                    continue
+
                 if d[name]:
                     if attr.is_hash_key or attr.is_range_key:
+                        continue
+
+                    if type(attr) in [NumberAttribute]:
+                        continue
+
+                    if type(attr) in [TimestampAttribute]: #, NumberAttribute]:
+                        log.debug(attr.attr_type)
+                        log.debug(attr.attr_path)
+                        log.debug(attr.__class__)
+                        log.debug(attr.deserialize(d[name]))
+                        d[name] = attr.deserialize(d[name])
                         continue
 
                     # if attr.__class__ == pynamodb.attributes.UnicodeAttribute:
                     #     continue
 
                     if type(attr) == pynamodb.attributes.JSONAttribute:
+                        log.debug(attr.attr_type)
+                        log.debug(attr.attr_path)
+                        log.debug(attr.__class__)
+                        log.debug(attr.deserialize(d[name]))                        
                         d[name] = json.loads(decompress_string(d[name]))
                         continue
-
                     try:
                         # May not pickled, maybe just standard serialisation
                         d[name] = pickle.loads(base64.b64decode(d[name]))
                         log.debug(d[name])
-                        # log.debug(f"{attr.attr_name} {attr.attr_type} {upk} {type(upk)}")
-
-                        # if isinstance(upk, float):
-                        #     d[name] = upk
-                        # else:
-                        #     d[name] = attr.deserialize(upk)
-                        # continue
-                    except Exception as exc:
-                        log.debug(f"{attr.attr_name} {attr.attr_type} {exc}")
-
-                    try:
-                        # maybe not serialized
-                        d[name] = attr.deserialize(attr.get_value(d[name]))
                         continue
+
                     except Exception as exc:
                         log.debug(f"{attr.attr_name} {attr.attr_type} {exc}")
+
+                    # try:
+                    #     # maybe not serialized
+                    #     # d[name] = attr.deserialize(attr.get_value(d[name]))
+                    #     # d[name] = attr.get_value(d[name])
+                    #     continue
+
+                    # except Exception as exc:
+                    #     log.debug(f"{attr.attr_name} {attr.attr_type} {exc}")
+                    #     raise
 
                     # Dont do anything
                     continue
 
-                    # if "pynamodb_attributes.timestamp.TimestampAttribute" in str(attr):
-                    #     log.debug(attr.attr_type)
-                    #     log.debug(attr.attr_path)
-                    #     log.debug(attr.__class__)
-                    #     log.debug(attr.deserialize(upk))
-                    #     assert 0
+
 
                     # log.debug(f"{attr.get_value(upk)}")
                     # try to deserialize

@@ -118,12 +118,14 @@ class SqlWriteAdapter:
         if attr.is_hash_key or attr.is_range_key:
             return value
 
-        # if "pynamodb_attributes.timestamp.TimestampAttribute" in str(attr):
-        #     log.debug(attr.attr_type)
-        #     log.debug(attr.attr_path)
-        #     log.debug(attr.__class__)
-        #     log.debug(value)
-        #     log.debug(dynamo_serialized.get(attr.attr_name))
+        if "pynamodb_attributes.timestamp.TimestampAttribute" in str(attr):
+            log.debug(attr.attr_type)
+            log.debug(attr.attr_path)
+            log.debug(attr.__class__)
+            log.debug(value)
+            log.debug(attr.serialize(value))
+            #log.debug(dynamo_serialized.get(attr.attr_name
+            return attr.serialize(value)
 
         if type(attr) == pynamodb.attributes.JSONAttribute:
             return compress_string(json.dumps(value))
@@ -133,8 +135,10 @@ class SqlWriteAdapter:
             if isinstance(attr, query_arg_type):
                 return value
 
-        # if attr.attr_type in ['S', 'N']:
-        #     return value
+        print(attr.serialize(value))
+        #assert 0
+        if attr.attr_type in ['S', 'N']:
+            return attr.serialize(value)
 
         # if attr.__class__ == pynamodb.attributes.UnicodeAttribute:
         #     return value
