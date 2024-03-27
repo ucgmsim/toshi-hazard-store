@@ -160,8 +160,47 @@ def create_tables(context, verbose, dry_run):
         toshi_hazard_store.model.migrate_r4()
 
 
+
 @main.command()
-@click.argument('model_id')  # , '-M', default="NSHM_v1.0.4")
+@click.argument('gt_list', type=click.File('rb'))
+@click.argument('partition')
+@click.option(
+    '--compatible_calc_fk',
+    '-CCF',
+    default="A_A",
+    required=True,
+    help="foreign key of the compatible_calc in form `A_B`",
+)
+@click.option('-v', '--verbose', is_flag=True, default=False)
+@click.option('-d', '--dry-run', is_flag=True, default=False)
+@click.pass_context
+def prod_from_gtfile(
+    context,
+    gt_list,
+    partition,
+    compatible_calc_fk,
+    # update,
+    # software, version, hashed, config, notes,
+    verbose,
+    dry_run,
+):
+    """Prepare and validate Producer Configs a given file of GT_IDa in a PARTITION"""
+    for gt_id in gt_list:
+        click.echo(F"call producers for {gt_id.decode().strip()}")
+        # continue
+        context.invoke(producers,
+            gt_id=gt_id.decode().strip(),
+            partition=partition,
+            compatible_calc_fk=compatible_calc_fk,
+            update = False,
+            # software, version, hashed, config, notes,
+            verbose=verbose,
+            dry_run=dry_run
+        )
+    click.echo("ALL DONE")
+
+
+@main.command()
 @click.argument('gt_id')
 @click.argument('partition')
 @click.option(
@@ -178,17 +217,12 @@ def create_tables(context, verbose, dry_run):
     default=False,
     help="overwrite existing producer record (versioned table).",
 )
-# @click.option('--software', '-S', required=True, help="name of the producer software")
-# @click.option('--version', '-V', required=True, help="version of the producer software")
-# @click.option('--hashed', '-H', required=True, help="hash of the producer configuration")
-# @click.option('--config', '-C', required=False, help="producer configuration as a unicode string")
-# @click.option('--notes', '-N', required=False, help="user notes")
 @click.option('-v', '--verbose', is_flag=True, default=False)
 @click.option('-d', '--dry-run', is_flag=True, default=False)
 @click.pass_context
 def producers(
     context,
-    model_id,
+    # model_id,
     gt_id,
     partition,
     compatible_calc_fk,
@@ -197,9 +231,8 @@ def producers(
     verbose,
     dry_run,
 ):
-    """Prepare and validate Producer Configs for a given MODEL_ID and GT_ID in a PARTITION
+    """Prepare and validate Producer Configs for a given GT_ID in a PARTITION
 
-    MODEL_ID is a valid NSHM model identifier\n
     GT_ID is an NSHM General task id containing HazardAutomation Tasks\n
     PARTITION is a table partition (hash)
 
@@ -212,8 +245,6 @@ def producers(
 
     headers = {"x-api-key": API_KEY}
     gtapi = toshi_api_client.ApiClient(API_URL, None, with_schema_validation=False, headers=headers)
-
-    current_model = nzshm_model.get_model_version(model_id)
 
     if verbose:
         echo_settings(work_folder)
@@ -240,25 +271,18 @@ def producers(
 
         for task_id in subtask_ids:
             query_res = gtapi.get_oq_hazard_task(task_id)
-            log.info(query_res)
+            log.debug(query_res)
             task_created = dt.datetime.fromisoformat(query_res["created"])  # "2023-03-20T09:02:35.314495+00:00",
-            log.info(f"task created: {task_created}")
+            log.debug(f"task created: {task_created}")
 
             oq_config.download_artefacts(gtapi, task_id, query_res, subtasks_folder)
             jobconf = oq_config.config_from_task(task_id, subtasks_folder)
 
             config_hash = jobconf.compatible_hash_digest()
             latest_engine_image = ecr_repo_stash.active_image_asat(task_created)
-            log.info(latest_engine_image)
-            """
-            {'registryId': '461564345538', 'repositoryName': 'nzshm22/runzi-openquake',
-            'imageDigest': 'sha256:8c09bffb9f4cf88bbcc96876b029aa91a638620810d2c0917dfba53454e21ac2', 'imageTags': ['runzi-5b0b3b4_nz_openquake-nightly_20230320'],
-            'imageSizeInBytes': 1187720086, 'imagePushedAt': datetime.datetime(2023, 3, 20, 21, 27, 21, tzinfo=tzlocal()), 'imageManifestMediaType':
-            'application/vnd.docker.distribution.manifest.v2+json', 'artifactMediaType': 'application/vnd.docker.container.image.v1+json',
-            'lastRecordedPullTime': datetime.datetime(2023, 3, 31, 11, 18, 42, 418000, tzinfo=tzlocal())
-            }
-            """
-            log.info(f"task {task_id} hash: {config_hash}")
+            log.debug(latest_engine_image)
+
+            log.debug(f"task {task_id} hash: {config_hash}")
             yield SubtaskRecord(image=latest_engine_image, 
                 config_hash=config_hash)
 
