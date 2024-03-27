@@ -26,7 +26,7 @@ def save_file(filepath: pathlib.Path, url: str):
         raise (RuntimeError(f'Error downloading file {filepath.name}: Status code {r.status_code}'))
 
 
-def download_artefacts(gtapi, task_id, hazard_task_detail, subtasks_folder):
+def download_artefacts(gtapi, task_id, hazard_task_detail, subtasks_folder, include_hdf5=False):
     """Pull down the files and store localling in WORKFOLDER"""
 
     subtask_folder = subtasks_folder / str(task_id)
@@ -34,19 +34,19 @@ def download_artefacts(gtapi, task_id, hazard_task_detail, subtasks_folder):
 
     save_file(subtask_folder / TASK_ARGS_JSON, hazard_task_detail['hazard_solution']['task_args']['file_url'])
 
-    if False:
-        """Skipping this as it seems these aren't of use for the job.ini ... maybe for other inputs"""
-        zipped = save_file(
-            subtask_folder / "config.zip",
-            hazard_task_detail['hazard_solution']['config']['files']['edges'][0]['node']['file']['file_url'],
-        )
+    if include_hdf5:
+        hdf5_file = subtask_folder / "calc_1.hdf5"
+        if not hdf5_file.exists():
+            hazard_task_detail['hazard_solution']['hdf5_archive']['file_name']
+            hdf5_archive = save_file(
+                subtask_folder / hazard_task_detail['hazard_solution']['hdf5_archive']['file_name'],
+                hazard_task_detail['hazard_solution']['hdf5_archive']['file_url'],
+            )
 
-        with zipfile.ZipFile(zipped) as myzip:
-            myzip.extract("job.ini", subtask_folder)
-
-        (subtask_folder / "job.ini").rename(subtask_folder / ARCHIVED_INI)
-
-        zipped.unlink()  # delete the zip
+            #TODO handle possibly different filename ??
+            with zipfile.ZipFile(hdf5_archive) as myzip:
+                myzip.extract('calc_1.hdf5', subtask_folder)
+            hdf5_archive.unlink()  # delete the zip
 
 
 # def check_hashes(task_id, config):
@@ -57,6 +57,12 @@ def download_artefacts(gtapi, task_id, hazard_task_detail, subtasks_folder):
 #         if not archived_config.compatible_hash_digest() == config.compatible_hash_digest():
 #             log.warning("archived and synethic hashes differ")
 
+def hdf5_from_task(task_id, subtasks_folder):
+    """Use nzshm-model to build a compatibility config"""
+    subtask_folder = subtasks_folder / str(task_id)
+    hdf5_file = subtask_folder / "calc_1.hdf5"
+    assert hdf5_file.exists()
+    return hdf5_file
 
 def config_from_task(task_id, subtasks_folder) -> OpenquakeConfig:
     """Use nzshm-model to build a compatibility config"""

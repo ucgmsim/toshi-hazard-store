@@ -49,7 +49,7 @@ import toshi_hazard_store  # noqa: E402
 from toshi_hazard_store.model.revision_4 import hazard_models  # noqa: E402
 from toshi_hazard_store.oq_import import (  # noqa: E402
     create_producer_config,
-    # export_rlzs_rev4,
+    export_rlzs_rev4,
     get_compatible_calc,
     get_producer_config,
 )
@@ -86,6 +86,7 @@ try:
         API_KEY = get_secret("NZSHM22_TOSHI_API_SECRET_PROD", "us-east-1").get("NZSHM22_TOSHI_API_KEY_PROD")
     else:
         API_KEY = os.getenv('NZSHM22_TOSHI_API_KEY', "")
+    # print(f"key: {API_KEY}")
 except AttributeError as err:
     print(f"unable to get secret from secretmanager: {err}")
     API_KEY = os.getenv('NZSHM22_TOSHI_API_KEY', "")
@@ -217,6 +218,13 @@ def prod_from_gtfile(
     default=False,
     help="overwrite existing producer record (versioned table).",
 )
+@click.option(
+    '--with_rlzs',
+    '-R',
+    is_flag=True,
+    default=False,
+    help="also get the realisations",
+)
 @click.option('-v', '--verbose', is_flag=True, default=False)
 @click.option('-d', '--dry-run', is_flag=True, default=False)
 @click.pass_context
@@ -227,6 +235,7 @@ def producers(
     partition,
     compatible_calc_fk,
     update,
+    with_rlzs,
     # software, version, hashed, config, notes,
     verbose,
     dry_run,
@@ -264,7 +273,7 @@ def producers(
         click.echo('fetching General Task subtasks')
     query_res = gtapi.get_gt_subtasks(gt_id)
 
-    SubtaskRecord = collections.namedtuple('SubtaskRecord', 'config_hash, image')
+    SubtaskRecord = collections.namedtuple('SubtaskRecord', 'hazard_calc_id, config_hash, image, hdf5_path')
     def handle_subtasks(gt_id: str, subtask_ids: Iterable):
         subtasks_folder = pathlib.Path(work_folder, gt_id, 'subtasks')
         subtasks_folder.mkdir(parents=True, exist_ok=True)
@@ -275,7 +284,7 @@ def producers(
             task_created = dt.datetime.fromisoformat(query_res["created"])  # "2023-03-20T09:02:35.314495+00:00",
             log.debug(f"task created: {task_created}")
 
-            oq_config.download_artefacts(gtapi, task_id, query_res, subtasks_folder)
+            oq_config.download_artefacts(gtapi, task_id, query_res, subtasks_folder, include_hdf5=with_rlzs)
             jobconf = oq_config.config_from_task(task_id, subtasks_folder)
 
             config_hash = jobconf.compatible_hash_digest()
@@ -283,8 +292,17 @@ def producers(
             log.debug(latest_engine_image)
 
             log.debug(f"task {task_id} hash: {config_hash}")
-            yield SubtaskRecord(image=latest_engine_image, 
-                config_hash=config_hash)
+
+            if with_rlzs:
+                hdf5_path = oq_config.hdf5_from_task(task_id, subtasks_folder)
+            else:
+                hdf5_path=None
+                
+            yield SubtaskRecord(
+                hazard_calc_id=task_id,
+                image=latest_engine_image, 
+                config_hash=config_hash,
+                hdf5_path=hdf5_path)
 
     def get_hazard_task_ids(query_res):
         for edge in query_res['children']['edges']:
@@ -293,6 +311,9 @@ def producers(
     extractor=None
     for subtask_info in handle_subtasks(gt_id, get_hazard_task_ids(query_res)):
 
+        if verbose:
+            click.echo(subtask_info)
+            
         producer_software = f"{ECR_REGISTRY_ID}/{ECR_REPONAME}"
         producer_version_id = subtask_info.image['imageDigest'][7:27] # first 20 bits of hashdigest
         configuration_hash = subtask_info.config_hash
@@ -324,6 +345,19 @@ def producers(
             )
             if verbose:
                 click.echo(f"New Model {model} has foreign key ({model.partition_key}, {model.range_key})")
+
+        if with_rlzs:
+            extractor = Extractor(str(subtask_info.hdf5_path))
+            export_rlzs_rev4(
+                extractor,
+                compatible_calc=compatible_calc,
+                producer_config=producer_config,
+                hazard_calc_id=subtask_info.hazard_calc_id,
+                vs30=400,
+                return_rlz=False,
+                update_producer=True
+            )
+            assert 0
 
 if __name__ == "__main__":
     main()

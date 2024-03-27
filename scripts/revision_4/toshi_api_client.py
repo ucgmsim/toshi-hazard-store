@@ -63,6 +63,11 @@ class ApiClient(toshi_client_base.ToshiClientBase):
                         id
                         __typename
                       }
+                      hdf5_archive {
+                        file_name
+                        file_size
+                        file_url
+                      }
                       task_args {
                         file_name
                         file_size

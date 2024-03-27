@@ -97,6 +97,7 @@ def export_rlzs_rev4(
     hazard_calc_id: str,
     vs30: int,
     return_rlz=True,
+    update_producer=False
 ) -> Union[List[hazard_models.HazardRealizationCurve], None]:
 
     # first check the FKs are OK
@@ -115,8 +116,19 @@ def export_rlzs_rev4(
     imtls = oq['hazard_imtls']  # dict of imt and the levels used at each imt e.g {'PGA': [0.011. 0.222]}
 
     if not set(producer_config.imts).issuperset(set(imtls.keys())):
-        log.error(f'imts do not align {imtls.keys()} <=> {producer_config.imts}')
-        raise ValueError('bad IMT configuration')
+
+        if not update_producer:
+            log.error(f'imts do not align {imtls.keys()} <=> {producer_config.imts}')
+            raise ValueError('bad IMT configuration')
+        else:
+            # update producer
+            producer_config.imts = list(set(producer_config.imts).union(set(imtls.keys())))
+            imtl_values = set()
+            for values in imtls.values():
+                imtl_values.update(set(values))
+            producer_config.imt_levels = list(set(producer_config.imt_levels).union(imtl_values))
+            producer_config.save()
+            log.debug(f'updated: {producer_config}')
 
     source_lt, gsim_lt, rlz_lt = parse_logic_tree_branches(extractor)
 
@@ -148,12 +160,13 @@ def export_rlzs_rev4(
                         raise ValueError('bad IMT levels configuration')
 
                     # can check actual levels here too
-                    if not imtls[imt] == producer_config.imt_levels:
-                        log.error(
-                            f'imt_levels not matched: {len(producer_config.imt_levels)}'
-                            ' and values: {len(values)} do not align.'
-                        )
-                        raise ValueError('bad IMT levels configuration')
+                    if not update_producer:
+                        if not imtls[imt] == producer_config.imt_levels:
+                            log.error(
+                                f'imt_levels not matched: {len(producer_config.imt_levels)}'
+                                ' and values: {len(values)} do not align.'
+                            )
+                            raise ValueError('bad IMT levels configuration')
 
                     oq_realization = hazard_models.HazardRealizationCurve(
                         compatible_calc_fk=compatible_calc.foreign_key(),
