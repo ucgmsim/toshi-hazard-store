@@ -4242,7 +4242,7 @@ docs = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.link
 testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-ignore-flaky", "pytest-mypy", "pytest-ruff (>=0.2.1)"]
 
 [extras]
-openquake = ["fiona", "networkx", "numba", "nzshm-model", "openquake-engine"]
+openquake = ["fiona", "networkx", "numba", "openquake-engine"]
 
 [metadata]
 lock-version = "2.0"
