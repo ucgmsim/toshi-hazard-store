@@ -1,16 +1,9 @@
 """Console script for querying THS_R4 tables
 """
 
-import datetime as dt
 import logging
-import os
-# import pathlib
-import click
-# import requests
-# import zipfile
-# import collections
 
-from typing import Iterable
+import click
 
 log = logging.getLogger()
 
@@ -21,8 +14,8 @@ logging.getLogger('toshi_hazard_store').setLevel(logging.INFO)
 
 # import nzshm_model  # noqa: E402
 import toshi_hazard_store  # noqa: E402
-from toshi_hazard_store.model.revision_4 import hazard_models  # noqa: E402
 
+# from toshi_hazard_store.model.revision_4 import hazard_models  # noqa: E402
 
 # from toshi_hazard_store.config import (
 #     USE_SQLITE_ADAPTER,
@@ -56,6 +49,7 @@ def lsc(context, partition, verbose, dry_run):
     for compat in toshi_hazard_store.model.CompatibleHazardCalculation.query(partition):
         click.echo(compat)
 
+
 @main.command()
 @click.argument('partition')
 @click.option('-v', '--verbose', is_flag=True, default=False)
@@ -74,9 +68,10 @@ def lsp(context, partition, verbose, dry_run):
             str(pc.last_used),
             pc.tags,
             pc.configuration_hash,
-            pc.notes
+            pc.notes,
         ]
         click.echo(row)
+
 
 if __name__ == "__main__":
     main()

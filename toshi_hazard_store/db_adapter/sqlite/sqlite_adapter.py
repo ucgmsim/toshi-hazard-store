@@ -10,10 +10,11 @@ from typing import TYPE_CHECKING, Any, Dict, Generic, Iterable, List, Optional, 
 import pynamodb.models
 from pynamodb.constants import DELETE, PUT
 from pynamodb.expressions.condition import Condition
-from .pynamodb_sql import get_version_attribute
+
 from toshi_hazard_store.config import SQLITE_ADAPTER_FOLDER
 
 from ..pynamodb_adapter_interface import PynamodbAdapterInterface  # noqa
+from .pynamodb_sql import get_version_attribute
 from .sqlite_store import (
     check_exists,
     drop_table,
@@ -93,7 +94,6 @@ class SqliteAdapter(PynamodbAdapterInterface):
     ) -> dict[str, Any]:
         log.debug('SqliteAdapter.save')
 
-
         version_attr = get_version_attribute(self)
         if version_attr:
             # simple_serialized = self.to_simple_dict(force=True)
@@ -102,7 +102,7 @@ class SqliteAdapter(PynamodbAdapterInterface):
             if not value:
                 setattr(self, version_attr.attr_name, 1)
             else:
-                setattr(self, version_attr.attr_name, value +1)
+                setattr(self, version_attr.attr_name, value + 1)
         return put_model(get_connection(type(self)), self)
 
     @classmethod

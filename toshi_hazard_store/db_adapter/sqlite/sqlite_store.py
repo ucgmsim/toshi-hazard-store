@@ -16,9 +16,7 @@ from pynamodb.expressions.condition import Condition
 
 from toshi_hazard_store.config import DEPLOYMENT_STAGE, LOCAL_CACHE_FOLDER
 
-from .pynamodb_sql import SqlReadAdapter, SqlWriteAdapter, get_version_attribute, safe_table_name
-from pynamodb_attributes import TimestampAttribute  # IntegerAttribute,
-from pynamodb.attributes import NumberAttribute, UnicodeAttribute
+from .pynamodb_sql import SqlReadAdapter, SqlWriteAdapter, safe_table_name
 
 _T = TypeVar('_T', bound='pynamodb.models.Model')
 
@@ -63,7 +61,7 @@ def get_model(
                 if d[name]:
                     if attr.is_hash_key or attr.is_range_key:
                         continue
-                    
+
                     try:
                         # May not pickled, maybe just standard serialisation
                         d[name] = pickle.loads(base64.b64decode(d[name]))
@@ -72,21 +70,20 @@ def get_model(
                     except Exception as exc:
                         log.debug(f"unpickle attempt failed on {attr.attr_name} {attr.attr_type} {exc}")
 
-
                     if type(attr) == pynamodb.attributes.JSONAttribute:
                         log.debug(attr.attr_type)
                         log.debug(attr.attr_path)
                         log.debug(attr.__class__)
-                        # log.debug(attr.deserialize(d[name]))                        
+                        # log.debug(attr.deserialize(d[name]))
                         d[name] = json.loads(decompress_string(d[name]))
                         continue
 
                     # catch-all ...
-                    try: 
+                    try:
                         d[name] = attr.deserialize(d[name])
                     except (TypeError, ValueError) as exc:
                         log.debug(f'attempt to deserialize {attr.attr_name} failed with {exc}')
-                        #leave the field as-is
+                        # leave the field as-is
                         continue
 
             log.debug(f"d {d}")
@@ -123,12 +120,6 @@ def put_model(
     swa = SqlWriteAdapter(model_class)
     statement = swa.insert_statement([model_instance])
 
-    version_attr = get_version_attribute(model_instance)
-    # if version_attr:
-    #     version_value = getattr(model_instance, version_attr.attr_name, 0)
-    #     setattr(model_instance, version_attr.attr_name, version_value +1)
-    
-    # # swa.insert_into(conn, put_items)
     # custom error handling follows
     try:
         cursor = conn.cursor()
@@ -143,9 +134,7 @@ def put_model(
         if 'UNIQUE constraint failed' in msg:
             log.info('attempt to insert a duplicate key failed: ')
         unique_failure = True
-        
-        # if version_attr:
-        #     raise
+
     except Exception as e:
         log.debug(f'SQL: {statement}')
         log.error(e)
@@ -161,17 +150,6 @@ def put_model(
         if not changes == (1,):
             conn.rollback()
             raise sqlite3.IntegrityError()
-
-        # conn.row_factory = sqlite3.Row
-        # changes = 0
-        # for row in conn.execute(update_statement):
-        #     d = dict(row)
-        #     changes += d.get('changes()') 
-        #     log.debug(f"ROW as dict: {d}")
-
-        # if not changes == 1:
-        #     conn.rollback()
-        #     raise sqlite3.IntegrityError()
 
         conn.commit()
         log.debug(f'cursor: {cursor}')

@@ -1,7 +1,7 @@
+import datetime as dt
 import json
 import logging
 import random
-import datetime as dt
 
 # from dataclasses import dataclass
 from typing import List, Optional, Tuple, Union
@@ -27,7 +27,7 @@ def create_producer_config(
     configuration_hash: str,
     tags: Optional[List[str]] = None,
     effective_from: Optional[dt.datetime] = None,
-    last_used: Optional[dt.datetime] = None,   
+    last_used: Optional[dt.datetime] = None,
     configuration_data: Optional[str] = "",
     notes: Optional[str] = "",
     dry_run: bool = False,
@@ -53,9 +53,9 @@ def create_producer_config(
         compatible_calc_fk=compatible_calc.foreign_key(),
         producer_software=producer_software,
         producer_version_id=producer_version_id,
-        tags = tags,
-        effective_from = effective_from,
-        last_used = last_used,
+        tags=tags,
+        effective_from=effective_from,
+        last_used=last_used,
         configuration_hash=configuration_hash,
         configuration_data=configuration_data,
         imts=imts,
@@ -97,7 +97,7 @@ def export_rlzs_rev4(
     hazard_calc_id: str,
     vs30: int,
     return_rlz=True,
-    update_producer=False
+    update_producer=False,
 ) -> Union[List[hazard_models.HazardRealizationCurve], None]:
 
     # first check the FKs are OK

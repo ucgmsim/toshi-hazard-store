@@ -1,14 +1,13 @@
-import pytest
 import importlib
 import sys
 
-# from pynamodb.attributes import UnicodeAttribute
 from pynamodb.models import Model
 
 from toshi_hazard_store.db_adapter import ensure_class_bases_begin_with
 from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
 
 from . import module_model_rebase_fixtures
+
 
 def test_dynamic_subclass_reassign():
 
@@ -29,7 +28,7 @@ def test_dynamic_subclass_reassign():
     instance = module_model_rebase_fixtures.MySubclassedModel(my_hash_key='A', my_range_key='B', extra="C")
     print(dir(instance))
     assert isinstance(instance, module_model_rebase_fixtures.MySubclassedModel)
-    assert isinstance(instance, module_model_rebase_fixtures.MyModel)    
+    assert isinstance(instance, module_model_rebase_fixtures.MyModel)
     assert isinstance(instance, Model)
     assert not isinstance(instance, SqliteAdapter)
 
@@ -84,12 +83,11 @@ def test_dynamic_subclass_reassign_reversed():
 
     print('MySubclassedModel bases', module_model_rebase_fixtures.MySubclassedModel.__bases__)
     print('MyModel bases', module_model_rebase_fixtures.MyModel.__bases__)
-    
+
     assert isinstance(instance, module_model_rebase_fixtures.MySubclassedModel)
     assert isinstance(instance, module_model_rebase_fixtures.MyModel)
     assert isinstance(instance, SqliteAdapter)
     assert isinstance(instance, Model)
-
 
     assert getattr(instance, 'exists')  # interface method
     assert getattr(instance, 'my_hash_key')  # baseclass attibute
@@ -110,13 +108,12 @@ def test_dynamic_subclass_reassign_reversed():
 
     print('MySubclassedModel bases', module_model_rebase_fixtures.MySubclassedModel.__bases__)
     print('MyModel bases', module_model_rebase_fixtures.MyModel.__bases__)
- 
+
     assert isinstance(instance, module_model_rebase_fixtures.MySubclassedModel)
-    assert isinstance(instance, module_model_rebase_fixtures.MyModel)    
+    assert isinstance(instance, module_model_rebase_fixtures.MyModel)
     assert isinstance(instance, Model)
     assert not isinstance(instance, SqliteAdapter)
 
     assert getattr(instance, 'exists')  # interface method
     assert getattr(instance, 'my_hash_key')  # custom model attibute
     assert getattr(instance, 'extra')  # custom model attibute
-

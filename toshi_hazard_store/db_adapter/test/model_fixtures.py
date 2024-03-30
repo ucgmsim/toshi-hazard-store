@@ -15,10 +15,12 @@ from pynamodb.models import Model
 from pynamodb_attributes import FloatAttribute, TimestampAttribute  # IntegerAttribute,
 
 from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
-from toshi_hazard_store.model.attributes import ( EnumConstrainedIntegerAttribute, 
-    EnumConstrainedUnicodeAttribute, 
-    ForeignKeyAttribute
+from toshi_hazard_store.model.attributes import (
+    EnumConstrainedIntegerAttribute,
+    EnumConstrainedUnicodeAttribute,
+    ForeignKeyAttribute,
 )
+
 
 class FieldsMixin:
     my_hash_key = UnicodeAttribute(hash_key=True)

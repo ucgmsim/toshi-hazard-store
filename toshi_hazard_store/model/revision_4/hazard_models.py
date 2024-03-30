@@ -65,7 +65,7 @@ class HazardCurveProducerConfig(Model):
 
     created = TimestampAttribute(default=datetime_now)
     modified = TimestampAttribute(default=datetime_now)
-    
+
     effective_from = TimestampAttribute(null=True)
     last_used = TimestampAttribute(null=True)
 

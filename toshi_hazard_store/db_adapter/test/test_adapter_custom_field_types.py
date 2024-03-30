@@ -4,7 +4,7 @@ import pytest
 from moto import mock_dynamodb
 from pytest_lazyfixture import lazy_fixture
 
-from .model_fixtures import CustomFieldsPynamodbModel, CustomFieldsSqliteModel, CustomMapAttribute
+from .model_fixtures import CustomFieldsPynamodbModel, CustomFieldsSqliteModel
 
 
 @pytest.fixture()
@@ -142,6 +142,7 @@ def test_filter_condition_on_custom_numeric_enum(payload, expected, custom_field
     print(result[0])
     assert result[0].enum_numeric == expected
 
+
 # @pytest.mark.skip("wack")
 @pytest.mark.parametrize(
     'custom_fields_test_table',
@@ -155,9 +156,11 @@ def test_roundtrip_custom_list_of_map(custom_fields_test_table):
 
     created = datetime(2020, 1, 1, 11, tzinfo=timezone.utc)
     m = custom_fields_test_table(
-        hash_key="0A", range_key="XX", 
-        my_fk = ('A', 'A'),
-        custom_list_field=[dict(fldA="ABC", fldB=[0, 2, 3])], created=created
+        hash_key="0A",
+        range_key="XX",
+        my_fk=('A', 'A'),
+        custom_list_field=[dict(fldA="ABC", fldB=[0, 2, 3])],
+        created=created,
     )
 
     # print("TO:", m.to_dynamodb_dict())
@@ -177,6 +180,7 @@ def test_roundtrip_custom_list_of_map(custom_fields_test_table):
     assert result[0].created == created
     # assert 0
 
+
 @pytest.mark.parametrize(
     'custom_fields_test_table',
     [(lazy_fixture('sqlite_adapter_test_table')), (lazy_fixture('pynamodb_adapter_test_table'))],
@@ -189,15 +193,16 @@ def test_roundtrip_twice_fk(custom_fields_test_table):
 
     created = datetime(2020, 1, 1, 11, tzinfo=timezone.utc)
     m = custom_fields_test_table(
-        hash_key="0A", range_key="XX", 
-        my_fk = ('A', 'A'), 
+        hash_key="0A",
+        range_key="XX",
+        my_fk=('A', 'A'),
         custom_list_field=[dict(fldA="ABC", fldB=[0, 2, 3])],
-        created=created
+        created=created,
     )
     m.save()
     res = custom_fields_test_table.query(hash_key="0A", range_key_condition=custom_fields_test_table.range_key == "XX")
     m1 = next(res)
-    m1.custom_list_field=[dict(fldA="XYZ", fldB=[0, 2, 3])]
+    m1.custom_list_field = [dict(fldA="XYZ", fldB=[0, 2, 3])]
     # m1.my_fk = ('B', 'M')
     m1.save()
     assert m1.my_fk == ('A', 'A')

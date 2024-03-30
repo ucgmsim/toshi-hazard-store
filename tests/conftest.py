@@ -142,8 +142,7 @@ def adapted_rlz_model(request, tmp_path):
     def set_rlz_adapter(adapter):
         log.debug(f"set_rlz_adapter() called with {adapter} class")
         ensure_class_bases_begin_with(
-            namespace=openquake_models.__dict__,
-            class_name=str('LocationIndexedModel'), base_class=adapter
+            namespace=openquake_models.__dict__, class_name=str('LocationIndexedModel'), base_class=adapter
         )
         ensure_class_bases_begin_with(
             namespace=openquake_models.__dict__,
@@ -159,7 +158,7 @@ def adapted_rlz_model(request, tmp_path):
             set_rlz_adapter(Model)
             # obj0 = openquake_models.LocationIndexedModel()
             # assert not isinstance(obj0, SqliteAdapter)
-            # assert isinstance(obj0, Model)            
+            # assert isinstance(obj0, Model)
             # obj = openquake_models.OpenquakeRealization()
             # assert not isinstance(obj, SqliteAdapter)
             # assert isinstance(obj, Model)
@@ -167,7 +166,7 @@ def adapted_rlz_model(request, tmp_path):
             openquake_models.OpenquakeRealization.create_table(wait=True)
             yield openquake_models
             openquake_models.OpenquakeRealization.delete_table()
-    
+
     elif request.param == 'sqlite':
         log.debug(f"mock_sqlite {request.param}")
         envvars = {"THS_SQLITE_FOLDER": str(tmp_path), "THS_USE_SQLITE_ADAPTER": "TRUE"}
@@ -178,7 +177,6 @@ def adapted_rlz_model(request, tmp_path):
             openquake_models.OpenquakeRealization.delete_table()
     else:
         raise ValueError("invalid internal test config")
-
 
 
 @pytest.fixture

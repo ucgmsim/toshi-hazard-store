@@ -26,7 +26,7 @@ def test_field_encode():
     [
         ({"SA"}, {'SA'}),
         ({"PGA"}, {'PGA'}),
-        (None,None),
+        (None, None),
         ({"PGA", "ABC"}, {'PGA', 'ABC'}),
     ],
 )

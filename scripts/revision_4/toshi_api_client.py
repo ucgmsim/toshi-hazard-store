@@ -1,9 +1,5 @@
 import logging
 
-# import os
-# import pathlib
-# import click
-
 log = logging.getLogger()
 
 from nshm_toshi_client import toshi_client_base  # noqa: E402
@@ -47,7 +43,7 @@ class ApiClient(toshi_client_base.ToshiClientBase):
         node(id: "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDE3") { # "2023-03-20T "Source Logic Tree v8.0.2", -> T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDE3
         node(id:"T3BlbnF1YWtlSGF6YXJkVGFzazo2NTM3Mjcy") { # "2023-08-21T "Source Logic Tree v9.0.0", -> T3BlbnF1YWtlSGF6YXJkVGFzazo2NTM3Mjcy
         node(id: "T3BlbnF1YWtlSGF6YXJkVGFzazo2NzAxMjU1") { # "2024-01-31T "Logic Tree 9.0.1, locations for cave locations", -> T3BlbnF1YWtlSGF6YXJkVGFzazo2NzAxMjU1
-        """
+        """  # noqa
         qry = '''
             query oqht ($id:ID!)  {
                 node(id: $id) {

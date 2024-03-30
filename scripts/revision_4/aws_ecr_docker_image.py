@@ -3,17 +3,13 @@
 
 """
 
+from datetime import datetime, timezone
 from functools import partial
 from itertools import cycle, groupby
 from operator import itemgetter
 
 import boto3
-from datetime import timezone
-from datetime import datetime
-
 from botocore.config import Config
-
-import logging
 
 OPENQUAKE_ECR_REPO_URI = '461564345538.dkr.ecr.us-east-1.amazonaws.com/nzshm22/runzi-openquake'
 

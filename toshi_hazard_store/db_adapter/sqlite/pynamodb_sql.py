@@ -105,7 +105,7 @@ class SqlWriteAdapter:
 
     def __init__(self, model_class: Type[_T]):
         self.model_class = model_class
-    
+
     def _attribute_value(self, model_instance, attr):
         """Take a pynamodb serialized dict
 
@@ -134,20 +134,15 @@ class SqlWriteAdapter:
         return attr.serialize(value)
 
     def _attribute_values(self, model_instance, exclude=None) -> str:
-
         _sql = ""
         exclude = exclude or []
-        version_attr = get_version_attribute(model_instance)
-
         for name, attr in model_instance.get_attributes().items():
-            # log.debug(f'attr {attr} {name}')
-
             if attr in exclude:
                 continue
 
             value = self._attribute_value(model_instance, attr)
             if value is None:
-                _sql += f'NULL, '
+                _sql += 'NULL, '
             else:
                 _sql += f'"{value}", '
 
@@ -160,16 +155,15 @@ class SqlWriteAdapter:
         # print(name, _type, _type.attr_type)
         # print(dir(_type))
         _sql: str = "CREATE TABLE IF NOT EXISTS %s (\n" % safe_table_name(self.model_class)
-        version_attr = None
+        # version_attr = None
         for name, attr in self.model_class.get_attributes().items():
             # if attr.attr_type not in TYPE_MAP.keys():
             #     raise ValueError(f"Unupported type: {attr.attr_type} for attribute {attr.attr_name}")
             field_type = 'NUMERIC' if attr.attr_type == 'N' else 'STRING'
-
             _sql += f'\t"{attr.attr_name}" {field_type},\n'
             # print(name, attr, attr.attr_name, attr.attr_type)
-            if isinstance(attr, VersionAttribute):
-                version_attr = attr
+            # if isinstance(attr, VersionAttribute):
+            #     version_attr = attr
 
         # now add the primary key
         if self.model_class._range_key_attribute() and self.model_class._hash_key_attribute():
@@ -218,7 +212,7 @@ class SqlWriteAdapter:
             version = self._attribute_value(model_instance, version_attr)
             _sql += f'\t{version_attr.attr_name} = {int(version)-1}\n'
         else:
-            _sql = _sql[:-4] 
+            _sql = _sql[:-4]
         _sql += ";"
         log.debug('SQL: %s' % _sql)
         return _sql
@@ -250,9 +244,7 @@ class SqlWriteAdapter:
             # simple_serialized = model_instance.to_simple_dict(force=True)
             # dynamo_serialized = model_instance.to_dynamodb_dict()
             # # model_args = model_instance.get_save_kwargs_from_instance()['Item']
-            uniq_key = ":".join(
-                [f'{self._attribute_value(model_instance, attr)}' for attr in unique_on]
-            )
+            uniq_key = ":".join([f'{self._attribute_value(model_instance, attr)}' for attr in unique_on])
             # uniq_key = ":".join([f'{getattr(model_instance, attr.attr_name) for attr in unique_on}'])
             log.debug(f'UNIQ_KEY: {uniq_key}')
             unique_put_items[uniq_key] = model_instance

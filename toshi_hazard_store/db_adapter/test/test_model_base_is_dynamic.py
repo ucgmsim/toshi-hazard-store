@@ -98,7 +98,7 @@ def test_dynamic_baseclass_reassign_reversed():
         base_class=SqliteAdapter,
     )
 
-    instance = MyModel(my_hash_key='A', my_range_key='B')    
+    instance = MyModel(my_hash_key='A', my_range_key='B')
     assert isinstance(instance, SqliteAdapter)
     assert isinstance(instance, Model)
     assert isinstance(instance, MyModel)
@@ -234,6 +234,3 @@ def test_dynamic_subclass_reassign_reversed():
     assert isinstance(instance, Model)
     assert isinstance(instance, MyModel)
     assert not isinstance(instance, SqliteAdapter)
-
-
-

@@ -1,13 +1,14 @@
-import pathlib
-import requests
-import zipfile
 import json
 import logging
+import pathlib
+import zipfile
 
-from typing import Dict
-
+import requests
 from nzshm_model.psha_adapter.openquake.hazard_config import OpenquakeConfig
 from nzshm_model.psha_adapter.openquake.hazard_config_compat import DEFAULT_HAZARD_CONFIG
+
+# from typing import Dict
+
 
 log = logging.getLogger(__name__)
 
@@ -43,19 +44,11 @@ def download_artefacts(gtapi, task_id, hazard_task_detail, subtasks_folder, incl
                 hazard_task_detail['hazard_solution']['hdf5_archive']['file_url'],
             )
 
-            #TODO handle possibly different filename ??
+            # TODO handle possibly different filename ??
             with zipfile.ZipFile(hdf5_archive) as myzip:
                 myzip.extract('calc_1.hdf5', subtask_folder)
             hdf5_archive.unlink()  # delete the zip
 
-
-# def check_hashes(task_id, config):
-#     log.info(f"task: {task_id} hash: {config.compatible_hash_digest()}")
-#     with open(subtask_folder / ARCHIVED_INI, 'r') as f:
-#         archived_config = OpenquakeConfig.read_file(f)
-#         log.info(f"archived_ini hash: {archived_config.compatible_hash_digest()}")
-#         if not archived_config.compatible_hash_digest() == config.compatible_hash_digest():
-#             log.warning("archived and synethic hashes differ")
 
 def hdf5_from_task(task_id, subtasks_folder):
     """Use nzshm-model to build a compatibility config"""
@@ -63,6 +56,7 @@ def hdf5_from_task(task_id, subtasks_folder):
     hdf5_file = subtask_folder / "calc_1.hdf5"
     assert hdf5_file.exists()
     return hdf5_file
+
 
 def config_from_task(task_id, subtasks_folder) -> OpenquakeConfig:
     """Use nzshm-model to build a compatibility config"""
@@ -229,4 +223,4 @@ INFO:toshi_hazard_store.model:Configure adapter: <class 'toshi_hazard_store.db_a
 INFO:botocore.credentials:Found credentials in shared credentials file: ~/.aws/credentials
 INFO:scripts.revision_4.oq_config:new-skool config
 INFO:scripts.revision_4.oq_config:{'title': 'OpenQuake Hazard Calcs', 'description': 'Logic Tree 9.0.1, locations for cave locations', 'task_type': 'HAZARD', 'gmcm_logic_tree': "<?xml version=``1.0`` encoding=``UTF-8``?>--<nrml xmlns:gml=``http://www.opengis.net/gml``-      xmlns=``http://openquake.org/xmlns/nrml/0.4``>-    <logicTree logicTreeID='lt1'>-            <logicTreeBranchSet uncertaintyType=``gmpeModel`` branchSetID=``bs_crust``-                    applyToTectonicRegionType=``Active Shallow Crust``>--                    <logicTreeBranch branchID=``BSSA2014_center``>-                <uncertaintyModel>[BooreEtAl2014]-                  sigma_mu_epsilon = 0.0 </uncertaintyModel>-                        <uncertaintyWeight>1.0</uncertaintyWeight>-                    </logicTreeBranch>--            </logicTreeBranchSet>--            <logicTreeBranchSet uncertaintyType=``gmpeModel`` branchSetID=``bs_interface``-                    applyToTectonicRegionType=``Subduction Interface``>--                <logicTreeBranch branchID=``ATK22_SI_center``>-                    <uncertaintyModel>[Atkinson2022SInter]-                          epistemic = ``Central``-                            modified_sigma = ``true``-                           </uncertaintyModel>-                    <uncertaintyWeight>1.0</uncertaintyWeight>-                      </logicTreeBranch>--            </logicTreeBranchSet>--            <logicTreeBranchSet uncertaintyType=``gmpeModel`` branchSetID=``bs_slab``-                    applyToTectonicRegionType=``Subduction Intraslab``>--                <logicTreeBranch branchID=``ATK22_SS_center``>-                      <uncertaintyModel>[Atkinson2022SSlab]-                              epistemic = ``Central``-                              modified_sigma = ``true``-                              </uncertaintyModel>-                        <uncertaintyWeight>1.0</uncertaintyWeight>-                </logicTreeBranch>--            </logicTreeBranchSet>-    </logicTree>-</nrml>-", 'model_type': 'COMPOSITE', 'intensity_spec': {'tag': 'fixed', 'measures': ['PGA'], 'levels': [0.01, 0.02, 0.04, 0.06, 0.08, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0, 3.5, 4.0, 4.5, 5.0]}, 'location_list': ['WLG', 'AKL', 'DUD', 'CHC'], 'vs30': 400, 'disagg_conf': {'enabled': False, 'config': {}}, 'oq': {'general': {'random_seed': 25, 'calculation_mode': 'classical', 'ps_grid_spacing': 30}, 'logic_tree': {'number_of_logic_tree_samples': 0}, 'erf': {'rupture_mesh_spacing': 4, 'width_of_mfd_bin': 0.1, 'complex_fault_mesh_spacing': 10.0, 'area_source_discretization': 10.0}, 'site_params': {'reference_vs30_type': 'measured'}, 'calculation': {'investigation_time': 1.0, 'truncation_level': 4, 'maximum_distance': {'Active Shallow Crust': '[[4.0, 0], [5.0, 100.0], [6.0, 200.0], [9.5, 300.0]]'}}, 'output': {'individual_curves': 'true'}}, 'srm_logic_tree': {'version': '', 'title': '', 'fault_systems': [{'short_name': 'HIK', 'long_name': 'Hikurangi-Kermadec', 'branches': [{'values': [{'name': 'dm', 'long_name': 'deformation model', 'value': 'TL'}, {'name': 'bN', 'long_name': 'bN pair', 'value': [1.097, 21.5]}, {'name': 'C', 'long_name': 'area-magnitude scaling', 'value': 4.0}, {'name': 's', 'long_name': 'moment rate scaling', 'value': 1.0}], 'sources': [{'nrml_id': 'SW52ZXJzaW9uU29sdXRpb25Ocm1sOjEyOTE2MDg=', 'rupture_rate_scaling': None, 'inversion_id': '', 'rupture_set_id': '', 'inversion_solution_type': '', 'type': 'inversion'}, {'nrml_id': 'RmlsZToxMzA3NDA=', 'rupture_rate_scaling': None, 'type': 'distributed'}], 'weight': 1.0, 'rupture_rate_scaling': 1.0}]}], 'logic_tree_version': 2}}
-"""
+"""  # noqa
