@@ -6,6 +6,8 @@ import random
 # from dataclasses import dataclass
 from typing import List, Optional, Tuple, Union
 
+from nzshm_model import branch_registry
+
 from toshi_hazard_store.config import NUM_BATCH_WORKERS, USE_SQLITE_ADAPTER
 from toshi_hazard_store.model.revision_4 import hazard_models
 from toshi_hazard_store.multi_batch import save_parallel
@@ -16,7 +18,6 @@ log = logging.getLogger(__name__)
 
 NUM_BATCH_WORKERS = 1 if USE_SQLITE_ADAPTER else NUM_BATCH_WORKERS
 BATCH_SIZE = 1000 if USE_SQLITE_ADAPTER else random.randint(15, 50)
-
 
 def create_producer_config(
     partition_key: str,
@@ -100,6 +101,9 @@ def export_rlzs_rev4(
     update_producer=False,
 ) -> Union[List[hazard_models.HazardRealizationCurve], None]:
 
+
+    registry = branch_registry.Registry()
+
     # first check the FKs are OK
     compatible_calc = get_compatible_calc(compatible_calc.foreign_key())
     if compatible_calc is None:
@@ -181,6 +185,7 @@ def export_rlzs_rev4(
                     # if oqmeta.model.vs30 == 0:
                     #    oq_realization.site_vs30 = sites.loc[i_site, 'vs30']
                     yield oq_realization.set_location(loc)
+                    return
 
     # used for testing
     if return_rlz:

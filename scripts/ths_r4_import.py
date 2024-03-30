@@ -266,7 +266,7 @@ def producers(
         click.echo('fetching General Task subtasks')
     query_res = gtapi.get_gt_subtasks(gt_id)
 
-    SubtaskRecord = collections.namedtuple('SubtaskRecord', 'hazard_calc_id, config_hash, image, hdf5_path')
+    SubtaskRecord = collections.namedtuple('SubtaskRecord', 'hazard_calc_id, config_hash, image, hdf5_path, vs30')
 
     def handle_subtasks(gt_id: str, subtask_ids: Iterable):
         subtasks_folder = pathlib.Path(work_folder, gt_id, 'subtasks')
@@ -293,7 +293,8 @@ def producers(
                 hdf5_path = None
 
             yield SubtaskRecord(
-                hazard_calc_id=task_id, image=latest_engine_image, config_hash=config_hash, hdf5_path=hdf5_path
+                hazard_calc_id=task_id, image=latest_engine_image, config_hash=config_hash, hdf5_path=hdf5_path,
+                vs30 = jobconf.config.get('site_params', 'reference_vs30_value')
             )
 
     def get_hazard_task_ids(query_res):
@@ -345,7 +346,7 @@ def producers(
                 compatible_calc=compatible_calc,
                 producer_config=producer_config,
                 hazard_calc_id=subtask_info.hazard_calc_id,
-                vs30=400,
+                vs30=subtask_info.vs30,
                 return_rlz=False,
                 update_producer=True,
             )
