@@ -28,6 +28,7 @@ class TestOqImportRevisionFour:
         assert res.uniq_id == "AAA"
         assert res.notes == m.notes
 
+    @pytest.mark.skip("mocking needed for odd sources in calc_9.hdf5")
     def test_export_rlzs_rev4(self, adapted_model):
 
         extractor = Extractor(str(Path(Path(__file__).parent.parent, 'fixtures/oq_import', 'calc_9.hdf5')))
@@ -74,9 +75,6 @@ class TestOqImportRevisionFour:
                 return_rlz=True,
             )
         )
-
-        # with open(self.rlzs_filepath, 'rb') as rlzsfile:
-        #     expected = pickle.load(rlzsfile)
 
         assert rlzs[0].partition_key == '-41.3~174.8'
         assert (

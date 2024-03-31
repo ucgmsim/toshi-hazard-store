@@ -72,8 +72,8 @@ def many_rlz_args():
         vs30s=[250, 1500],
         imts=['PGA', 'SA(0.5)'],
         locs=[CodedLocation(o['latitude'], o['longitude'], 0.001) for o in list(LOCATIONS_BY_ID.values())[-5:]],
-        sources=["SourceA", "SourceB"],
-        gmms=["GMM_A", "GMM_B"],
+        sources=["c9d8be924ee7"],
+        gmms=["a7d8c5d537e1"],
     )
 
 
@@ -82,7 +82,7 @@ def generate_rev4_rlz_models(many_rlz_args, adapted_model):
     def model_generator():
         # values = list(map(lambda x: LevelValuePairAttribute(lvl=x / 1e3, val=(x / 1e6)), range(1, 51)))
         values = list(map(lambda x: x / 1e6, range(1, 51)))
-        for loc, vs30, imt, source, gmm in itertools.product(
+        for loc, vs30, imt, sources, gmms in itertools.product(
             many_rlz_args["locs"][:5],
             many_rlz_args["vs30s"],
             many_rlz_args["imts"],
@@ -95,8 +95,8 @@ def generate_rev4_rlz_models(many_rlz_args, adapted_model):
                 values=values,
                 imt=imt,
                 vs30=vs30,
-                source_branch=source,
-                gmm_branch=gmm,
+                source_digests=[sources],
+                gmm_digests=[gmms],
                 # site_vs30=vs30,
                 # hazard_solution_id=many_rlz_args["TOSHI_ID"],
                 # source_tags=['TagOne'],

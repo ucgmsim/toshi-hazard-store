@@ -6,18 +6,20 @@ import random
 # from dataclasses import dataclass
 from typing import List, Optional, Tuple, Union
 
-from nzshm_model import branch_registry
+# from nzshm_model import branch_registry
 
 from toshi_hazard_store.config import NUM_BATCH_WORKERS, USE_SQLITE_ADAPTER
 from toshi_hazard_store.model.revision_4 import hazard_models
 from toshi_hazard_store.multi_batch import save_parallel
-from toshi_hazard_store.transform import parse_logic_tree_branches
 from toshi_hazard_store.utils import normalise_site_code
+
+from .parse_oq_realizations import build_rlz_mapper
 
 log = logging.getLogger(__name__)
 
 NUM_BATCH_WORKERS = 1 if USE_SQLITE_ADAPTER else NUM_BATCH_WORKERS
 BATCH_SIZE = 1000 if USE_SQLITE_ADAPTER else random.randint(15, 50)
+
 
 def create_producer_config(
     partition_key: str,
@@ -101,9 +103,6 @@ def export_rlzs_rev4(
     update_producer=False,
 ) -> Union[List[hazard_models.HazardRealizationCurve], None]:
 
-
-    registry = branch_registry.Registry()
-
     # first check the FKs are OK
     compatible_calc = get_compatible_calc(compatible_calc.foreign_key())
     if compatible_calc is None:
@@ -134,14 +133,15 @@ def export_rlzs_rev4(
             producer_config.save()
             log.debug(f'updated: {producer_config}')
 
-    source_lt, gsim_lt, rlz_lt = parse_logic_tree_branches(extractor)
+    rlz_map = build_rlz_mapper(extractor)
 
+    # source_lt, gsim_lt, rlz_lt = parse_logic_tree_branches(extractor)
     # log.debug('rlz %s' % rlz_lt)
     # log.debug('src %s' % source_lt)
     # log.debug('gsim %s' % gsim_lt)
 
     # TODO : this assumes keys are in same order as rlzs
-    rlz_branch_paths = rlz_lt['branch_path'].tolist()
+    # rlz_branch_paths = rlz_lt['branch_path'].tolist()
 
     # assert 0
 
@@ -149,9 +149,10 @@ def export_rlzs_rev4(
         for i_site in range(len(sites)):
             loc = normalise_site_code((sites.loc[i_site, 'lon'], sites.loc[i_site, 'lat']), True)
             # print(f'loc: {loc}')
-            for i_rlz, bp in enumerate(rlz_branch_paths):
 
-                source_branch, gmm_branch = bp.split('~')
+            for i_rlz in rlz_map.keys():
+
+                # source_branch, gmm_branch = bp.split('~')
 
                 for i_imt, imt in enumerate(imtls.keys()):
                     values = rlzs[rlz_keys[i_rlz]][i_site][i_imt].tolist()
@@ -172,6 +173,8 @@ def export_rlzs_rev4(
                             )
                             raise ValueError('bad IMT levels configuration')
 
+                    realization = rlz_map[i_rlz]
+                    log.debug(realization)
                     oq_realization = hazard_models.HazardRealizationCurve(
                         compatible_calc_fk=compatible_calc.foreign_key(),
                         producer_config_fk=producer_config.foreign_key(),
@@ -179,13 +182,13 @@ def export_rlzs_rev4(
                         values=values,
                         imt=imt,
                         vs30=vs30,
-                        source_branch=source_branch,
-                        gmm_branch=gmm_branch,
+                        source_digests=[realization.sources.hash_digest],
+                        gmm_digests=[realization.gmms.hash_digest],
                     )
                     # if oqmeta.model.vs30 == 0:
                     #    oq_realization.site_vs30 = sites.loc[i_site, 'vs30']
                     yield oq_realization.set_location(loc)
-                    return
+            log.info(f"site {loc} done")
 
     # used for testing
     if return_rlz:

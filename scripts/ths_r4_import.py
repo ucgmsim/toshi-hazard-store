@@ -25,7 +25,7 @@ import logging
 import os
 import pathlib
 from typing import Iterable
-
+from .store_hazard_v3 import extract_and_save
 import click
 
 log = logging.getLogger()
@@ -56,6 +56,7 @@ from toshi_hazard_store.oq_import import (  # noqa: E402
     get_compatible_calc,
     get_producer_config,
 )
+# from toshi_hazard_store import model
 
 from .revision_4 import aws_ecr_docker_image as aws_ecr
 from .revision_4 import oq_config
@@ -123,6 +124,59 @@ def echo_settings(work_folder, verbose=True):
     click.echo(f'   using USE_SQLITE_ADAPTER: {USE_SQLITE_ADAPTER}')
 
 
+def handle_import_subtask_rev4(subtask_info: 'SubtaskRecord', compatible_calc, verbose, update, with_rlzs):
+
+    if verbose:
+        click.echo(subtask_info)
+    
+    extractor = None
+
+    producer_software = f"{ECR_REGISTRY_ID}/{ECR_REPONAME}"
+    producer_version_id = subtask_info.image['imageDigest'][7:27]  # first 20 bits of hashdigest
+    configuration_hash = subtask_info.config_hash
+    pc_key = (partition, f"{producer_software}:{producer_version_id}:{configuration_hash}")
+
+    # check for existing
+    producer_config = get_producer_config(pc_key, compatible_calc)
+    if producer_config:
+        if verbose:
+            click.echo(f'found producer_config {pc_key} ')
+        if update:
+            producer_config.notes = "notes 2"
+            producer_config.save()
+            click.echo(f'updated producer_config {pc_key} ')
+    
+    if producer_config is None:
+        model = create_producer_config(
+            partition_key=partition,
+            compatible_calc=compatible_calc,
+            extractor=extractor,
+            tags=subtask_info.image['imageTags'],
+            effective_from=subtask_info.image['imagePushedAt'],
+            last_used=subtask_info.image['lastRecordedPullTime'],
+            producer_software=producer_software,
+            producer_version_id=producer_version_id,
+            configuration_hash=configuration_hash,
+            # configuration_data=config.config_hash,
+            notes="notes",
+            dry_run=dry_run,
+        )
+        if verbose:
+            click.echo(f"New Model {model} has foreign key ({model.partition_key}, {model.range_key})")
+
+    if with_rlzs:
+        extractor = Extractor(str(subtask_info.hdf5_path))
+        export_rlzs_rev4(
+            extractor,
+            compatible_calc=compatible_calc,
+            producer_config=producer_config,
+            hazard_calc_id=subtask_info.hazard_calc_id,
+            vs30=subtask_info.vs30,
+            return_rlz=False,
+            update_producer=True,
+        )
+
+
 #  _ __ ___   __ _(_)_ __
 # | '_ ` _ \ / _` | | '_ \
 # | | | | | | (_| | | | | |
@@ -140,18 +194,21 @@ def main(context, work_folder):
 
 
 @main.command()
-@click.option('-v', '--verbose', is_flag=True, default=False)
-@click.option('-d', '--dry-run', is_flag=True, default=False)
+@click.option(
+    '--process_v3',
+    '-P3',
+    is_flag=True,
+    default=False,
+    help="V3 instead of v4",
+)
 @click.pass_context
-def create_tables(context, verbose, dry_run):
+def create_tables(context, process_v3):
 
-    work_folder = context.obj['work_folder']
-    if verbose:
-        echo_settings(work_folder)
-    if dry_run:
-        click.echo('SKIP: Ensuring tables exist.')
+    if process_v3:
+        click.echo('Ensuring V3 openquake tables exist.')
+        toshi_hazard_store.model.migrate_openquake()
     else:
-        click.echo('Ensuring tables exist.')
+        click.echo('Ensuring Rev4 tables exist.')
         toshi_hazard_store.model.migrate_r4()
 
 
@@ -219,6 +276,13 @@ def prod_from_gtfile(
     default=False,
     help="also get the realisations",
 )
+@click.option(
+    '--process_v3',
+    '-P3',
+    is_flag=True,
+    default=False,
+    help="V3 instead of v4",
+)
 @click.option('-v', '--verbose', is_flag=True, default=False)
 @click.option('-d', '--dry-run', is_flag=True, default=False)
 @click.pass_context
@@ -230,6 +294,7 @@ def producers(
     compatible_calc_fk,
     update,
     with_rlzs,
+    process_v3,
     # software, version, hashed, config, notes,
     verbose,
     dry_run,
@@ -266,7 +331,7 @@ def producers(
         click.echo('fetching General Task subtasks')
     query_res = gtapi.get_gt_subtasks(gt_id)
 
-    SubtaskRecord = collections.namedtuple('SubtaskRecord', 'hazard_calc_id, config_hash, image, hdf5_path, vs30')
+    SubtaskRecord = collections.namedtuple('SubtaskRecord', 'gt_id, hazard_calc_id, config_hash, image, hdf5_path, vs30')
 
     def handle_subtasks(gt_id: str, subtask_ids: Iterable):
         subtasks_folder = pathlib.Path(work_folder, gt_id, 'subtasks')
@@ -293,64 +358,39 @@ def producers(
                 hdf5_path = None
 
             yield SubtaskRecord(
-                hazard_calc_id=task_id, image=latest_engine_image, config_hash=config_hash, hdf5_path=hdf5_path,
-                vs30 = jobconf.config.get('site_params', 'reference_vs30_value')
+                gt_id=gt_id,
+                hazard_calc_id=task_id,
+                image=latest_engine_image,
+                config_hash=config_hash,
+                hdf5_path=hdf5_path,
+                vs30=jobconf.config.get('site_params', 'reference_vs30_value'),
             )
 
     def get_hazard_task_ids(query_res):
         for edge in query_res['children']['edges']:
             yield edge['node']['child']['id']
 
-    extractor = None
+
     for subtask_info in handle_subtasks(gt_id, get_hazard_task_ids(query_res)):
-
-        if verbose:
-            click.echo(subtask_info)
-
-        producer_software = f"{ECR_REGISTRY_ID}/{ECR_REPONAME}"
-        producer_version_id = subtask_info.image['imageDigest'][7:27]  # first 20 bits of hashdigest
-        configuration_hash = subtask_info.config_hash
-        pc_key = (partition, f"{producer_software}:{producer_version_id}:{configuration_hash}")
-
-        # check for existing
-        producer_config = get_producer_config(pc_key, compatible_calc)
-        if producer_config:
-            if verbose:
-                click.echo(f'found producer_config {pc_key} ')
-            if update:
-                producer_config.notes = "notes 2"
-                producer_config.save()
-                click.echo(f'updated producer_config {pc_key} ')
-        if producer_config is None:
-            model = create_producer_config(
-                partition_key=partition,
-                compatible_calc=compatible_calc,
-                extractor=extractor,
-                tags=subtask_info.image['imageTags'],
-                effective_from=subtask_info.image['imagePushedAt'],
-                last_used=subtask_info.image['lastRecordedPullTime'],
-                producer_software=producer_software,
-                producer_version_id=producer_version_id,
-                configuration_hash=configuration_hash,
-                # configuration_data=config.config_hash,
-                notes="notes",
-                dry_run=dry_run,
+        if process_v3:
+            ArgsRecord = collections.namedtuple('ArgsRecord', 
+                'calc_id, source_tags, source_ids, toshi_hazard_id, toshi_gt_id, locations_id, verbose, meta_data_only'
+            )       
+            args = ArgsRecord(
+                calc_id=subtask_info.hdf5_path,
+                toshi_gt_id=subtask_info.gt_id,
+                toshi_hazard_id=subtask_info.hazard_calc_id,
+                source_tags = "",
+                source_ids = "",
+                locations_id = "",
+                verbose=verbose,
+                meta_data_only=False
             )
-            if verbose:
-                click.echo(f"New Model {model} has foreign key ({model.partition_key}, {model.range_key})")
-
-        if with_rlzs:
-            extractor = Extractor(str(subtask_info.hdf5_path))
-            export_rlzs_rev4(
-                extractor,
-                compatible_calc=compatible_calc,
-                producer_config=producer_config,
-                hazard_calc_id=subtask_info.hazard_calc_id,
-                vs30=subtask_info.vs30,
-                return_rlz=False,
-                update_producer=True,
-            )
-            assert 0
+            extract_and_save(args)
+        else:
+            handle_import_subtask_rev4(subtask_info, compatible_calc, verbose, update, with_rlzs)
+        #crash out after one subtask
+        assert 0
 
 
 if __name__ == "__main__":

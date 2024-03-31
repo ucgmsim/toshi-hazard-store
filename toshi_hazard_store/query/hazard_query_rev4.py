@@ -11,14 +11,13 @@ Functions:
 import decimal
 import itertools
 import logging
-from typing import Iterable, Iterator, TYPE_CHECKING, Dict
+import time
+from typing import Iterable, Iterator
 
 from nzshm_common.location.code_location import CodedLocation
 
 from toshi_hazard_store.model.revision_4 import hazard_models
 
-if TYPE_CHECKING:
-    import pandas
 
 log = logging.getLogger(__name__)
 
@@ -113,105 +112,53 @@ def get_rlz_curves(
 # DEMO code below, to migrate to tests and/or docs
 ##
 
-
-
 if __name__ == '__main__':
 
-    logging.basicConfig(level=logging.ERROR)
-    from nzshm_common.location.location import LOCATIONS_BY_ID
+    from toshi_hazard_store.query import hazard_query
 
+    t0 = time.perf_counter()
     from nzshm_model import branch_registry
-    from nzshm_model.psha_adapter.openquake import gmcm_branch_from_element_text
+    t1 = time.perf_counter()
+
+    logging.basicConfig(level=logging.ERROR)
+    log.info(f"nzshm-model import took {t1 - t0:.6f} seconds")
+
+    from nzshm_common.location.location import LOCATIONS_BY_ID
 
     registry = branch_registry.Registry()
 
     locs = [CodedLocation(o['latitude'], o['longitude'], 0.001) for o in list(LOCATIONS_BY_ID.values())[:1]]
 
-    def build_rlz_gmm_map(gsim_lt: 'pandas.DataFrame') -> Dict[str, branch_registry.BranchRegistryEntry]:
-        branch_ids = gsim_lt.branch.tolist()
-        rlz_gmm_map = dict()
-        for idx, uncertainty in enumerate(gsim_lt.uncertainty.tolist()):
-            if "Atkinson2022" in uncertainty:
-                uncertainty += '\nmodified_sigma = "true"'
-            branch = gmcm_branch_from_element_text(uncertainty)
-            entry = registry.gmm_registry.get_by_identity(branch.registry_identity)
-            rlz_gmm_map[branch_ids[idx][1:-1]] = entry
-        return rlz_gmm_map
-
-    def build_rlz_source_map(source_lt: 'pandas.DataFrame') -> Dict[str, branch_registry.BranchRegistryEntry]:
-        branch_ids = source_lt.index.tolist()
-        rlz_source_map = dict()
-        for idx, source_str in enumerate(source_lt.branch.tolist()):
-            sources = "|".join(sorted(source_str.split('|')))
-            entry = registry.source_registry.get_by_identity(sources)
-            rlz_source_map[branch_ids[idx]] = entry
-        return rlz_source_map
-
-
-    for res in get_rlz_curves([loc.code for loc in locs], [400], ['PGA', 'SA(1.0)']):
-        print(
-            [res.nloc_001, res.vs30, res.imt, res.source_branch, res.gmm_branch, res.compatible_calc_fk, res.values[:4]]
-        )
-
-    def parse_lts():
-
-        import pathlib
-        import collections
-        from openquake.calculators.extract import Extractor
-
-        from toshi_hazard_store.transform import parse_logic_tree_branches
-
-
-        hdf5 = pathlib.Path(
-            "./WORKING/",
-            "R2VuZXJhbFRhc2s6MTMyODQxNA==",
-            "subtasks",
-            "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDE3",
-            "calc_1.hdf5",
-        )
-        assert hdf5.exists()
-
-        extractor = Extractor(str(hdf5))
-        # rlzs = extractor.get('hcurves?kind=rlzs', asdict=True)
-        # rlz_keys = [k for k in rlzs.keys() if 'rlz-' in k]
-
-        source_lt, gsim_lt, rlz_lt = parse_logic_tree_branches(extractor)
-        print("GSIMs")
-        # print(gsim_lt)
-        print()
-        print()  
-
-        gmm_map = build_rlz_gmm_map(gsim_lt)
-
-        print()
-        print("Sources")
-        print(source_lt)
-
-        print()
-        # print(source_lt["branch"].tolist()[0].split('|'))
-        print()
-        source_map = build_rlz_source_map(source_lt)
-
-        print()
-        print("RLZs")
-        print(rlz_lt)
-
-        RealizationRecord = collections.namedtuple('RlzRecord', 'idx, path, sources, gmms')
-
-        def build_rlz_map(rlz_lt: 'pandas.DataFrame', source_map: Dict, gmm_map: Dict) -> Dict[int, RealizationRecord]:
-            paths = rlz_lt.branch_path.tolist()
-            rlz_map = dict()
-            for idx, path in enumerate(paths):
-                src_key, gmm_key = path.split('~')
-                rlz_map[idx] = RealizationRecord(idx=idx, path=path, sources=source_map[src_key], gmms= gmm_map[gmm_key])
-            return rlz_map
-
-        rlz_map = build_rlz_map(rlz_lt, source_map, gmm_map)
-
-        print(rlz_map)
-
-
-
-    # play with LTS
+    t2 = time.perf_counter()
+    count = 0
+    for res in get_rlz_curves([loc.code for loc in locs], [275], ['PGA', 'SA(1.0)']):
+        srcs = [registry.source_registry.get_by_hash(s).extra for s in res.source_digests]
+        gmms = [registry.gmm_registry.get_by_hash(g).identity for g in res.gmm_digests]
+        # print([res.nloc_001, res.vs30, res.imt, srcs, gmms, res.compatible_calc_fk, res.values[:4]])  # srcs, gmms,
+        count += 1
+    print(res)
+    
+    t3 = time.perf_counter()
+    print(f'got {count} hits')
+    print(f"rev 4 query  {t3 - t2:.6f} seconds")
     print()
-    parse_lts()
+    print()
+    print("V3 ....")
+    count = 0
+    for rlz in hazard_query.get_rlz_curves_v3(
+        locs = [loc.code for loc in locs],
+        vs30s = [275],
+        rlzs = [x for x in range(21)],
+        tids = ["T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDE3"],
+        imts = ['PGA', 'SA(1.0)'],
+        ):
+        # print(r)
+        count += 1
+    
+    print(rlz)
+    t4 = time.perf_counter()
+    print(f'got {count} hits')
+    print(f"rev 3 query  {t4- t3:.6f} seconds")
+
+
+    

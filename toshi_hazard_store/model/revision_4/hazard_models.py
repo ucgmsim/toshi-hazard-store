@@ -1,6 +1,6 @@
 """This module defines the pynamodb tables used to store  hazard data. revision 4 = Fourth iteration"""
 
-import hashlib
+
 import logging
 
 from nzshm_common.location.code_location import CodedLocation
@@ -102,8 +102,8 @@ class HazardRealizationCurve(LocationIndexedModel):
     sort_key = UnicodeAttribute(range_key=True)  # e.g ProducerID:MetaID
 
     compatible_calc_fk = ForeignKeyAttribute()
-    source_branch = UnicodeAttribute()
-    gmm_branch = UnicodeAttribute()
+    source_digests = ListAttribute(of=UnicodeAttribute)
+    gmm_digests = ListAttribute(of=UnicodeAttribute)
     imt = EnumConstrainedUnicodeAttribute(IntensityMeasureTypeEnum)
 
     created = TimestampAttribute(default=datetime_now)
@@ -116,18 +116,18 @@ class HazardRealizationCurve(LocationIndexedModel):
     # a reference to where/how this calc done (URI URL, http://nshm-blah-blah/api-ref
     calculation_id = UnicodeAttribute(null=True)
 
-    def sources_hash(self):
-        return hashlib.shake_128(self.source_branch.encode()).hexdigest(5)
+    def _sources_key(self):
+        return "s" + "|".join(self.source_digests)
 
-    def gmm_hash(self):
-        return hashlib.shake_128(self.gmm_branch.encode()).hexdigest(5)
+    def _gmms_key(self):
+        return "g" + "|".join(self.gmm_digests)
 
     def build_sort_key(self):
         vs30s = str(self.vs30).zfill(VS30_KEYLEN)
         sort_key = f'{self.nloc_001}:{vs30s}:{self.imt}:'
         sort_key += f'{ForeignKeyAttribute().serialize(self.compatible_calc_fk)}:'
-        sort_key += 's' + self.sources_hash() + ':'
-        sort_key += 'g' + self.gmm_hash()
+        sort_key += self._sources_key() + ':'
+        sort_key += self._gmms_key()
         return sort_key
 
     def set_location(self, location: CodedLocation):
