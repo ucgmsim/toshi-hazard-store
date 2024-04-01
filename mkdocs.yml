@@ -23,6 +23,7 @@ nav:
       - Hazard Disaggregation: domain_model/disaggregation_models.md
       - PROPOSED:
         - Hazard: domain_model/proposed_hazard_models.md
+        - Migration Tests: domain_model/revision _4_migration_ testing.md
   - Contributing: contributing.md
   - Changelog: changelog.md
 theme:

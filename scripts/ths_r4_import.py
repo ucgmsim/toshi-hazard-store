@@ -34,8 +34,9 @@ logging.basicConfig(level=logging.INFO)
 logging.getLogger('pynamodb').setLevel(logging.INFO)
 logging.getLogger('botocore').setLevel(logging.INFO)
 logging.getLogger('toshi_hazard_store').setLevel(logging.INFO)
-logging.getLogger('nzshm_model').setLevel(logging.DEBUG)
+logging.getLogger('nzshm_model').setLevel(logging.INFO)
 logging.getLogger('gql.transport').setLevel(logging.WARNING)
+logging.getLogger('urllib3').setLevel(logging.INFO)
 
 try:
     from openquake.calculators.extract import Extractor
@@ -57,6 +58,7 @@ from toshi_hazard_store.oq_import import (  # noqa: E402
     get_producer_config,
 )
 # from toshi_hazard_store import model
+from toshi_hazard_store.model.revision_4 import hazard_models
 
 from .revision_4 import aws_ecr_docker_image as aws_ecr
 from .revision_4 import oq_config
@@ -124,7 +126,7 @@ def echo_settings(work_folder, verbose=True):
     click.echo(f'   using USE_SQLITE_ADAPTER: {USE_SQLITE_ADAPTER}')
 
 
-def handle_import_subtask_rev4(subtask_info: 'SubtaskRecord', compatible_calc, verbose, update, with_rlzs):
+def handle_import_subtask_rev4(subtask_info: 'SubtaskRecord', partition, compatible_calc, verbose, update, with_rlzs, dry_run=False):
 
     if verbose:
         click.echo(subtask_info)
@@ -147,7 +149,7 @@ def handle_import_subtask_rev4(subtask_info: 'SubtaskRecord', compatible_calc, v
             click.echo(f'updated producer_config {pc_key} ')
     
     if producer_config is None:
-        model = create_producer_config(
+        producer_config = create_producer_config(
             partition_key=partition,
             compatible_calc=compatible_calc,
             extractor=extractor,
@@ -162,7 +164,7 @@ def handle_import_subtask_rev4(subtask_info: 'SubtaskRecord', compatible_calc, v
             dry_run=dry_run,
         )
         if verbose:
-            click.echo(f"New Model {model} has foreign key ({model.partition_key}, {model.range_key})")
+            click.echo(f"New Model {producer_config} has foreign key ({producer_config.partition_key}, {producer_config.range_key})")
 
     if with_rlzs:
         extractor = Extractor(str(subtask_info.hdf5_path))
@@ -210,6 +212,36 @@ def create_tables(context, process_v3):
     else:
         click.echo('Ensuring Rev4 tables exist.')
         toshi_hazard_store.model.migrate_r4()
+
+
+@main.command()
+@click.argument('partition')
+@click.option('--uniq', '-U', required=False, default=None, help="uniq_id, if not specified a UUID will be used")
+@click.option('--notes', '-N', required=False, default=None, help="optional notes about the item")
+@click.option(
+    '-d',
+    '--dry-run',
+    is_flag=True,
+    default=False,
+    help="dont actually do anything.",
+)
+def compat(partition, uniq, notes, dry_run):
+    """create a new hazard calculation compatability identifier in PARTITION"""
+
+    mCHC = hazard_models.CompatibleHazardCalculation
+
+    t0 = dt.datetime.utcnow()
+    if uniq:
+        m = mCHC(partition_key=partition, uniq_id=uniq, notes=notes)
+    else:
+        m = mCHC(partition_key=partition, notes=notes)
+
+    if not dry_run:
+        m.save()
+        t1 = dt.datetime.utcnow()
+        click.echo("Done saving CompatibleHazardCalculation, took %s secs" % (t1 - t0).total_seconds())
+    else:
+        click.echo('SKIP: saving CompatibleHazardCalculation.')
 
 
 @main.command()
@@ -317,10 +349,6 @@ def producers(
     if verbose:
         echo_settings(work_folder)
 
-    compatible_calc = get_compatible_calc(compatible_calc_fk.split("_"))
-    if compatible_calc is None:
-        raise ValueError(f'compatible_calc: {compatible_calc_fk} was not found')
-
     if verbose:
         click.echo('fetching ECR stash')
     ecr_repo_stash = aws_ecr.ECRRepoStash(
@@ -338,6 +366,16 @@ def producers(
         subtasks_folder.mkdir(parents=True, exist_ok=True)
 
         for task_id in subtask_ids:
+
+            # completed already
+            if task_id in ['T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDE3', 'T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI3']:
+                continue
+
+            # problems
+            if task_id in ['T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDE4', 'T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI0', "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI2",
+             "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI5", "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDMy"]:
+                continue
+
             query_res = gtapi.get_oq_hazard_task(task_id)
             log.debug(query_res)
             task_created = dt.datetime.fromisoformat(query_res["created"])  # "2023-03-20T09:02:35.314495+00:00",
@@ -388,7 +426,10 @@ def producers(
             )
             extract_and_save(args)
         else:
-            handle_import_subtask_rev4(subtask_info, compatible_calc, verbose, update, with_rlzs)
+            compatible_calc = get_compatible_calc(compatible_calc_fk.split("_"))
+            if compatible_calc is None:
+                raise ValueError(f'compatible_calc: {compatible_calc_fk} was not found')
+            handle_import_subtask_rev4(subtask_info, partition, compatible_calc, verbose, update, with_rlzs, dry_run)
         #crash out after one subtask
         assert 0
 

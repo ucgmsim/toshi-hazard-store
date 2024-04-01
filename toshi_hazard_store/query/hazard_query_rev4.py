@@ -149,7 +149,7 @@ if __name__ == '__main__':
         locs = [loc.code for loc in locs],
         vs30s = [275],
         rlzs = [x for x in range(21)],
-        tids = ["T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDE3"],
+        tids = ["T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDE3", "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI3"],
         imts = ['PGA', 'SA(1.0)'],
         ):
         # print(r)
