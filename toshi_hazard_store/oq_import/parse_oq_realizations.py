@@ -1,5 +1,7 @@
 """
 Convert openquake realizataions using nzshm_model.branch_registry
+
+NB maybe this belongs in the nzshm_model.psha_adapter.openquake package ??
 """
 
 import collections
@@ -38,14 +40,6 @@ def build_rlz_gmm_map(gsim_lt: 'pandas.DataFrame') -> Dict[str, branch_registry.
     branch_ids = gsim_lt.branch.tolist()
     rlz_gmm_map = dict()
     for idx, uncertainty in enumerate(gsim_lt.uncertainty.tolist()):
-        # handle GMM modifications ...
-        if "Atkinson2022" in uncertainty:
-            uncertainty += '\nmodified_sigma = "true"'
-        if "AbrahamsonGulerce2020SInter" in uncertainty:
-            uncertainty = uncertainty.replace("AbrahamsonGulerce2020SInter", "NZNSHM2022_AbrahamsonGulerce2020SInter")
-        if "KuehnEtAl2020SInter" in uncertainty:
-            uncertainty = uncertainty.replace("KuehnEtAl2020SInter", "NZNSHM2022_KuehnEtAl2020SInter")
-            uncertainty += '\nmodified_sigma = "true"'
         branch = gmcm_branch_from_element_text(uncertainty)
         entry = registry.gmm_registry.get_by_identity(branch.registry_identity)
         rlz_gmm_map[branch_ids[idx][1:-1]] = entry

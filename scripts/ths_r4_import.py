@@ -18,7 +18,6 @@ These things may get a separate script
     - OPTION to download HDF5 and load hazard curves from there
     - OPTION to import V3 hazard curves from DynamodDB and extract ex
 """
-
 import collections
 import datetime as dt
 import logging
@@ -28,21 +27,52 @@ from typing import Iterable
 from .store_hazard_v3 import extract_and_save
 import click
 
+try:
+    from openquake.calculators.extract import Extractor
+except (ModuleNotFoundError, ImportError):
+    print("WARNING: the transform module uses the optional openquake dependencies - h5py, pandas and openquake.")
+    raise
+
+class PyanamodbConsumedHandler(logging.Handler):
+    def __init__(self, level=0) -> None:
+        super().__init__(level)
+        self.consumed = 0
+
+    def reset(self):
+        self.consumed = 0
+
+    def emit(self, record):
+        if "pynamodb/connection/base.py" in record.pathname and record.msg == "%s %s consumed %s units":
+            # print(record.msg)
+            # print(self.consumed)
+            # ('', 'BatchWriteItem', [{'TableName': 'THS_R4_HazardRealizationCurve-TEST_CBC', 'CapacityUnits': 25.0}])
+            if isinstance(record.args[2], list): # # handle batch-write
+                for itm in record.args[2]:
+                    # print(itm)
+                    self.consumed += itm['CapacityUnits']
+                # print(self.consumed)
+                # assert 0
+            else:
+                self.consumed += record.args[2]
+            # print("CONSUMED:",  self.consumed)
+
 log = logging.getLogger()
 
-logging.basicConfig(level=logging.INFO)
-logging.getLogger('pynamodb').setLevel(logging.INFO)
+pyconhandler = PyanamodbConsumedHandler(logging.DEBUG)
+log.addHandler(pyconhandler)
+
+logging.getLogger('pynamodb').setLevel(logging.DEBUG)
+
+logging.basicConfig(level=logging.DEBUG)
+# logging.getLogger('pynamodb').setLevel(logging.INFO)
 logging.getLogger('botocore').setLevel(logging.INFO)
 logging.getLogger('toshi_hazard_store').setLevel(logging.INFO)
 logging.getLogger('nzshm_model').setLevel(logging.INFO)
 logging.getLogger('gql.transport').setLevel(logging.WARNING)
 logging.getLogger('urllib3').setLevel(logging.INFO)
 
-try:
-    from openquake.calculators.extract import Extractor
-except (ModuleNotFoundError, ImportError):
-    print("WARNING: the transform module uses the optional openquake dependencies - h5py, pandas and openquake.")
-    raise
+
+
 
 # import nzshm_model  # noqa: E402
 
@@ -57,6 +87,7 @@ from toshi_hazard_store.oq_import import (  # noqa: E402
     get_compatible_calc,
     get_producer_config,
 )
+
 # from toshi_hazard_store import model
 from toshi_hazard_store.model.revision_4 import hazard_models
 
@@ -126,11 +157,13 @@ def echo_settings(work_folder, verbose=True):
     click.echo(f'   using USE_SQLITE_ADAPTER: {USE_SQLITE_ADAPTER}')
 
 
-def handle_import_subtask_rev4(subtask_info: 'SubtaskRecord', partition, compatible_calc, verbose, update, with_rlzs, dry_run=False):
+def handle_import_subtask_rev4(
+    subtask_info: 'SubtaskRecord', partition, compatible_calc, verbose, update, with_rlzs, dry_run=False
+):
 
     if verbose:
         click.echo(subtask_info)
-    
+
     extractor = None
 
     producer_software = f"{ECR_REGISTRY_ID}/{ECR_REPONAME}"
@@ -147,7 +180,7 @@ def handle_import_subtask_rev4(subtask_info: 'SubtaskRecord', partition, compati
             producer_config.notes = "notes 2"
             producer_config.save()
             click.echo(f'updated producer_config {pc_key} ')
-    
+
     if producer_config is None:
         producer_config = create_producer_config(
             partition_key=partition,
@@ -164,7 +197,9 @@ def handle_import_subtask_rev4(subtask_info: 'SubtaskRecord', partition, compati
             dry_run=dry_run,
         )
         if verbose:
-            click.echo(f"New Model {producer_config} has foreign key ({producer_config.partition_key}, {producer_config.range_key})")
+            click.echo(
+                f"New Model {producer_config} has foreign key ({producer_config.partition_key}, {producer_config.range_key})"
+            )
 
     if with_rlzs:
         extractor = Extractor(str(subtask_info.hdf5_path))
@@ -340,6 +375,7 @@ def producers(
     - pull the configs and check we have a compatible producer config\n
     - optionally, create any new producer configs
     """
+    pyconhandler.reset()
 
     work_folder = context.obj['work_folder']
 
@@ -359,7 +395,9 @@ def producers(
         click.echo('fetching General Task subtasks')
     query_res = gtapi.get_gt_subtasks(gt_id)
 
-    SubtaskRecord = collections.namedtuple('SubtaskRecord', 'gt_id, hazard_calc_id, config_hash, image, hdf5_path, vs30')
+    SubtaskRecord = collections.namedtuple(
+        'SubtaskRecord', 'gt_id, hazard_calc_id, config_hash, image, hdf5_path, vs30'
+    )
 
     def handle_subtasks(gt_id: str, subtask_ids: Iterable):
         subtasks_folder = pathlib.Path(work_folder, gt_id, 'subtasks')
@@ -371,17 +409,17 @@ def producers(
             if task_id in ['T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDE3', 'T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI3']:
                 continue
 
-            # problems
-            if task_id in ['T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDE4', 'T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI0', "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI2",
-             "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI5", "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDMy"]:
-                continue
+            # # problems
+            # if task_id in ['T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDE4', 'T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI0', "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI2",
+            #  "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDMy"]: # "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI5",
+            #     continue
 
             query_res = gtapi.get_oq_hazard_task(task_id)
             log.debug(query_res)
             task_created = dt.datetime.fromisoformat(query_res["created"])  # "2023-03-20T09:02:35.314495+00:00",
             log.debug(f"task created: {task_created}")
 
-            oq_config.download_artefacts(gtapi, task_id, query_res, subtasks_folder, include_hdf5=with_rlzs)
+            oq_config.download_artefacts(gtapi, task_id, query_res, subtasks_folder)
             jobconf = oq_config.config_from_task(task_id, subtasks_folder)
 
             config_hash = jobconf.compatible_hash_digest()
@@ -391,7 +429,7 @@ def producers(
             log.debug(f"task {task_id} hash: {config_hash}")
 
             if with_rlzs:
-                hdf5_path = oq_config.hdf5_from_task(task_id, subtasks_folder)
+                hdf5_path = oq_config.process_hdf5(gtapi, task_id, query_res, subtasks_folder, manipulate=True)
             else:
                 hdf5_path = None
 
@@ -408,21 +446,22 @@ def producers(
         for edge in query_res['children']['edges']:
             yield edge['node']['child']['id']
 
-
+    count = 0
     for subtask_info in handle_subtasks(gt_id, get_hazard_task_ids(query_res)):
         if process_v3:
-            ArgsRecord = collections.namedtuple('ArgsRecord', 
-                'calc_id, source_tags, source_ids, toshi_hazard_id, toshi_gt_id, locations_id, verbose, meta_data_only'
-            )       
+            ArgsRecord = collections.namedtuple(
+                'ArgsRecord',
+                'calc_id, source_tags, source_ids, toshi_hazard_id, toshi_gt_id, locations_id, verbose, meta_data_only',
+            )
             args = ArgsRecord(
                 calc_id=subtask_info.hdf5_path,
                 toshi_gt_id=subtask_info.gt_id,
                 toshi_hazard_id=subtask_info.hazard_calc_id,
-                source_tags = "",
-                source_ids = "",
-                locations_id = "",
+                source_tags="",
+                source_ids="",
+                locations_id="",
                 verbose=verbose,
-                meta_data_only=False
+                meta_data_only=False,
             )
             extract_and_save(args)
         else:
@@ -430,8 +469,13 @@ def producers(
             if compatible_calc is None:
                 raise ValueError(f'compatible_calc: {compatible_calc_fk} was not found')
             handle_import_subtask_rev4(subtask_info, partition, compatible_calc, verbose, update, with_rlzs, dry_run)
-        #crash out after one subtask
-        assert 0
+
+        count += 1
+        # crash out after some subtasks..
+        if count >= 1:
+            break
+
+    click.echo("pyanmodb operation cost: %s units" % pyconhandler.consumed)
 
 
 if __name__ == "__main__":

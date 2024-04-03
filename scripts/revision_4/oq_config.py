@@ -2,12 +2,12 @@ import json
 import logging
 import pathlib
 import zipfile
+from shutil import copyfile
 
 import requests
 from nzshm_model.psha_adapter.openquake.hazard_config import OpenquakeConfig
 from nzshm_model.psha_adapter.openquake.hazard_config_compat import DEFAULT_HAZARD_CONFIG
-
-# from typing import Dict
+from toshi_hazard_store.oq_import.oq_manipulate_hdf5 import rewrite_calc_gsims
 
 
 log = logging.getLogger(__name__)
@@ -32,22 +32,42 @@ def download_artefacts(gtapi, task_id, hazard_task_detail, subtasks_folder, incl
 
     subtask_folder = subtasks_folder / str(task_id)
     subtask_folder.mkdir(exist_ok=True)
-
     save_file(subtask_folder / TASK_ARGS_JSON, hazard_task_detail['hazard_solution']['task_args']['file_url'])
 
-    if include_hdf5:
-        hdf5_file = subtask_folder / "calc_1.hdf5"
-        if not hdf5_file.exists():
-            hazard_task_detail['hazard_solution']['hdf5_archive']['file_name']
-            hdf5_archive = save_file(
-                subtask_folder / hazard_task_detail['hazard_solution']['hdf5_archive']['file_name'],
-                hazard_task_detail['hazard_solution']['hdf5_archive']['file_url'],
-            )
 
-            # TODO handle possibly different filename ??
-            with zipfile.ZipFile(hdf5_archive) as myzip:
-                myzip.extract('calc_1.hdf5', subtask_folder)
-            hdf5_archive.unlink()  # delete the zip
+def process_hdf5(gtapi, task_id, hazard_task_detail, subtasks_folder, manipulate=True):
+    """
+    download and unpack the hdf5_file, returnng the path object.
+    """
+    log.info(f"processing hdf5 file for {hazard_task_detail['hazard_solution']['id']}")
+
+    subtask_folder = subtasks_folder / str(task_id)
+    assert subtask_folder.exists()
+
+    hdf5_file = subtask_folder / "calc_1.hdf5"
+    newpath = pathlib.Path(hdf5_file.parent, str(hdf5_file.name) + ".original")
+
+    if not hdf5_file.exists():
+        hazard_task_detail['hazard_solution']['hdf5_archive']['file_name']
+        hdf5_archive = save_file(
+            subtask_folder / hazard_task_detail['hazard_solution']['hdf5_archive']['file_name'],
+            hazard_task_detail['hazard_solution']['hdf5_archive']['file_url'],
+        )
+
+        # TODO handle possibly different filename ??
+        with zipfile.ZipFile(hdf5_archive) as myzip:
+            myzip.extract('calc_1.hdf5', subtask_folder)
+        hdf5_archive.unlink()  # delete the zip
+    else:
+        log.info(f"skip download, file exists at  {hdf5_file}")
+
+    if manipulate and not newpath.exists():
+        # make a copy, just in case
+        log.info(f"make copy, and manipulate ..")
+        copyfile(hdf5_file, newpath)
+        rewrite_calc_gsims(hdf5_file)
+
+    return hdf5_file
 
 
 def hdf5_from_task(task_id, subtasks_folder):

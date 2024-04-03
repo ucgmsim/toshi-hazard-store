@@ -1,6 +1,5 @@
 """This module defines the pynamodb tables used to store  hazard data. revision 4 = Fourth iteration"""
 
-
 import logging
 
 from nzshm_common.location.code_location import CodedLocation

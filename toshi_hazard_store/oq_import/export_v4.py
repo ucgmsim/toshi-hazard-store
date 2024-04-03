@@ -146,6 +146,7 @@ def export_rlzs_rev4(
     # assert 0
 
     def generate_models():
+        log.info(f"generating models")
         for i_site in range(len(sites)):
             loc = normalise_site_code((sites.loc[i_site, 'lon'], sites.loc[i_site, 'lat']), True)
             # print(f'loc: {loc}')
@@ -188,7 +189,7 @@ def export_rlzs_rev4(
                     # if oqmeta.model.vs30 == 0:
                     #    oq_realization.site_vs30 = sites.loc[i_site, 'vs30']
                     yield oq_realization.set_location(loc)
-            log.info(f"site {loc} done")
+            log.debug(f"site {loc} done")
 
     # used for testing
     if return_rlz:

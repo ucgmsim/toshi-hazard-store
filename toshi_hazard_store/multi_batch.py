@@ -6,11 +6,34 @@ from toshi_hazard_store.model.revision_4 import hazard_models
 
 log = logging.getLogger(__name__)
 
+logging.getLogger('pynamodb').setLevel(logging.DEBUG)
+
+
+# class PyanamodbConsumedHandler(logging.Handler):
+#     def __init__(self, level=0) -> None:
+#         super().__init__(level)
+#         self.consumed = 0
+
+#     def reset(self):
+#         self.consumed = 0
+
+#     def emit(self, record):
+#         if "pynamodb/connection/base.py" in record.pathname and record.msg == "%s %s consumed %s units":
+#             print(record.msg)
+#             print(self.consumed)
+#             # ('', 'BatchWriteItem', [{'TableName': 'THS_R4_HazardRealizationCurve-TEST_CBC', 'CapacityUnits': 25.0}])
+#             if isinstance(record.args[2], list): # # handle batch-write
+#                 for itm in record.args[2]:
+#                     print(itm)
+#                     self.consumed += itm['CapacityUnits']
+#             else:
+#                 self.consumed += record.args[2]
+#             print("CONSUMED:",  self.consumed)
 
 class DynamoBatchWorker(multiprocessing.Process):
-    """A worker that batches and saves records to DynamoDB.
+    """A worker that batches and saves records to THS
 
-    based on https://pymotw.com/2/multiprocessing/communication.html example 2.
+    based on     example 2.
     """
 
     def __init__(self, task_queue, toshi_id, model, batch_size):
@@ -20,6 +43,9 @@ class DynamoBatchWorker(multiprocessing.Process):
         self.toshi_id = toshi_id
         self.model = model
         self.batch_size = batch_size
+
+        # self.pyconhandler = PyanamodbConsumedHandler(logging.DEBUG)
+        # log.addHandler(self.pyconhandler)
 
     def run(self):
         log.info(f"worker {self.name} running with batch size: {self.batch_size}")
@@ -34,18 +60,22 @@ class DynamoBatchWorker(multiprocessing.Process):
                 # finally
                 if len(models):
                     self._batch_save(models)
+                    log.info(f'Saved final {len(models)} {self.model} models')
 
+                # log.info(f"{self.name} - Total pynamodb operation cost: {self.pyconhandler.consumed} units")
                 self.task_queue.task_done()
                 break
 
             assert isinstance(next_task, self.model)
             models.append(next_task)
-            if len(models) > self.batch_size:
+            if len(models) >= self.batch_size:
                 self._batch_save(models)
                 models = []
+                log.info(f'Saved batch of {self.batch_size} {self.model} models')
 
             self.task_queue.task_done()
             # self.result_queue.put(answer)
+
         return
 
     def _batch_save(self, models):
