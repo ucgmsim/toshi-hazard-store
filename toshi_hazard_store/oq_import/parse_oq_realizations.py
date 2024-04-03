@@ -25,15 +25,16 @@ registry = branch_registry.Registry()
 
 RealizationRecord = collections.namedtuple('RealizationRecord', 'idx, path, sources, gmms')
 
-
-def build_rlz_mapper(extractor: 'Extractor') -> Dict[int, RealizationRecord]:
-    # extractor = Extractor(str(hdf5))
-    source_lt, gsim_lt, rlz_lt = parse_logic_tree_branches(extractor)
-
+def rlz_mapper_from_dataframes(source_lt: 'pandas.DataFrame', gsim_lt: 'pandas.DataFrame', rlz_lt: 'pandas.DataFrame') -> Dict[int, RealizationRecord]:
     gmm_map = build_rlz_gmm_map(gsim_lt)
     source_map = build_rlz_source_map(source_lt)
     rlz_map = build_rlz_map(rlz_lt, source_map, gmm_map)
     return rlz_map
+
+
+def build_rlz_mapper(extractor: 'Extractor') -> Dict[int, RealizationRecord]:
+    # extractor = Extractor(str(hdf5))
+    return rlz_mapper_from_dataframes(*parse_logic_tree_branches(extractor))
 
 
 def build_rlz_gmm_map(gsim_lt: 'pandas.DataFrame') -> Dict[str, branch_registry.BranchRegistryEntry]:

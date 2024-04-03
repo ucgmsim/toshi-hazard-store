@@ -1,5 +1,6 @@
 import logging
 import multiprocessing
+import time
 
 from toshi_hazard_store.model import openquake_models
 from toshi_hazard_store.model.revision_4 import hazard_models
@@ -51,13 +52,15 @@ class DynamoBatchWorker(multiprocessing.Process):
         log.info(f"worker {self.name} running with batch size: {self.batch_size}")
         proc_name = self.name
         models = []
-
+        report_interval  = 10000
+        count = 0
+        t0 = time.perf_counter()
         while True:
             next_task = self.task_queue.get()
+            count += 1
             if next_task is None:
                 # Poison pill means shutdown
                 log.info('%s: Exiting' % proc_name)
-                # finally
                 if len(models):
                     self._batch_save(models)
                     log.info(f'Saved final {len(models)} {self.model} models')
@@ -71,8 +74,11 @@ class DynamoBatchWorker(multiprocessing.Process):
             if len(models) >= self.batch_size:
                 self._batch_save(models)
                 models = []
-                log.info(f'Saved batch of {self.batch_size} {self.model} models')
 
+            if count % report_interval == 0:
+                t1 = time.perf_counter()
+                log.info(f"{self.name} saved {report_interval} {self.model.__name__} objects in {t1- t0:.6f} seconds with batch size {self.batch_size}")
+                t0 = t1
             self.task_queue.task_done()
             # self.result_queue.put(answer)
 
@@ -84,6 +90,7 @@ class DynamoBatchWorker(multiprocessing.Process):
         #     query.batch_save_hcurve_stats_v2(self.toshi_id, models=models)
         # elif self.model == model.ToshiOpenquakeHazardCurveRlzsV2:
         #     query.batch_save_hcurve_rlzs_v2(self.toshi_id, models=models)
+        t0 = time.perf_counter()
         try:
             if self.model == openquake_models.OpenquakeRealization:
                 with openquake_models.OpenquakeRealization.batch_write() as batch:
@@ -95,10 +102,11 @@ class DynamoBatchWorker(multiprocessing.Process):
                         batch.save(item)
             else:
                 raise ValueError("WHATT!")
+            t1 = time.perf_counter()
+            log.debug(f"{self.name} batch saved {len(models)} {self.model} objects in {t1- t0:.6f} seconds")
         except Exception as err:
             log.error(str(err))
             raise
-
 
 def save_parallel(toshi_id: str, model_generator, model, num_workers, batch_size=50):
     tasks: multiprocessing.JoinableQueue = multiprocessing.JoinableQueue()

@@ -113,50 +113,47 @@ def get_rlz_curves(
 ##
 
 def block_query():
+
+    from toshi_hazard_store.oq_import.oq_manipulate_hdf5 import migrate_nshm_uncertainty_string
+    from toshi_hazard_store.oq_import.parse_oq_realizations import rlz_mapper_from_dataframes
+    import pandas
+
     locs = [CodedLocation(o['latitude'], o['longitude'], 0.001) for o in list(LOCATIONS_BY_ID.values())[:1]]
 
+    mMeta   = toshi_hazard_store.model.openquake_models.ToshiOpenquakeMeta
     mRLZ_V4 = hazard_models.HazardRealizationCurve
 
     mRLZ_V3 = toshi_hazard_store.model.openquake_models.OpenquakeRealization
 
+    hazard_solution_id = "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDE3"
+    query = mMeta.query(
+        "ToshiOpenquakeMeta",
+        mMeta.hazsol_vs30_rk==f"{hazard_solution_id}:275"
+    )
+
+    meta = next(query)
+    gsim_lt = pandas.read_json(meta.gsim_lt)
+    source_lt = pandas.read_json(meta.src_lt)
+    rlz_lt = pandas.read_json(meta.rlz_lt)
+
+    #apply the gsim migrations
+    gsim_lt["uncertainty"] = gsim_lt["uncertainty"].map(migrate_nshm_uncertainty_string)
+
+    rlz_map = rlz_mapper_from_dataframes(source_lt=source_lt, gsim_lt=gsim_lt, rlz_lt=rlz_lt)
+
+    # print(rlz_map)
+
     t3 = time.perf_counter()
-    # print(f'got {count} hits')
-    # print(f"rev 4 query  {t3 - t2:.6f} seconds")
-    # print()
+
     print()
     print("V3 ....")
-    count = 0
 
     # assert len(location.LOCATION_LISTS["NZ"]["locations"]) == 36
     # assert len(location.LOCATION_LISTS["SRWG214"]["locations"]) == 214
     # assert len(location.LOCATION_LISTS["ALL"]["locations"]) == 214 + 36 + 19480
     # assert len(location.LOCATION_LISTS["HB"]["locations"]) == 19480
 
-    grid = load_grid('NZ_0_1_NB_1_1')
 
-    for loc in [CodedLocation(o[0], o[1], 0.1) for o in grid]:
-        rlz = None
-        # nloc_001 = loc.resample(0.001).code
-        for rlz in mRLZ_V3.query(
-            loc.code,
-            mRLZ_V3.sort_key >= "",
-            filter_condition=(mRLZ_V3.hazard_solution_id == "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDE3")
-            & (mRLZ_V3.rlz == 0),
-        ):
-            # print(rlz.nloc_001, rlz.nloc_01)
-            count += 1
-        if rlz:
-            print(rlz.partition_key, rlz.sort_key, count)
-            rlz = None
-        else:
-            print(loc.code, 'no hits')
-
-    t4 = time.perf_counter()
-    print(f'got {count} hits')
-    print(f"rev 3 query  {t4- t3:.6f} seconds")
-
-    print()
-    assert 0
 
     t2 = time.perf_counter()
     count = 0
@@ -185,10 +182,10 @@ def demo_query():
         srcs = [registry.source_registry.get_by_hash(s).extra for s in rlz.source_digests]
         gmms = [registry.gmm_registry.get_by_hash(g).identity for g in rlz.gmm_digests]
         # print([rlz.nloc_001, rlz.vs30, rlz.imt, srcs, gmms, rlz.compatible_calc_fk, rlz.values[:4]])  # srcs, gmms,
-        print(rlz.partition_key, rlz.sort_key, rlz.nloc_001, rlz.nloc_01, rlz.nloc_1, rlz.vs30)
+        # print(rlz.partition_key, rlz.sort_key, rlz.nloc_001, rlz.nloc_01, rlz.nloc_1, rlz.vs30)
         count += 1
-        if count == 10:
-            assert 0
+        # if count == 10:
+        #     assert 0
     print(rlz)
 
     t3 = time.perf_counter()
@@ -206,7 +203,7 @@ def demo_query():
         imts=['PGA', 'SA(1.0)'],
     ):
         # print(r)
-        print(rlz.partition_key, rlz.sort_key, rlz.nloc_001, rlz.nloc_01, rlz.nloc_1, rlz.vs30)
+        # print(rlz.partition_key, rlz.sort_key, rlz.nloc_001, rlz.nloc_01, rlz.nloc_1, rlz.vs30)
         count += 1
 
     print(rlz)
@@ -223,6 +220,7 @@ if __name__ == '__main__':
 
     from nzshm_common.grids import load_grid
     from nzshm_common import location
+    import json
 
     t0 = time.perf_counter()
     from nzshm_model import branch_registry
@@ -234,6 +232,6 @@ if __name__ == '__main__':
 
     from nzshm_common.location.location import LOCATIONS_BY_ID
 
-    block_query()
+    # block_query()
 
-    # demo_query()
+    demo_query()
