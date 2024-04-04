@@ -7,8 +7,7 @@ from toshi_hazard_store.model.revision_4 import hazard_models
 
 log = logging.getLogger(__name__)
 
-logging.getLogger('pynamodb').setLevel(logging.DEBUG)
-
+# logging.getLogger('pynamodb').setLevel(logging.DEBUG)
 
 # class PyanamodbConsumedHandler(logging.Handler):
 #     def __init__(self, level=0) -> None:

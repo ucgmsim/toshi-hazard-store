@@ -71,7 +71,7 @@ def create_producer_config(
     return m
 
 
-def get_compatible_calc(foreign_key: Tuple[str, str]):
+def get_compatible_calc(foreign_key: Tuple[str, str]) ->hazard_models.CompatibleHazardCalculation:
     try:
         mCHC = hazard_models.CompatibleHazardCalculation
         return next(mCHC.query(foreign_key[0], mCHC.uniq_id == foreign_key[1]))
@@ -79,7 +79,7 @@ def get_compatible_calc(foreign_key: Tuple[str, str]):
         return None
 
 
-def get_producer_config(foreign_key: Tuple[str, str], compatible_calc: hazard_models.CompatibleHazardCalculation):
+def get_producer_config(foreign_key: Tuple[str, str], compatible_calc: hazard_models.CompatibleHazardCalculation) -> hazard_models.HazardCurveProducerConfig:
     mHCPC = hazard_models.HazardCurveProducerConfig
     try:
         return next(

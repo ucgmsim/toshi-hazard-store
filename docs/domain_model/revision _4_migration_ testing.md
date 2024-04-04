@@ -65,3 +65,17 @@ Cost observations:
 
   - Rev 4 are a 1 unit/object, as total objects size is just under 1k
   - Ver 3 vary, as a) batching uses different sizes and b) the objects are much larger (~17 times ?).
+
+
+## April 4th 2024
+
+ - **ths_r4_migrate** migrated 10.5 GB V3 local into V4 local in around 1 hour. Realisations that is.
+ - **ths_r4_migrate** migration from PROD ap-southeast-2 tables to LOCAL is very slow - about 120 times slower due to read latency.
+
+ ```
+ INFO:scripts.ths_r4_migrate:Processing calculation T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUyNQ== in gt R2VuZXJhbFRhc2s6MTMyODQxNA==
+ INFO:botocore.credentials:Found credentials in shared credentials file: ~/.aws/credentials
+ INFO:botocore.credentials:Found credentials in shared credentials file: ~/.aws/credentials
+ INFO:toshi_hazard_store.multi_batch:DynamoBatchWorker-1 saved 10000 HazardRealizationCurve objects in 847.937410 seconds with batch size 100
+ ```
+

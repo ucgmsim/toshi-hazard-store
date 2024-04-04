@@ -9,7 +9,7 @@ from pynamodb.indexes import AllProjection, LocalSecondaryIndex
 from pynamodb.models import Model
 from pynamodb_attributes import IntegerAttribute, TimestampAttribute
 
-from toshi_hazard_store.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION
+from toshi_hazard_store.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION, SOURCE_REGION, SOURCE_DEPLOYMENT_STAGE
 from toshi_hazard_store.model.caching import ModelCacheMixin
 
 from .attributes import EnumConstrainedUnicodeAttribute, IMTValuesAttribute, LevelValuePairAttribute
@@ -31,8 +31,8 @@ class ToshiOpenquakeMeta(Model):
         """DynamoDB Metadata."""
 
         billing_mode = 'PAY_PER_REQUEST'
-        table_name = f"THS_WIP_OpenquakeMeta-{DEPLOYMENT_STAGE}"
-        region = REGION
+        table_name = f"THS_WIP_OpenquakeMeta-{SOURCE_DEPLOYMENT_STAGE or DEPLOYMENT_STAGE}"
+        region = SOURCE_REGION or REGION
         if IS_OFFLINE:
             host = "http://localhost:8000"  # pragma: no cover
 
@@ -152,8 +152,8 @@ class OpenquakeRealization(LocationIndexedModel):
         """DynamoDB Metadata."""
 
         billing_mode = 'PAY_PER_REQUEST'
-        table_name = f"THS_OpenquakeRealization-{DEPLOYMENT_STAGE}"
-        region = REGION
+        table_name = f"THS_OpenquakeRealization-{SOURCE_DEPLOYMENT_STAGE or DEPLOYMENT_STAGE}"
+        region = SOURCE_REGION or REGION
         if IS_OFFLINE:
             host = "http://localhost:8000"  # pragma: no cover
 
