@@ -67,6 +67,21 @@ class PynamodbAdapterInterface(ABCModel):
         """Get iterator for given conditions"""
         pass
 
+    @classmethod
+    @abstractmethod
+    def count(
+        model_class: Type[_T],
+        hash_key: Optional[Any] = None,
+        range_key_condition: Optional[Condition] = None,
+        filter_condition: Optional[Condition] = None,
+        consistent_read: bool = False,
+        index_name: Optional[str] = None,
+        limit: Optional[int] = None,
+        rate_limit: Optional[float] = None
+    ) -> int:
+        """Get iterator for given conditions"""
+        pass
+
     @abstractmethod
     def save(self: _T, *args, **kwargs) -> dict[str, Any]:
         """Put an item to the store"""

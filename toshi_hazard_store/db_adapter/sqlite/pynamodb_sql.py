@@ -74,13 +74,27 @@ class SqlReadAdapter:
     def __init__(self, model_class: Type[_T]):
         self.model_class = model_class
 
+
+    def count_statement(
+        self,
+        hash_key: str,
+        range_key_condition: Union[Condition, None] = None,
+        filter_condition: Union[Condition, None] = None,
+    ) -> str:
+        """Build a SQL `SELECT COUNT(*) ...` statement"""
+        _sql = self.query_statement(hash_key, range_key_condition, filter_condition)
+        _sql = _sql.replace("SELECT *", "SELECT count(*)")
+        log.debug(_sql)
+        return _sql
+
+
     def query_statement(
         self,
         hash_key: str,
         range_key_condition: Union[Condition, None] = None,
         filter_condition: Union[Condition, None] = None,
     ) -> str:
-        """Build a SQL SELECT STATEMENT"""
+        """Build a `SQL SELECT ...` statement"""
 
         _sql = "SELECT * FROM %s \n" % safe_table_name(self.model_class)
         _sql += f"\tWHERE {get_hash_key(self.model_class)}='{hash_key}'"

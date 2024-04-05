@@ -23,6 +23,7 @@ from .sqlite_store import (
     put_model,
     put_models,
     safe_table_name,
+    count_model
 )
 
 if TYPE_CHECKING:
@@ -143,6 +144,21 @@ class SqliteAdapter(PynamodbAdapterInterface):
         if range_key_condition is None:
             raise TypeError("must supply range_key_condition argument")
         return get_model(get_connection(cls), cls, hash_key, range_key_condition, filter_condition)
+
+    @classmethod
+    def count(
+        cls: Type[_T],
+        hash_key: Optional[Any] = None,
+        range_key_condition: Optional[Condition] = None,
+        filter_condition: Optional[Condition] = None,
+        consistent_read: bool = False,
+        index_name: Optional[str] = None,
+        limit: Optional[int] = None,
+        rate_limit: Optional[float] = None
+    ) -> int:
+        if range_key_condition is None:
+            raise TypeError("must supply range_key_condition argument")
+        return count_model(get_connection(cls), cls, hash_key, range_key_condition, filter_condition)
 
     @staticmethod
     def count_hits(filter_condition):

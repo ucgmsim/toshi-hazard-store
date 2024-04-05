@@ -23,6 +23,20 @@ _T = TypeVar('_T', bound='pynamodb.models.Model')
 log = logging.getLogger(__name__)
 
 
+def count_model(
+    conn: sqlite3.Connection,
+    model_class: Type[_T],
+    hash_key: Union[str, None] = None,
+    range_key_condition: Union[Condition, None] = None,
+    filter_condition: Union[Condition, None] = None,
+) -> int:
+    sra = SqlReadAdapter(model_class)
+    sql = sra.count_statement(hash_key, range_key_condition, filter_condition)
+    result = next(conn.execute(sql))
+    log.debug(f"count_model() result: {result[0]}")
+    return result[0]
+
+
 def get_model(
     conn: sqlite3.Connection,
     model_class: Type[_T],
