@@ -91,16 +91,9 @@ class DynamoBatchWorker(multiprocessing.Process):
         #     query.batch_save_hcurve_rlzs_v2(self.toshi_id, models=models)
         t0 = time.perf_counter()
         try:
-            if self.model == openquake_models.OpenquakeRealization:
-                with openquake_models.OpenquakeRealization.batch_write() as batch:
-                    for item in models:
-                        batch.save(item)
-            elif self.model == hazard_models.HazardRealizationCurve:
-                with hazard_models.HazardRealizationCurve.batch_write() as batch:
-                    for item in models:
-                        batch.save(item)
-            else:
-                raise ValueError("WHATT!")
+            with self.model.batch_write() as batch:
+                for item in models:
+                    batch.save(item)
             t1 = time.perf_counter()
             log.debug(f"{self.name} batch saved {len(models)} {self.model} objects in {t1- t0:.6f} seconds")
         except Exception as err:

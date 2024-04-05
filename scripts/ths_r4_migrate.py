@@ -30,7 +30,7 @@ logging.getLogger('toshi_hazard_store.db_adapter.sqlite.sqlite_store').setLevel(
 from toshi_hazard_store.config import DEPLOYMENT_STAGE as THS_STAGE
 from toshi_hazard_store.config import LOCAL_CACHE_FOLDER
 from toshi_hazard_store.config import REGION as THS_REGION
-from toshi_hazard_store.config import USE_SQLITE_ADAPTER
+from toshi_hazard_store.config import USE_SQLITE_ADAPTER, NUM_BATCH_WORKERS
 from toshi_hazard_store.oq_import import get_compatible_calc
 from toshi_hazard_store.oq_import.migrate_v3_to_v4 import migrate_realisations_from_subtask, SubtaskRecord, ECR_REPONAME
 
@@ -42,6 +42,8 @@ from toshi_hazard_store.model.revision_4 import hazard_models
 from .revision_4 import aws_ecr_docker_image as aws_ecr
 from .revision_4 import oq_config
 from .revision_4 import toshi_api_client  # noqa: E402
+
+from .core import echo_settings
 
 from nzshm_model.logic_tree.source_logic_tree.toshi_api import (  # noqa: E402 and this function be in the client !
     get_secret,
@@ -64,24 +66,7 @@ S3_URL = None
 DEPLOYMENT_STAGE = os.getenv('DEPLOYMENT_STAGE', 'LOCAL').upper()
 REGION = os.getenv('REGION', 'ap-southeast-2')  # SYDNEY
 
-def echo_settings(work_folder, verbose=True):
-    click.echo('\nfrom command line:')
-    click.echo(f"   using verbose: {verbose}")
-    click.echo(f"   using work_folder: {work_folder}")
 
-    try:
-        click.echo('\nfrom API environment:')
-        click.echo(f'   using API_URL: {API_URL}')
-        click.echo(f'   using REGION: {REGION}')
-        click.echo(f'   using DEPLOYMENT_STAGE: {DEPLOYMENT_STAGE}')
-    except Exception:
-        pass
-
-    click.echo('\nfrom THS config:')
-    click.echo(f'   using LOCAL_CACHE_FOLDER: {LOCAL_CACHE_FOLDER}')
-    click.echo(f'   using THS_STAGE: {THS_STAGE}')
-    click.echo(f'   using THS_REGION: {THS_REGION}')
-    click.echo(f'   using USE_SQLITE_ADAPTER: {USE_SQLITE_ADAPTER}')
 
 def process_gt_subtasks(gt_id: str, work_folder:str, verbose:bool = False):
     subtasks_folder = pathlib.Path(work_folder, gt_id, 'subtasks')
@@ -104,12 +89,12 @@ def process_gt_subtasks(gt_id: str, work_folder:str, verbose:bool = False):
 
     for task_id in get_hazard_task_ids(query_res):
 
-        # completed already
-        if task_id in ['T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDE3', 'T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI3',
-            'T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDE4', 'T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI0',
-            "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI2",
-            "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDMy", "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI5"]:
-            continue
+        # # completed already
+        # if task_id in ['T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDE3', 'T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI3',
+        #     'T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDE4', 'T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI0',
+        #     "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI2",
+        #     "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDMy", "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI5"]:
+        #     continue
 
         query_res = gtapi.get_oq_hazard_task(task_id)
         log.debug(query_res)
@@ -185,34 +170,48 @@ def main(
     verbose,
     dry_run,
 ):
-    """Migrate realisations from V3 to R4 table for GT_ID PARTITION and COMPAT_CALC
+    """Migrate realisations from V3 to R4 table for GT_ID, PARTITION and COMPAT_CALC
 
     GT_ID is an NSHM General task id containing HazardAutomation Tasks\n
     PARTITION is a table partition (hash) for Producer\n
     COMPAT is foreign key of the compatible_calc in form `A_B`
     """
+
     compatible_calc = get_compatible_calc(compat_calc.split("_"))
     if compatible_calc is None:
         raise ValueError(f'compatible_calc: {compat_calc} was not found')
 
     if verbose:
+        echo_settings(work_folder)
+        click.echo()
         click.echo('fetching General Task subtasks')
 
     def generate_models():
+        task_count = 0
         for subtask_info in process_gt_subtasks(gt_id, work_folder=work_folder, verbose=verbose):
+            task_count +=1
+            if task_count < 7:
+                continue
+
             log.info(f"Processing calculation {subtask_info.hazard_calc_id} in gt {gt_id}")
             count = 0
             for new_rlz in migrate_realisations_from_subtask(subtask_info, source, partition, compatible_calc, verbose, update, dry_run=False):
                 count += 1
                 yield new_rlz
             log.info(f"Produced {count} source objects from {subtask_info.hazard_calc_id} in {gt_id}")
+            # crash out after some subtasks..
+            if task_count >= 12:
+                break
 
     if dry_run:
         for itm in generate_models():
             pass
         log.info("Dry run completed")
     else:
-        save_parallel("", generate_models(), hazard_models.HazardRealizationCurve, 1, 100)
+        workers = 1 if target == 'LOCAL' else NUM_BATCH_WORKERS
+        batch_size = 100 if target == 'LOCAL' else 25
+        model = hazard_models.HazardRealizationCurve
+        save_parallel("", generate_models(), model, workers, batch_size)
 
 if __name__ == "__main__":
     main()

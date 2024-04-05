@@ -178,6 +178,7 @@ def demo_query():
 
     t2 = time.perf_counter()
     count = 0
+    rlz = None
     for rlz in get_rlz_curves([loc.code for loc in locs], [275], ['PGA', 'SA(1.0)']):
         srcs = [registry.source_registry.get_by_hash(s).extra for s in rlz.source_digests]
         gmms = [registry.gmm_registry.get_by_hash(g).identity for g in rlz.gmm_digests]
@@ -186,7 +187,7 @@ def demo_query():
         count += 1
         # if count == 10:
         #     assert 0
-    print(rlz)
+    print(rlz) if rlz else print("V4 no hits")
 
     t3 = time.perf_counter()
     print(f'got {count} hits')
@@ -199,7 +200,7 @@ def demo_query():
         locs=[loc.code for loc in locs],
         vs30s=[275],
         rlzs=[x for x in range(21)],
-        tids=["T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDE3", "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI3"],
+        tids=["T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUxNA=="],
         imts=['PGA', 'SA(1.0)'],
     ):
         # print(r)
@@ -207,6 +208,40 @@ def demo_query():
         count += 1
 
     print(rlz)
+    t4 = time.perf_counter()
+    print(f'got {count} hits')
+    print(f"rev 3 query  {t4- t3:.6f} seconds")
+
+
+def test_query():
+
+    test_loc = "-42.450~171.210"
+
+
+    wd = pathlib.Path(__file__).parent
+    gtfile = wd / "GT_HAZ_IDs_R2VuZXJhbFRhc2s6MTMyODQxNA==.json"
+    print(gtfile)
+    assert gtfile.exists()
+    gt_info = json.load(open(str(gtfile)))
+
+    tids = [edge['node']['child']['hazard_solution']["id"] for edge in gt_info['data']['node']['children']['edges']]
+    # print(tids)
+
+    t3 = time.perf_counter()
+    print("V3 ....")
+    count = 0
+    for rlz in hazard_query.get_rlz_curves_v3(
+        locs=[test_loc],
+        vs30s=[275],
+        rlzs=[x for x in range(21)],
+        tids=tids, #["T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUxNA=="],
+        imts=['PGA'],
+    ):
+        # print(r)
+        # print(rlz.partition_key, rlz.sort_key, rlz.nloc_001, rlz.nloc_01, rlz.nloc_1, rlz.vs30)
+        count += 1
+
+    print(rlz) if rlz else print("V3 no hits")
     t4 = time.perf_counter()
     print(f'got {count} hits')
     print(f"rev 3 query  {t4- t3:.6f} seconds")
@@ -221,6 +256,7 @@ if __name__ == '__main__':
     from nzshm_common.grids import load_grid
     from nzshm_common import location
     import json
+    import pathlib
 
     t0 = time.perf_counter()
     from nzshm_model import branch_registry
@@ -233,5 +269,5 @@ if __name__ == '__main__':
     from nzshm_common.location.location import LOCATIONS_BY_ID
 
     # block_query()
-
-    demo_query()
+    # demo_query()
+    test_query()

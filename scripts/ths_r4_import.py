@@ -4,7 +4,7 @@ This is NSHM process specific, as it assumes the following:
  - hazard producer metadata is available from the NSHM toshi-api via **nshm-toshi-client** library
  - NSHM model characteristics are available in the **nzshm-model** library
 
-Hazard curves are store using the new THS Rev4 tables which may also be used independently.
+Hazard curves are stored using the new THS Rev4 tables which may also be used independently.
 
 Given a general task containing hazard calcs used in NHSM, we want to iterate over the sub-tasks and do
 the setup required for importing the hazard curves:
@@ -26,12 +26,6 @@ import pathlib
 from typing import Iterable
 from .store_hazard_v3 import extract_and_save
 import click
-
-try:
-    from openquake.calculators.extract import Extractor
-except (ModuleNotFoundError, ImportError):
-    print("WARNING: the transform module uses the optional openquake dependencies - h5py, pandas and openquake.")
-    raise
 
 class PyanamodbConsumedHandler(logging.Handler):
     def __init__(self, level=0) -> None:
@@ -71,11 +65,6 @@ logging.getLogger('nzshm_model').setLevel(logging.INFO)
 logging.getLogger('gql.transport').setLevel(logging.WARNING)
 logging.getLogger('urllib3').setLevel(logging.INFO)
 
-
-
-
-# import nzshm_model  # noqa: E402
-
 import toshi_hazard_store  # noqa: E402
 from toshi_hazard_store.config import DEPLOYMENT_STAGE as THS_STAGE
 from toshi_hazard_store.config import LOCAL_CACHE_FOLDER
@@ -86,6 +75,7 @@ from toshi_hazard_store.oq_import import (  # noqa: E402
     export_rlzs_rev4,
     get_compatible_calc,
     get_producer_config,
+    get_extractor
 )
 
 # from toshi_hazard_store import model
@@ -93,16 +83,16 @@ from toshi_hazard_store.model.revision_4 import hazard_models
 
 from .revision_4 import aws_ecr_docker_image as aws_ecr
 from .revision_4 import oq_config
+from .revision_4 import toshi_api_client  # noqa: E402
+from .core import echo_settings
 
 ECR_REGISTRY_ID = '461564345538.dkr.ecr.us-east-1.amazonaws.com'
 ECR_REPONAME = "nzshm22/runzi-openquake"
-
 
 from nzshm_model.logic_tree.source_logic_tree.toshi_api import (  # noqa: E402 and this function be in the client !
     get_secret,
 )
 
-from .revision_4 import toshi_api_client  # noqa: E402
 
 # Get API key from AWS secrets manager
 API_URL = os.getenv('NZSHM22_TOSHI_API_URL', "http://127.0.0.1:5000/graphql")
@@ -120,41 +110,6 @@ except AttributeError as err:
 S3_URL = None
 DEPLOYMENT_STAGE = os.getenv('DEPLOYMENT_STAGE', 'LOCAL').upper()
 REGION = os.getenv('REGION', 'ap-southeast-2')  # SYDNEY
-
-
-def get_extractor(calc_id: str):
-    """return an extractor for given calc_id or path to hdf5"""
-    hdf5_path = pathlib.Path(calc_id)
-    try:
-        if hdf5_path.exists():
-            # we have a file path to work with
-            extractor = Extractor(str(hdf5_path))
-        else:
-            extractor = Extractor(int(calc_id))
-    except Exception as err:
-        log.info(err)
-        return None
-    return extractor
-
-
-def echo_settings(work_folder, verbose=True):
-    click.echo('\nfrom command line:')
-    click.echo(f"   using verbose: {verbose}")
-    click.echo(f"   using work_folder: {work_folder}")
-
-    try:
-        click.echo('\nfrom API environment:')
-        click.echo(f'   using API_URL: {API_URL}')
-        click.echo(f'   using REGION: {REGION}')
-        click.echo(f'   using DEPLOYMENT_STAGE: {DEPLOYMENT_STAGE}')
-    except Exception:
-        pass
-
-    click.echo('\nfrom THS config:')
-    click.echo(f'   using LOCAL_CACHE_FOLDER: {LOCAL_CACHE_FOLDER}')
-    click.echo(f'   using THS_STAGE: {THS_STAGE}')
-    click.echo(f'   using THS_REGION: {THS_REGION}')
-    click.echo(f'   using USE_SQLITE_ADAPTER: {USE_SQLITE_ADAPTER}')
 
 
 def handle_import_subtask_rev4(
@@ -406,8 +361,8 @@ def producers(
         for task_id in subtask_ids:
 
             # completed already
-            if task_id in ['T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDE3', 'T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI3']:
-                continue
+            # if task_id in ['T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDE3', 'T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI3']:
+            #     continue
 
             # # problems
             # if task_id in ['T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDE4', 'T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI0', "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI2",
@@ -435,7 +390,7 @@ def producers(
 
             yield SubtaskRecord(
                 gt_id=gt_id,
-                hazard_calc_id=task_id,
+                hazard_calc_id=query_res['hazard_solution']['id'],
                 image=latest_engine_image,
                 config_hash=config_hash,
                 hdf5_path=hdf5_path,
@@ -448,6 +403,10 @@ def producers(
 
     count = 0
     for subtask_info in handle_subtasks(gt_id, get_hazard_task_ids(query_res)):
+        count += 1
+        # skip some subtasks..
+        if count <= 6:
+            continue
         if process_v3:
             ArgsRecord = collections.namedtuple(
                 'ArgsRecord',
@@ -470,10 +429,9 @@ def producers(
                 raise ValueError(f'compatible_calc: {compatible_calc_fk} was not found')
             handle_import_subtask_rev4(subtask_info, partition, compatible_calc, verbose, update, with_rlzs, dry_run)
 
-        count += 1
-        # crash out after some subtasks..
-        if count >= 1:
-            break
+        # # crash out after some subtasks..
+        # if count >= 6:
+        #     break
 
     click.echo("pyanmodb operation cost: %s units" % pyconhandler.consumed)
 

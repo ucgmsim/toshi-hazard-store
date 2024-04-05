@@ -17,6 +17,10 @@ from toshi_hazard_store.oq_import import create_producer_config, get_producer_co
 from toshi_hazard_store.oq_import.oq_manipulate_hdf5 import migrate_nshm_uncertainty_string
 from toshi_hazard_store.oq_import.parse_oq_realizations import rlz_mapper_from_dataframes
 
+#
+from toshi_hazard_store.db_adapter import ensure_class_bases_begin_with
+from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
+
 SubtaskRecord = collections.namedtuple(
     'SubtaskRecord', 'gt_id, hazard_calc_id, config_hash, image, vs30'
 )
@@ -30,15 +34,29 @@ log = logging.getLogger(__name__)
 def migrate_realisations_from_subtask(
     subtask_info: 'SubtaskRecord', source:str, partition:str, compatible_calc, verbose, update, dry_run=False
 ) ->Iterator[toshi_hazard_store.model.openquake_models.OpenquakeRealization]:
-    """Migrate all the realisations for the given subtask
+    """
+    Migrate all the realisations for the given subtask
     """
     if source == 'AWS':
         # set tables to default classes
         importlib.reload(sys.modules['toshi_hazard_store.model.location_indexed_model'])
         importlib.reload(sys.modules['toshi_hazard_store.model.openquake_models'])
     elif source == 'LOCAL':
-        pass
-        # configure_v3_source(SqliteAdapter)
+        adapter_model = SqliteAdapter
+        log.info(f"Configure adapter: {adapter_model}")
+        ensure_class_bases_begin_with(
+            namespace=toshi_hazard_store.model.openquake_models.__dict__,
+            class_name=str('ToshiOpenquakeMeta'),  # `str` type differs on Python 2 vs. 3.
+            base_class=adapter_model,
+        )
+        ensure_class_bases_begin_with(
+            namespace=toshi_hazard_store.model.location_indexed_model.__dict__, class_name=str('LocationIndexedModel'), base_class=adapter_model
+        )
+        ensure_class_bases_begin_with(
+            namespace=toshi_hazard_store.model.openquake_models.__dict__,
+            class_name=str('OpenquakeRealization'),  # `str` type differs on Python 2 vs. 3.
+            base_class=adapter_model,
+        )
     else:
         raise ValueError('unknown source {source}')
 

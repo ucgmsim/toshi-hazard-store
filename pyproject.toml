@@ -24,6 +24,7 @@ packages = [
 ]
 
 [tool.poetry.scripts]
+sanity = 'scripts.migration.ths_r4_sanity:main'
 store_hazard_v3 = 'scripts.store_hazard_v3:main'
 store_hazard_v4 = 'scripts.store_hazard_v4:main'
 ths_r4_import = 'scripts.ths_r4_import:main'

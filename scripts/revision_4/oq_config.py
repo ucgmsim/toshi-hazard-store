@@ -9,6 +9,11 @@ from nzshm_model.psha_adapter.openquake.hazard_config import OpenquakeConfig
 from nzshm_model.psha_adapter.openquake.hazard_config_compat import DEFAULT_HAZARD_CONFIG
 from toshi_hazard_store.oq_import.oq_manipulate_hdf5 import rewrite_calc_gsims
 
+try:
+    from openquake.calculators.extract import Extractor
+except (ModuleNotFoundError, ImportError):
+    print("WARNING: the transform module uses the optional openquake dependencies - h5py, pandas and openquake.")
+    raise
 
 log = logging.getLogger(__name__)
 
@@ -16,6 +21,19 @@ ARCHIVED_INI = "archived_job.ini"
 SYNTHETIC_INI = 'synthetic_job.ini'
 TASK_ARGS_JSON = "task_args.json"
 
+def get_extractor(calc_id: str):
+    """return an extractor for given calc_id or path to hdf5"""
+    hdf5_path = pathlib.Path(calc_id)
+    try:
+        if hdf5_path.exists():
+            # we have a file path to work with
+            extractor = Extractor(str(hdf5_path))
+        else:
+            extractor = Extractor(int(calc_id))
+    except Exception as err:
+        log.info(err)
+        return None
+    return extractor
 
 def save_file(filepath: pathlib.Path, url: str):
     r = requests.get(url, stream=True)
