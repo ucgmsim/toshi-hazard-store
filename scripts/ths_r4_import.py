@@ -18,6 +18,7 @@ These things may get a separate script
     - OPTION to download HDF5 and load hazard curves from there
     - OPTION to import V3 hazard curves from DynamodDB and extract ex
 """
+
 import collections
 import datetime as dt
 import logging
@@ -26,6 +27,7 @@ import pathlib
 from typing import Iterable
 from .store_hazard_v3 import extract_and_save
 import click
+
 
 class PyanamodbConsumedHandler(logging.Handler):
     def __init__(self, level=0) -> None:
@@ -40,7 +42,7 @@ class PyanamodbConsumedHandler(logging.Handler):
             # print(record.msg)
             # print(self.consumed)
             # ('', 'BatchWriteItem', [{'TableName': 'THS_R4_HazardRealizationCurve-TEST_CBC', 'CapacityUnits': 25.0}])
-            if isinstance(record.args[2], list): # # handle batch-write
+            if isinstance(record.args[2], list):  # # handle batch-write
                 for itm in record.args[2]:
                     # print(itm)
                     self.consumed += itm['CapacityUnits']
@@ -49,6 +51,7 @@ class PyanamodbConsumedHandler(logging.Handler):
             else:
                 self.consumed += record.args[2]
             # print("CONSUMED:",  self.consumed)
+
 
 log = logging.getLogger()
 
@@ -75,7 +78,7 @@ from toshi_hazard_store.oq_import import (  # noqa: E402
     export_rlzs_rev4,
     get_compatible_calc,
     get_producer_config,
-    get_extractor
+    get_extractor,
 )
 
 # from toshi_hazard_store import model

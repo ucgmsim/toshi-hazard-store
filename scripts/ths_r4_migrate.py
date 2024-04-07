@@ -12,6 +12,7 @@ import datetime as dt
 import logging
 import os
 import pathlib
+
 # import time
 import click
 
@@ -67,8 +68,7 @@ DEPLOYMENT_STAGE = os.getenv('DEPLOYMENT_STAGE', 'LOCAL').upper()
 REGION = os.getenv('REGION', 'ap-southeast-2')  # SYDNEY
 
 
-
-def process_gt_subtasks(gt_id: str, work_folder:str, verbose:bool = False):
+def process_gt_subtasks(gt_id: str, work_folder: str, verbose: bool = False):
     subtasks_folder = pathlib.Path(work_folder, gt_id, 'subtasks')
     subtasks_folder.mkdir(parents=True, exist_ok=True)
 
@@ -131,6 +131,7 @@ def process_gt_subtasks(gt_id: str, work_folder:str, verbose:bool = False):
 #     context.ensure_object(dict)
 #     context.obj['work_folder'] = work_folder
 
+
 @click.command()
 @click.argument('gt_id')
 @click.argument('partition')
@@ -147,14 +148,14 @@ def process_gt_subtasks(gt_id: str, work_folder:str, verbose:bool = False):
     '-S',
     type=click.Choice(['AWS', 'LOCAL'], case_sensitive=False),
     default='LOCAL',
-    help="set the source store. defaults to LOCAL"
+    help="set the source store. defaults to LOCAL",
 )
 @click.option(
     '--target',
     '-T',
     type=click.Choice(['AWS', 'LOCAL'], case_sensitive=False),
     default='LOCAL',
-    help="set the target store. defaults to LOCAL"
+    help="set the target store. defaults to LOCAL",
 )
 @click.option('-W', '--work_folder', default=lambda: os.getcwd(), help="defaults to Current Working Directory")
 @click.option('-v', '--verbose', is_flag=True, default=False)
@@ -189,13 +190,15 @@ def main(
     def generate_models():
         task_count = 0
         for subtask_info in process_gt_subtasks(gt_id, work_folder=work_folder, verbose=verbose):
-            task_count +=1
+            task_count += 1
             if task_count < 7:
                 continue
 
             log.info(f"Processing calculation {subtask_info.hazard_calc_id} in gt {gt_id}")
             count = 0
-            for new_rlz in migrate_realisations_from_subtask(subtask_info, source, partition, compatible_calc, verbose, update, dry_run=False):
+            for new_rlz in migrate_realisations_from_subtask(
+                subtask_info, source, partition, compatible_calc, verbose, update, dry_run=False
+            ):
                 count += 1
                 yield new_rlz
             log.info(f"Produced {count} source objects from {subtask_info.hazard_calc_id} in {gt_id}")
@@ -212,6 +215,7 @@ def main(
         batch_size = 100 if target == 'LOCAL' else 25
         model = hazard_models.HazardRealizationCurve
         save_parallel("", generate_models(), model, workers, batch_size)
+
 
 if __name__ == "__main__":
     main()

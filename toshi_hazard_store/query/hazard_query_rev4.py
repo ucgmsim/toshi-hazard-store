@@ -112,6 +112,7 @@ def get_rlz_curves(
 # DEMO code below, to migrate to tests and/or docs
 ##
 
+
 def block_query():
 
     from toshi_hazard_store.oq_import.oq_manipulate_hdf5 import migrate_nshm_uncertainty_string
@@ -120,23 +121,20 @@ def block_query():
 
     locs = [CodedLocation(o['latitude'], o['longitude'], 0.001) for o in list(LOCATIONS_BY_ID.values())[:1]]
 
-    mMeta   = toshi_hazard_store.model.openquake_models.ToshiOpenquakeMeta
+    mMeta = toshi_hazard_store.model.openquake_models.ToshiOpenquakeMeta
     mRLZ_V4 = hazard_models.HazardRealizationCurve
 
     mRLZ_V3 = toshi_hazard_store.model.openquake_models.OpenquakeRealization
 
     hazard_solution_id = "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDE3"
-    query = mMeta.query(
-        "ToshiOpenquakeMeta",
-        mMeta.hazsol_vs30_rk==f"{hazard_solution_id}:275"
-    )
+    query = mMeta.query("ToshiOpenquakeMeta", mMeta.hazsol_vs30_rk == f"{hazard_solution_id}:275")
 
     meta = next(query)
     gsim_lt = pandas.read_json(meta.gsim_lt)
     source_lt = pandas.read_json(meta.src_lt)
     rlz_lt = pandas.read_json(meta.rlz_lt)
 
-    #apply the gsim migrations
+    # apply the gsim migrations
     gsim_lt["uncertainty"] = gsim_lt["uncertainty"].map(migrate_nshm_uncertainty_string)
 
     rlz_map = rlz_mapper_from_dataframes(source_lt=source_lt, gsim_lt=gsim_lt, rlz_lt=rlz_lt)
@@ -152,8 +150,6 @@ def block_query():
     # assert len(location.LOCATION_LISTS["SRWG214"]["locations"]) == 214
     # assert len(location.LOCATION_LISTS["ALL"]["locations"]) == 214 + 36 + 19480
     # assert len(location.LOCATION_LISTS["HB"]["locations"]) == 19480
-
-
 
     t2 = time.perf_counter()
     count = 0
@@ -217,7 +213,6 @@ def test_query():
 
     test_loc = "-42.450~171.210"
 
-
     wd = pathlib.Path(__file__).parent
     gtfile = wd / "GT_HAZ_IDs_R2VuZXJhbFRhc2s6MTMyODQxNA==.json"
     print(gtfile)
@@ -234,7 +229,7 @@ def test_query():
         locs=[test_loc],
         vs30s=[275],
         rlzs=[x for x in range(21)],
-        tids=tids, #["T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUxNA=="],
+        tids=tids,  # ["T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUxNA=="],
         imts=['PGA'],
     ):
         # print(r)

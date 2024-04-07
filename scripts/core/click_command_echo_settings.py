@@ -1,7 +1,7 @@
 #! python3
-def echo_settings(work_folder:str, verbose=True):
+def echo_settings(work_folder: str, verbose=True):
     global click
-    global DEPLOYMENT_STAGE, API_URL, REGION, LOCAL_CACHE_FOLDER,THS_STAGE, THS_REGION, USE_SQLITE_ADAPTER
+    global DEPLOYMENT_STAGE, API_URL, REGION, LOCAL_CACHE_FOLDER, THS_STAGE, THS_REGION, USE_SQLITE_ADAPTER
 
     click.echo('\nfrom command line:')
     click.echo(f"   using verbose: {verbose}")

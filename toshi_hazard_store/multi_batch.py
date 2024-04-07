@@ -30,6 +30,7 @@ log = logging.getLogger(__name__)
 #                 self.consumed += record.args[2]
 #             print("CONSUMED:",  self.consumed)
 
+
 class DynamoBatchWorker(multiprocessing.Process):
     """A worker that batches and saves records to THS
 
@@ -51,7 +52,7 @@ class DynamoBatchWorker(multiprocessing.Process):
         log.info(f"worker {self.name} running with batch size: {self.batch_size}")
         proc_name = self.name
         models = []
-        report_interval  = 10000
+        report_interval = 10000
         count = 0
         t0 = time.perf_counter()
         while True:
@@ -76,7 +77,9 @@ class DynamoBatchWorker(multiprocessing.Process):
 
             if count % report_interval == 0:
                 t1 = time.perf_counter()
-                log.info(f"{self.name} saved {report_interval} {self.model.__name__} objects in {t1- t0:.6f} seconds with batch size {self.batch_size}")
+                log.info(
+                    f"{self.name} saved {report_interval} {self.model.__name__} objects in {t1- t0:.6f} seconds with batch size {self.batch_size}"
+                )
                 t0 = t1
             self.task_queue.task_done()
             # self.result_queue.put(answer)
@@ -99,6 +102,7 @@ class DynamoBatchWorker(multiprocessing.Process):
         except Exception as err:
             log.error(str(err))
             raise
+
 
 def save_parallel(toshi_id: str, model_generator, model, num_workers, batch_size=50):
     tasks: multiprocessing.JoinableQueue = multiprocessing.JoinableQueue()

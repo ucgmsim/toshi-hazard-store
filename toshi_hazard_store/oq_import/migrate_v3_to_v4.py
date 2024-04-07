@@ -21,9 +21,7 @@ from toshi_hazard_store.oq_import.parse_oq_realizations import rlz_mapper_from_d
 from toshi_hazard_store.db_adapter import ensure_class_bases_begin_with
 from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
 
-SubtaskRecord = collections.namedtuple(
-    'SubtaskRecord', 'gt_id, hazard_calc_id, config_hash, image, vs30'
-)
+SubtaskRecord = collections.namedtuple('SubtaskRecord', 'gt_id, hazard_calc_id, config_hash, image, vs30')
 
 ECR_REGISTRY_ID = '461564345538.dkr.ecr.us-east-1.amazonaws.com'
 ECR_REPONAME = "nzshm22/runzi-openquake"
@@ -32,8 +30,8 @@ log = logging.getLogger(__name__)
 
 
 def migrate_realisations_from_subtask(
-    subtask_info: 'SubtaskRecord', source:str, partition:str, compatible_calc, verbose, update, dry_run=False
-) ->Iterator[toshi_hazard_store.model.openquake_models.OpenquakeRealization]:
+    subtask_info: 'SubtaskRecord', source: str, partition: str, compatible_calc, verbose, update, dry_run=False
+) -> Iterator[toshi_hazard_store.model.openquake_models.OpenquakeRealization]:
     """
     Migrate all the realisations for the given subtask
     """
@@ -50,7 +48,9 @@ def migrate_realisations_from_subtask(
             base_class=adapter_model,
         )
         ensure_class_bases_begin_with(
-            namespace=toshi_hazard_store.model.location_indexed_model.__dict__, class_name=str('LocationIndexedModel'), base_class=adapter_model
+            namespace=toshi_hazard_store.model.location_indexed_model.__dict__,
+            class_name=str('LocationIndexedModel'),
+            base_class=adapter_model,
         )
         ensure_class_bases_begin_with(
             namespace=toshi_hazard_store.model.openquake_models.__dict__,
@@ -94,35 +94,38 @@ def migrate_realisations_from_subtask(
             dry_run=dry_run,
         )
 
-        log.info(f"New Model {producer_config} has foreign key ({producer_config.partition_key}, {producer_config.range_key})")
+        log.info(
+            f"New Model {producer_config} has foreign key ({producer_config.partition_key}, {producer_config.range_key})"
+        )
 
     mRLZ_V4 = toshi_hazard_store.model.revision_4.hazard_models.HazardRealizationCurve
 
     # table classes may be rebased, this makes sure we always get the current class definition
     mRLZ_V3 = toshi_hazard_store.model.openquake_models.__dict__['OpenquakeRealization']
-    mMeta   = toshi_hazard_store.model.openquake_models.__dict__['ToshiOpenquakeMeta']
+    mMeta = toshi_hazard_store.model.openquake_models.__dict__['ToshiOpenquakeMeta']
 
     # # modify the source region
     # mMeta.Meta.region = 'ap-southeast-25'
     # mRLZ_V3.Meta.region = 'ap-southeast-25'
 
-    #Get the V3 Metadata ...
+    # Get the V3 Metadata ...
     query = mMeta.query(
-        "ToshiOpenquakeMeta",
-        mMeta.hazsol_vs30_rk==f"{subtask_info.hazard_calc_id}:{subtask_info.vs30}"
+        "ToshiOpenquakeMeta", mMeta.hazsol_vs30_rk == f"{subtask_info.hazard_calc_id}:{subtask_info.vs30}"
     )
 
     try:
         meta = next(query)
     except StopIteration:
-        log.warning(f"Metadata for {subtask_info.hazard_calc_id}:{subtask_info.vs30} was not found. Terminating migration.")
+        log.warning(
+            f"Metadata for {subtask_info.hazard_calc_id}:{subtask_info.vs30} was not found. Terminating migration."
+        )
         return
 
     gsim_lt = pandas.read_json(meta.gsim_lt)
     source_lt = pandas.read_json(meta.src_lt)
     rlz_lt = pandas.read_json(meta.rlz_lt)
 
-    #apply gsim migrations
+    # apply gsim migrations
     gsim_lt["uncertainty"] = gsim_lt["uncertainty"].map(migrate_nshm_uncertainty_string)
 
     # build the realisation mapper
@@ -134,8 +137,9 @@ def migrate_realisations_from_subtask(
         for source_rlz in mRLZ_V3.query(
             location.code,
             mRLZ_V3.sort_key >= location.resample(0.001).code,
-            filter_condition=(mRLZ_V3.hazard_solution_id == subtask_info.hazard_calc_id) & (mRLZ_V3.vs30 == subtask_info.vs30)
-            ):
+            filter_condition=(mRLZ_V3.hazard_solution_id == subtask_info.hazard_calc_id)
+            & (mRLZ_V3.vs30 == subtask_info.vs30),
+        ):
 
             realization = rlz_map[source_rlz.rlz]
             for imt_values in source_rlz.values:
@@ -143,7 +147,7 @@ def migrate_realisations_from_subtask(
                 target_realization = mRLZ_V4(
                     compatible_calc_fk=compatible_calc.foreign_key(),
                     producer_config_fk=producer_config.foreign_key(),
-                    created = source_rlz.created,
+                    created=source_rlz.created,
                     calculation_id=subtask_info.hazard_calc_id,
                     values=list(imt_values.vals),
                     imt=imt_values.imt,
@@ -152,5 +156,6 @@ def migrate_realisations_from_subtask(
                     source_digests=[realization.sources.hash_digest],
                     gmm_digests=[realization.gmms.hash_digest],
                 )
-                yield target_realization.set_location(CodedLocation(lat=source_rlz.lat, lon=source_rlz.lon, resolution=0.001))
-
+                yield target_realization.set_location(
+                    CodedLocation(lat=source_rlz.lat, lon=source_rlz.lon, resolution=0.001)
+                )

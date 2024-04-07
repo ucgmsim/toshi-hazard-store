@@ -21,6 +21,7 @@ ARCHIVED_INI = "archived_job.ini"
 SYNTHETIC_INI = 'synthetic_job.ini'
 TASK_ARGS_JSON = "task_args.json"
 
+
 def get_extractor(calc_id: str):
     """return an extractor for given calc_id or path to hdf5"""
     hdf5_path = pathlib.Path(calc_id)
@@ -34,6 +35,7 @@ def get_extractor(calc_id: str):
         log.info(err)
         return None
     return extractor
+
 
 def save_file(filepath: pathlib.Path, url: str):
     r = requests.get(url, stream=True)
