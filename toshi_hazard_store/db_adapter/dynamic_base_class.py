@@ -53,3 +53,27 @@ def ensure_class_bases_begin_with(namespace, class_name, base_class):
 
     log.debug(f"new_class bases:  {new_class.__bases__}")
     namespace[class_name] = new_class
+
+
+def set_base_class(namespace, class_name, base_class):
+    """Ensure the named class's base class is the new_base_class.
+
+    :param namespace: The namespace containing the class name.
+    :param class_name: The name of the class to alter.
+    :param base_class: The type to be the base class for the
+        newly created type.
+    :return: ``None``.
+
+    Call this function after ensuring `base_class` is
+    available, before using the class named by `class_name`.
+
+    """
+    existing_class = namespace[class_name]
+    assert isinstance(existing_class, type)
+
+    new_class_namespace = existing_class.__dict__.copy()
+    # Type creation will assign the correct ‘__dict__’ attribute.
+    new_class_namespace.pop('__dict__', None)
+    metaclass = existing_class.__metaclass__
+    new_class = metaclass(class_name, tuple([base_class]), new_class_namespace)
+    namespace[class_name] = new_class
