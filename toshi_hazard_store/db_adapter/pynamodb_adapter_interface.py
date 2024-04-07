@@ -77,7 +77,7 @@ class PynamodbAdapterInterface(ABCModel):
         consistent_read: bool = False,
         index_name: Optional[str] = None,
         limit: Optional[int] = None,
-        rate_limit: Optional[float] = None
+        rate_limit: Optional[float] = None,
     ) -> int:
         """Get iterator for given conditions"""
         pass

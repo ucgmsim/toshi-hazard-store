@@ -74,7 +74,6 @@ class SqlReadAdapter:
     def __init__(self, model_class: Type[_T]):
         self.model_class = model_class
 
-
     def count_statement(
         self,
         hash_key: str,
@@ -86,7 +85,6 @@ class SqlReadAdapter:
         _sql = _sql.replace("SELECT *", "SELECT count(*)")
         log.debug(_sql)
         return _sql
-
 
     def query_statement(
         self,

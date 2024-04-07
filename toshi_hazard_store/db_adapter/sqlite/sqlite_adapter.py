@@ -23,7 +23,7 @@ from .sqlite_store import (
     put_model,
     put_models,
     safe_table_name,
-    count_model
+    count_model,
 )
 
 if TYPE_CHECKING:
@@ -154,7 +154,7 @@ class SqliteAdapter(PynamodbAdapterInterface):
         consistent_read: bool = False,
         index_name: Optional[str] = None,
         limit: Optional[int] = None,
-        rate_limit: Optional[float] = None
+        rate_limit: Optional[float] = None,
     ) -> int:
         if range_key_condition is None:
             raise TypeError("must supply range_key_condition argument")
