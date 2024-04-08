@@ -420,3 +420,20 @@ chrisbc@tryharder-ubuntu:/GNSDATA/LIB/toshi-hazard-store$ poetry run sanity rand
 ...
 compared 4943 realisations with 0 material differences
 ```
+
+
+
+# pyarrow experiments
+
+write to arrow file first 12 (25%) = 9.3GB in 10000 row df batched
+
+```
+
+time poetry run ths_r4_migrate -W WORKING/ R2VuZXJhbFRhc2s6MTMyODQxNA== A A_A -S LOCAL -T ARROW
+...
+INFO:scripts.ths_r4_migrate:built dataframe 1873
+INFO:scripts.ths_r4_migrate:Produced 1249020 source objects from T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUyMA== in R2VuZXJhbFRhc2s6MTMyODQxNA==
+INFO:scripts.ths_r4_migrate:built dataframe 1874
+
+real    122m58.576s
+```

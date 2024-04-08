@@ -52,6 +52,7 @@ python-dotenv = "^1.0.1"
 pynamodb = "^6.0.0"
 pynamodb-attributes = "^0.4.0"
 nzshm-model = {path = "../nzshm-model", extras = ["toshi"]}
+pyarrow = "^15.0.2"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.2.0"

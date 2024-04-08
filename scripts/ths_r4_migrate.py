@@ -15,6 +15,9 @@ import pathlib
 
 # import time
 import click
+import pandas as pd
+import pyarrow as pa
+import pyarrow.dataset as ds
 
 log = logging.getLogger(__name__)
 
@@ -151,7 +154,7 @@ def process_gt_subtasks(gt_id: str, work_folder: str, verbose: bool = False):
 @click.option(
     '--target',
     '-T',
-    type=click.Choice(['AWS', 'LOCAL'], case_sensitive=False),
+    type=click.Choice(['AWS', 'LOCAL', 'ARROW'], case_sensitive=False),
     default='LOCAL',
     help="set the target store. defaults to LOCAL",
 )
@@ -189,8 +192,8 @@ def main(
         task_count = 0
         for subtask_info in process_gt_subtasks(gt_id, work_folder=work_folder, verbose=verbose):
             task_count += 1
-            if task_count < 7:
-                continue
+            # if task_count < 7:
+            #     continue
 
             log.info(f"Processing calculation {subtask_info.hazard_calc_id} in gt {gt_id}")
             count = 0
@@ -204,10 +207,65 @@ def main(
             if task_count >= 12:
                 break
 
+    def chunked(iterable, chunk_size=100):
+        count = 0
+        chunk = []
+        for item in iterable:
+            chunk.append(item)
+            count +=1
+            if count % chunk_size == 0:
+                yield chunk
+                chunk = []
+        if chunk:
+            yield chunk
+
     if dry_run:
         for itm in generate_models():
             pass
         log.info("Dry run completed")
+    elif target == 'ARROW':
+        arrow_folder = pathlib.Path(work_folder) / 'ARROW'
+
+        def batch_builder(table_size):
+            n = 0
+            for chunk in chunked(generate_models(), chunk_size=table_size):
+                df = pd.DataFrame([rlz.to_simple_dict() for rlz in chunk])
+                yield df # pa.Table.from_pandas(df)
+                n+=1
+                log.info(f"built dataframe {n}")
+
+        hrc_schema = pa.schema([
+            ('created', pa.timestamp('ms', tz='UTC')),
+            ('compatible_calc_fk', pa.string()),
+            ('producer_config_fk', pa.string()),
+            ('calculation_id', pa.string()),
+            ('values', pa.list_(pa.float32(), 44)),
+            ('imt', pa.string()),
+            ('vs30', pa.uint16()),
+            # ('site_vs30', pa.uint16()),
+            ('source_digests', pa.list_(pa.string(), -1)),
+            ('gmm_digests', pa.list_(pa.string(), -1)),
+            ('nloc_001', pa.string()),
+            ('partition_key', pa.string()),
+            ('sort_key', pa.string())
+        ])
+
+        with pa.OSFile(f'{arrow_folder}/bigfile.arrow', 'wb') as sink:
+            with pa.ipc.new_file(sink, hrc_schema) as writer:
+                for table in batch_builder(10000):
+                    batch = pa.record_batch(table, hrc_schema)
+                    writer.write(batch)
+
+        """
+        >>> reader = pa.ipc.open_file(open('WORKING/ARROW/bigfile.arrow', 'rb'))
+        >>> reader
+        <pyarrow.ipc.RecordBatchFileReader object at 0x71fc83f705c0>
+        >>> df = reader.read_pandas()
+        """
+        # ds.write_dataset(scanner(), str(arrow_folder), format="parquet",
+        #     partitioning=ds.partitioning(pa.schema([("range_key", pa.string())]))
+        # )
+
     else:
         workers = 1 if target == 'LOCAL' else NUM_BATCH_WORKERS
         batch_size = 100 if target == 'LOCAL' else 25
