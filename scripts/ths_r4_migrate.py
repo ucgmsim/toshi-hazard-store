@@ -28,27 +28,25 @@ logging.getLogger('urllib3').setLevel(logging.INFO)
 logging.getLogger('toshi_hazard_store.db_adapter.sqlite.sqlite_store').setLevel(logging.WARNING)
 
 
-from toshi_hazard_store.config import DEPLOYMENT_STAGE as THS_STAGE
-from toshi_hazard_store.config import LOCAL_CACHE_FOLDER
-from toshi_hazard_store.config import REGION as THS_REGION
-from toshi_hazard_store.config import USE_SQLITE_ADAPTER, NUM_BATCH_WORKERS
-from toshi_hazard_store.oq_import import get_compatible_calc
-from toshi_hazard_store.oq_import.migrate_v3_to_v4 import migrate_realisations_from_subtask, SubtaskRecord, ECR_REPONAME
-
-from toshi_hazard_store.multi_batch import save_parallel
-
-# from toshi_hazard_store import model
-from toshi_hazard_store.model.revision_4 import hazard_models
-
-from .revision_4 import aws_ecr_docker_image as aws_ecr
-from .revision_4 import oq_config
-from .revision_4 import toshi_api_client  # noqa: E402
-
-from .core import echo_settings
-
 from nzshm_model.logic_tree.source_logic_tree.toshi_api import (  # noqa: E402 and this function be in the client !
     get_secret,
 )
+
+from toshi_hazard_store.config import DEPLOYMENT_STAGE as THS_STAGE
+from toshi_hazard_store.config import LOCAL_CACHE_FOLDER, NUM_BATCH_WORKERS
+from toshi_hazard_store.config import REGION as THS_REGION
+from toshi_hazard_store.config import USE_SQLITE_ADAPTER
+
+# from toshi_hazard_store import model
+from toshi_hazard_store.model.revision_4 import hazard_models
+from toshi_hazard_store.multi_batch import save_parallel
+from toshi_hazard_store.oq_import import get_compatible_calc
+from toshi_hazard_store.oq_import.migrate_v3_to_v4 import ECR_REPONAME, SubtaskRecord, migrate_realisations_from_subtask
+
+from .core import echo_settings
+from .revision_4 import aws_ecr_docker_image as aws_ecr
+from .revision_4 import toshi_api_client  # noqa: E402
+from .revision_4 import oq_config
 
 # Get API key from AWS secrets manager
 API_URL = os.getenv('NZSHM22_TOSHI_API_URL', "http://127.0.0.1:5000/graphql")

@@ -6,14 +6,12 @@ NB maybe this belongs in the nzshm_model.psha_adapter.openquake package ??
 
 import collections
 import logging
-
-
-from toshi_hazard_store.transform import parse_logic_tree_branches
+from typing import TYPE_CHECKING, Dict
 
 from nzshm_model import branch_registry
 from nzshm_model.psha_adapter.openquake import gmcm_branch_from_element_text
 
-from typing import TYPE_CHECKING, Dict
+from toshi_hazard_store.transform import parse_logic_tree_branches
 
 if TYPE_CHECKING:
     import pandas

@@ -7,6 +7,7 @@ from shutil import copyfile
 import requests
 from nzshm_model.psha_adapter.openquake.hazard_config import OpenquakeConfig
 from nzshm_model.psha_adapter.openquake.hazard_config_compat import DEFAULT_HAZARD_CONFIG
+
 from toshi_hazard_store.oq_import.oq_manipulate_hdf5 import rewrite_calc_gsims
 
 try:
@@ -83,7 +84,7 @@ def process_hdf5(gtapi, task_id, hazard_task_detail, subtasks_folder, manipulate
 
     if manipulate and not newpath.exists():
         # make a copy, just in case
-        log.info(f"make copy, and manipulate ..")
+        log.info("make copy, and manipulate ..")
         copyfile(hdf5_file, newpath)
         rewrite_calc_gsims(hdf5_file)
 

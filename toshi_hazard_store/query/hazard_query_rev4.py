@@ -18,7 +18,6 @@ from nzshm_common.location.code_location import CodedLocation
 
 from toshi_hazard_store.model.revision_4 import hazard_models
 
-
 log = logging.getLogger(__name__)
 
 
@@ -111,13 +110,15 @@ def get_rlz_curves(
 ##
 # DEMO code below, to migrate to tests and/or docs
 ##
+# flake8: noqa
 
 
 def block_query():
 
+    import pandas
+
     from toshi_hazard_store.oq_import.oq_manipulate_hdf5 import migrate_nshm_uncertainty_string
     from toshi_hazard_store.oq_import.parse_oq_realizations import rlz_mapper_from_dataframes
-    import pandas
 
     locs = [CodedLocation(o['latitude'], o['longitude'], 0.001) for o in list(LOCATIONS_BY_ID.values())[:1]]
 
@@ -244,14 +245,15 @@ def test_query():
 
 if __name__ == '__main__':
 
-    from toshi_hazard_store.query import hazard_query
-    from toshi_hazard_store.model import OpenquakeRealization
-    import toshi_hazard_store.model
-
-    from nzshm_common.grids import load_grid
-    from nzshm_common import location
     import json
     import pathlib
+
+    from nzshm_common import location
+    from nzshm_common.grids import load_grid
+
+    import toshi_hazard_store.model
+    from toshi_hazard_store.model import OpenquakeRealization
+    from toshi_hazard_store.query import hazard_query
 
     t0 = time.perf_counter()
     from nzshm_model import branch_registry

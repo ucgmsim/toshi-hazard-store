@@ -9,7 +9,7 @@ from pynamodb.indexes import AllProjection, LocalSecondaryIndex
 from pynamodb.models import Model
 from pynamodb_attributes import IntegerAttribute, TimestampAttribute
 
-from toshi_hazard_store.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION, SOURCE_REGION, SOURCE_DEPLOYMENT_STAGE
+from toshi_hazard_store.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION, SOURCE_DEPLOYMENT_STAGE, SOURCE_REGION
 from toshi_hazard_store.model.caching import ModelCacheMixin
 
 from .attributes import EnumConstrainedUnicodeAttribute, IMTValuesAttribute, LevelValuePairAttribute

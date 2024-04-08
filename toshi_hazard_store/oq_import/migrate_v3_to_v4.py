@@ -1,25 +1,23 @@
 """Migrate all the realisations for the given subtask"""
 
 import collections
-import logging
-import pandas
-import time
 import importlib
+import logging
 import sys
-
 from typing import Iterator
+
+import pandas
 from nzshm_common.grids import load_grid
 from nzshm_common.location.code_location import CodedLocation
 
 import toshi_hazard_store.model
 
-from toshi_hazard_store.oq_import import create_producer_config, get_producer_config
-from toshi_hazard_store.oq_import.oq_manipulate_hdf5 import migrate_nshm_uncertainty_string
-from toshi_hazard_store.oq_import.parse_oq_realizations import rlz_mapper_from_dataframes
-
 #
 from toshi_hazard_store.db_adapter import ensure_class_bases_begin_with
 from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
+from toshi_hazard_store.oq_import import create_producer_config, get_producer_config
+from toshi_hazard_store.oq_import.oq_manipulate_hdf5 import migrate_nshm_uncertainty_string
+from toshi_hazard_store.oq_import.parse_oq_realizations import rlz_mapper_from_dataframes
 
 SubtaskRecord = collections.namedtuple('SubtaskRecord', 'gt_id, hazard_calc_id, config_hash, image, vs30')
 
@@ -95,7 +93,8 @@ def migrate_realisations_from_subtask(
         )
 
         log.info(
-            f"New Model {producer_config} has foreign key ({producer_config.partition_key}, {producer_config.range_key})"
+            f"New Model {producer_config} has foreign key ({producer_config.partition_key}, "
+            f"{producer_config.range_key})"
         )
 
     mRLZ_V4 = toshi_hazard_store.model.revision_4.hazard_models.HazardRealizationCurve

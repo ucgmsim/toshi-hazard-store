@@ -30,6 +30,9 @@ def count_model(
     range_key_condition: Union[Condition, None] = None,
     filter_condition: Union[Condition, None] = None,
 ) -> int:
+
+    if hash_key is None:
+        raise NotImplementedError("Missing hash_key is not yet supported.")
     sra = SqlReadAdapter(model_class)
     sql = sra.count_statement(hash_key, range_key_condition, filter_condition)
     result = next(conn.execute(sql))

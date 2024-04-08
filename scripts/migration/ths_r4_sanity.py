@@ -1,14 +1,16 @@
+# flake8: noqa
 """
 Console script for querying tables before and after import/migration to ensure that we have what we expect
 """
 
 import importlib
-import logging
-import click
-import pathlib
-import json
-import random
 import itertools
+import json
+import logging
+import pathlib
+import random
+
+import click
 
 log = logging.getLogger()
 
@@ -17,30 +19,24 @@ logging.basicConfig(level=logging.INFO)
 logging.getLogger('botocore').setLevel(logging.WARNING)
 logging.getLogger('toshi_hazard_store').setLevel(logging.WARNING)
 
-import toshi_hazard_store  # noqa: E402
-
-from scripts.core import echo_settings
-
-import toshi_hazard_store.model.revision_4.hazard_models  # noqa: E402
-import toshi_hazard_store.model.openquake_models
-import toshi_hazard_store.config
-import toshi_hazard_store.query.hazard_query
-
 from nzshm_common.grids import load_grid
 from nzshm_common.location.code_location import CodedLocation
-
-
-from toshi_hazard_store.config import (
-    USE_SQLITE_ADAPTER,
-    LOCAL_CACHE_FOLDER,
-    DEPLOYMENT_STAGE as THS_STAGE,
-    REGION as THS_REGION,
-)
-
-
 from pynamodb.models import Model
-from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
+
+import toshi_hazard_store  # noqa: E402
+import toshi_hazard_store.config
+import toshi_hazard_store.model.openquake_models
+import toshi_hazard_store.model.revision_4.hazard_models  # noqa: E402
+import toshi_hazard_store.query.hazard_query
+from scripts.core import echo_settings  # noqa
+from toshi_hazard_store.config import DEPLOYMENT_STAGE as THS_STAGE
+from toshi_hazard_store.config import USE_SQLITE_ADAPTER  # noqa
+from toshi_hazard_store.config import LOCAL_CACHE_FOLDER
+from toshi_hazard_store.config import REGION as THS_REGION
 from toshi_hazard_store.db_adapter.dynamic_base_class import ensure_class_bases_begin_with, set_base_class
+from toshi_hazard_store.db_adapter.sqlite import (  # noqa this is needed to finish the randon-rlz functionality
+    SqliteAdapter,
+)
 
 nz1_grid = load_grid('NZ_0_1_NB_1_1')
 #  _ __ ___   __ _(_)_ __

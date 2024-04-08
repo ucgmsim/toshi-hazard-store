@@ -2,33 +2,7 @@ import logging
 import multiprocessing
 import time
 
-from toshi_hazard_store.model import openquake_models
-from toshi_hazard_store.model.revision_4 import hazard_models
-
 log = logging.getLogger(__name__)
-
-# logging.getLogger('pynamodb').setLevel(logging.DEBUG)
-
-# class PyanamodbConsumedHandler(logging.Handler):
-#     def __init__(self, level=0) -> None:
-#         super().__init__(level)
-#         self.consumed = 0
-
-#     def reset(self):
-#         self.consumed = 0
-
-#     def emit(self, record):
-#         if "pynamodb/connection/base.py" in record.pathname and record.msg == "%s %s consumed %s units":
-#             print(record.msg)
-#             print(self.consumed)
-#             # ('', 'BatchWriteItem', [{'TableName': 'THS_R4_HazardRealizationCurve-TEST_CBC', 'CapacityUnits': 25.0}])
-#             if isinstance(record.args[2], list): # # handle batch-write
-#                 for itm in record.args[2]:
-#                     print(itm)
-#                     self.consumed += itm['CapacityUnits']
-#             else:
-#                 self.consumed += record.args[2]
-#             print("CONSUMED:",  self.consumed)
 
 
 class DynamoBatchWorker(multiprocessing.Process):
@@ -44,9 +18,6 @@ class DynamoBatchWorker(multiprocessing.Process):
         self.toshi_id = toshi_id
         self.model = model
         self.batch_size = batch_size
-
-        # self.pyconhandler = PyanamodbConsumedHandler(logging.DEBUG)
-        # log.addHandler(self.pyconhandler)
 
     def run(self):
         log.info(f"worker {self.name} running with batch size: {self.batch_size}")
@@ -78,7 +49,8 @@ class DynamoBatchWorker(multiprocessing.Process):
             if count % report_interval == 0:
                 t1 = time.perf_counter()
                 log.info(
-                    f"{self.name} saved {report_interval} {self.model.__name__} objects in {t1- t0:.6f} seconds with batch size {self.batch_size}"
+                    f"{self.name} saved {report_interval} {self.model.__name__} objects in "
+                    f"{t1- t0:.6f} seconds with batch size {self.batch_size}"
                 )
                 t0 = t1
             self.task_queue.task_done()
@@ -87,11 +59,6 @@ class DynamoBatchWorker(multiprocessing.Process):
         return
 
     def _batch_save(self, models):
-        # print(f"worker {self.name} saving batch of len: {len(models)}")
-        # if self.model == model.ToshiOpenquakeHazardCurveStatsV2:
-        #     query.batch_save_hcurve_stats_v2(self.toshi_id, models=models)
-        # elif self.model == model.ToshiOpenquakeHazardCurveRlzsV2:
-        #     query.batch_save_hcurve_rlzs_v2(self.toshi_id, models=models)
         t0 = time.perf_counter()
         try:
             with self.model.batch_write() as batch:

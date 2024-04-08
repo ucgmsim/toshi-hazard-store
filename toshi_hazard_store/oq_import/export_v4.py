@@ -6,14 +6,15 @@ import random
 # from dataclasses import dataclass
 from typing import List, Optional, Tuple, Union
 
-# from nzshm_model import branch_registry
-
 from toshi_hazard_store.config import NUM_BATCH_WORKERS, USE_SQLITE_ADAPTER
 from toshi_hazard_store.model.revision_4 import hazard_models
 from toshi_hazard_store.multi_batch import save_parallel
 from toshi_hazard_store.utils import normalise_site_code
 
 from .parse_oq_realizations import build_rlz_mapper
+
+# from nzshm_model import branch_registry
+
 
 log = logging.getLogger(__name__)
 
@@ -71,7 +72,7 @@ def create_producer_config(
     return m
 
 
-def get_compatible_calc(foreign_key: Tuple[str, str]) -> hazard_models.CompatibleHazardCalculation:
+def get_compatible_calc(foreign_key: Tuple[str, str]) -> Optional[hazard_models.CompatibleHazardCalculation]:
     try:
         mCHC = hazard_models.CompatibleHazardCalculation
         return next(mCHC.query(foreign_key[0], mCHC.uniq_id == foreign_key[1]))
@@ -81,7 +82,7 @@ def get_compatible_calc(foreign_key: Tuple[str, str]) -> hazard_models.Compatibl
 
 def get_producer_config(
     foreign_key: Tuple[str, str], compatible_calc: hazard_models.CompatibleHazardCalculation
-) -> hazard_models.HazardCurveProducerConfig:
+) -> Optional[hazard_models.HazardCurveProducerConfig]:
     mHCPC = hazard_models.HazardCurveProducerConfig
     try:
         return next(
@@ -105,9 +106,8 @@ def export_rlzs_rev4(
     update_producer=False,
 ) -> Union[List[hazard_models.HazardRealizationCurve], None]:
 
-    # first check the FKs are OK
-    compatible_calc = get_compatible_calc(compatible_calc.foreign_key())
-    if compatible_calc is None:
+    # first check the FKs are available
+    if get_compatible_calc(compatible_calc.foreign_key()) is None:
         raise ValueError(f'compatible_calc: {compatible_calc.foreign_key()} was not found')
 
     if get_producer_config(producer_config.foreign_key(), compatible_calc) is None:
@@ -148,7 +148,7 @@ def export_rlzs_rev4(
     # assert 0
 
     def generate_models():
-        log.info(f"generating models")
+        log.info("generating models")
         for i_site in range(len(sites)):
             loc = normalise_site_code((sites.loc[i_site, 'lon'], sites.loc[i_site, 'lat']), True)
             # print(f'loc: {loc}')

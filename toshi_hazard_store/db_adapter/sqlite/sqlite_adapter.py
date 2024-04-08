@@ -17,13 +17,13 @@ from ..pynamodb_adapter_interface import PynamodbAdapterInterface  # noqa
 from .pynamodb_sql import get_version_attribute
 from .sqlite_store import (
     check_exists,
+    count_model,
     drop_table,
     ensure_table_exists,
     get_model,
     put_model,
     put_models,
     safe_table_name,
-    count_model,
 )
 
 if TYPE_CHECKING:

@@ -25,8 +25,10 @@ import logging
 import os
 import pathlib
 from typing import Iterable
-from .store_hazard_v3 import extract_and_save
+
 import click
+
+from .store_hazard_v3 import extract_and_save
 
 
 class PyanamodbConsumedHandler(logging.Handler):
@@ -69,33 +71,31 @@ logging.getLogger('gql.transport').setLevel(logging.WARNING)
 logging.getLogger('urllib3').setLevel(logging.INFO)
 
 import toshi_hazard_store  # noqa: E402
-from toshi_hazard_store.config import DEPLOYMENT_STAGE as THS_STAGE
-from toshi_hazard_store.config import LOCAL_CACHE_FOLDER
-from toshi_hazard_store.config import REGION as THS_REGION
-from toshi_hazard_store.config import USE_SQLITE_ADAPTER
+
+# from toshi_hazard_store import model
+from toshi_hazard_store.model.revision_4 import hazard_models
 from toshi_hazard_store.oq_import import (  # noqa: E402
     create_producer_config,
     export_rlzs_rev4,
     get_compatible_calc,
     get_producer_config,
-    get_extractor,
 )
+from toshi_hazard_store.oq_import.migrate_v3_to_v4 import ECR_REGISTRY_ID, ECR_REPONAME, SubtaskRecord
 
-# from toshi_hazard_store import model
-from toshi_hazard_store.model.revision_4 import hazard_models
-
-from .revision_4 import aws_ecr_docker_image as aws_ecr
-from .revision_4 import oq_config
-from .revision_4 import toshi_api_client  # noqa: E402
 from .core import echo_settings
+from .revision_4 import aws_ecr_docker_image as aws_ecr
+from .revision_4 import toshi_api_client  # noqa: E402
+from .revision_4 import oq_config
 
-ECR_REGISTRY_ID = '461564345538.dkr.ecr.us-east-1.amazonaws.com'
-ECR_REPONAME = "nzshm22/runzi-openquake"
+try:
+    from openquake.calculators.extract import Extractor
+except (ModuleNotFoundError, ImportError):
+    print("WARNING: the transform module uses the optional openquake dependencies - h5py, pandas and openquake.")
+
 
 from nzshm_model.logic_tree.source_logic_tree.toshi_api import (  # noqa: E402 and this function be in the client !
     get_secret,
 )
-
 
 # Get API key from AWS secrets manager
 API_URL = os.getenv('NZSHM22_TOSHI_API_URL', "http://127.0.0.1:5000/graphql")
@@ -156,7 +156,8 @@ def handle_import_subtask_rev4(
         )
         if verbose:
             click.echo(
-                f"New Model {producer_config} has foreign key ({producer_config.partition_key}, {producer_config.range_key})"
+                f"New Model {producer_config} has foreign key ({producer_config.partition_key},"
+                f" {producer_config.range_key})"
             )
 
     if with_rlzs:
@@ -368,7 +369,8 @@ def producers(
             #     continue
 
             # # problems
-            # if task_id in ['T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDE4', 'T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI0', "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI2",
+            # if task_id in ['T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDE4', 'T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI0',
+            #  "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI2",
             #  "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDMy"]: # "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI5",
             #     continue
 

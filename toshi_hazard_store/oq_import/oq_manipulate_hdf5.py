@@ -8,10 +8,11 @@ NB maybe this belongs in the nzshm_model.psha_adapter.openquake package ??
 
 """
 
-import h5py
+import collections
 import logging
 import pathlib
-import collections
+
+import h5py
 
 log = logging.getLogger(__name__)
 
@@ -35,7 +36,12 @@ def migrate_nshm_uncertainty_string(uncertainty: str) -> str:
 
 def migrate_gsim_row(row: GsimRow) -> GsimRow:
     log.debug(f"Manipulating row {row}")
-    new_row = (row.region, row.key, migrate_nshm_uncertainty_string(row.uncertainty.decode()).encode(), row.weight)
+    new_row = GsimRow(
+        region=row.region,
+        key=row.key,
+        uncertainty=migrate_nshm_uncertainty_string(row.uncertainty.decode()).encode(),
+        weight=row.weight,
+    )
     log.debug(f"New value: {row}")
     return new_row
 

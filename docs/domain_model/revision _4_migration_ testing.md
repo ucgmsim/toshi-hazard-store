@@ -232,7 +232,9 @@ Goals: confirm that
 Checks:
 
   - [ ] count of imported objects (LOCAL: **3639792**) matches the equivalent query against Dynamodb. PROD : **3411792** NO nw table is bigger by 200K!! (See below....)
-  - [ ] spot-check 1000 random realisation curves. Random location, IMT, RLZ ID,
+  - [X] spot-check 1000 random realisation curves. Random location, IMT, RLZ ID,
+
+
 
 
 ## Investigating rlz counts in the two DBs...
@@ -258,6 +260,7 @@ and with a little python set analysis....
 ['-34.300~172.900', '-34.300~173.000', '-34.300~173.100', '-34.400~172.600', '-34.400~172.700', '-34.400~172.800', '-34.400~172.900', '-34.400~173.000', '-34.400~173.100', '-34.500~172.600']
 >>>
 >>> from nzshm_common.grids import load_grid
+>>> from nzshm_common.location.code_location import CodedLocation
 >>> nz1_grid = load_grid('NZ_0_1_NB_1_1')
 >>> grid_locs = [CodedLocation(o[0], o[1], 0.001).code for o in nz1_grid]
 >>> gs = set(grid_locs)
@@ -409,3 +412,11 @@ real    0m0.969s
 
 real    47m42.010s
 
+
+## Spot checking random curves...
+
+```
+chrisbc@tryharder-ubuntu:/GNSDATA/LIB/toshi-hazard-store$ poetry run sanity random-rlz 75
+...
+compared 4943 realisations with 0 material differences
+```
