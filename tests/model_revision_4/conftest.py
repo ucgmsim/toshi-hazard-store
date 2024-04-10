@@ -82,7 +82,7 @@ def generate_rev4_rlz_models(many_rlz_args, adapted_model):
     def model_generator():
         # values = list(map(lambda x: LevelValuePairAttribute(lvl=x / 1e3, val=(x / 1e6)), range(1, 51)))
         values = list(map(lambda x: x / 1e6, range(1, 51)))
-        for loc, vs30, imt, sources, gmms in itertools.product(
+        for loc, vs30, imt, source, gmm in itertools.product(
             many_rlz_args["locs"][:5],
             many_rlz_args["vs30s"],
             many_rlz_args["imts"],
@@ -95,8 +95,8 @@ def generate_rev4_rlz_models(many_rlz_args, adapted_model):
                 values=values,
                 imt=imt,
                 vs30=vs30,
-                source_digests=[sources],
-                gmm_digests=[gmms],
+                sources_digest=source,
+                gmms_digest=gmm,
                 # site_vs30=vs30,
                 # hazard_solution_id=many_rlz_args["TOSHI_ID"],
                 # source_tags=['TagOne'],

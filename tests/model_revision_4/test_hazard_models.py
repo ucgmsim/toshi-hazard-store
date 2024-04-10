@@ -97,7 +97,7 @@ class TestRevisionFourModelCreation_WithAdaption:
         assert res.vs30 == m.vs30
         assert res.imt == m.imt
         # assert res.values[0] == m.values[0]
-        assert res.sort_key == '-38.160~178.247:0250:PGA:A_AA:sc9d8be924ee7:ga7d8c5d537e1'
+        assert res.sort_key == '-38.160~178.247:0250:PGA:A_AA:c9d8be924ee7:a7d8c5d537e1'
         # assert res.sources_key() == 'c9d8be924ee7'
         # assert res.rlz == m.rlz TODO: need string coercion for sqladapter!
         # assert 0

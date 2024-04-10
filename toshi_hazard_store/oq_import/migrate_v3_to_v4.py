@@ -152,8 +152,8 @@ def migrate_realisations_from_subtask(
                     imt=imt_values.imt,
                     vs30=source_rlz.vs30,
                     site_vs30=source_rlz.site_vs30,
-                    source_digests=[realization.sources.hash_digest],
-                    gmm_digests=[realization.gmms.hash_digest],
+                    sources_digest=realization.sources.hash_digest,
+                    gmms_digest=realization.gmms.hash_digest,
                 )
                 yield target_realization.set_location(
                     CodedLocation(lat=source_rlz.lat, lon=source_rlz.lon, resolution=0.001)
