@@ -52,6 +52,15 @@ def build_rlz_source_map(source_lt: 'pandas.DataFrame') -> Dict[str, branch_regi
     branch_ids = source_lt.index.tolist()
     rlz_source_map = dict()
     for idx, source_str in enumerate(source_lt.branch.tolist()):
+        log.debug(f"processing {idx} {source_str}")
+
+        if source_str[0] == '|':
+            # handle special case found in
+            # INFO:scripts.ths_r4_migrate:task: T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NTA0 hash: bdc5476361cd
+            # gt: R2VuZXJhbFRhc2s6MTMyODQxNA==  hazard_id: T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODU2MA==
+            ###
+            source_str = source_str[1:]
+
         sources = "|".join(sorted(source_str.split('|')))
         entry = registry.source_registry.get_by_identity(sources)
         rlz_source_map[branch_ids[idx]] = entry

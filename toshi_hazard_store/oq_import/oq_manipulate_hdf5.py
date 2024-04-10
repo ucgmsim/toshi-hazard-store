@@ -23,10 +23,10 @@ def migrate_nshm_uncertainty_string(uncertainty: str) -> str:
     # handle GMM modifications ...
     if "[Atkinson2022" in uncertainty:
         uncertainty += '\nmodified_sigma = "true"'
-    elif "[AbrahamsonGulerce2020SInter" in uncertainty:
-        uncertainty = uncertainty.replace("AbrahamsonGulerce2020SInter", "NZNSHM2022_AbrahamsonGulerce2020SInter")
-    elif "[KuehnEtAl2020SInter" in uncertainty:
-        uncertainty = uncertainty.replace("KuehnEtAl2020SInter", "NZNSHM2022_KuehnEtAl2020SInter")
+    elif "[AbrahamsonGulerce2020S" in uncertainty:
+        uncertainty = uncertainty.replace("AbrahamsonGulerce2020S", "NZNSHM2022_AbrahamsonGulerce2020S")
+    elif "[KuehnEtAl2020S" in uncertainty:
+        uncertainty = uncertainty.replace("KuehnEtAl2020S", "NZNSHM2022_KuehnEtAl2020S")
         uncertainty += '\nmodified_sigma = "true"'
     elif "[ParkerEtAl2021" in uncertainty:
         uncertainty = uncertainty.replace("ParkerEtAl2021", "NZNSHM2022_ParkerEtAl2020")
