@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from functools import partial
 from itertools import cycle, groupby
 from operator import itemgetter
+from typing import Dict, Optional
 
 import boto3
 from botocore.config import Config
@@ -44,7 +45,7 @@ def get_repository_images(ecr_client, reponame, batch_size=50):
             break
 
 
-def get_image_info(ecr_client, reponame, image_ids, since: datetime = None):
+def get_image_info(ecr_client, reponame, image_ids, since: Optional[datetime] = None):
 
     nextToken = None
     args = dict(repositoryName=reponame, imageIds=image_ids)
@@ -62,7 +63,7 @@ def get_image_info(ecr_client, reponame, image_ids, since: datetime = None):
             break
 
 
-def process_repo_images(ecr_client, reponame, since: datetime = None):
+def process_repo_images(ecr_client, reponame, since: Optional[datetime] = None):
     images = get_repository_images(ecr_client, reponame)
     for chunk in chunks(images, 10):
         image_infos = list(chunk)
@@ -77,7 +78,7 @@ class ECRRepoStash:
         self._client = ecr_client or boto3.client('ecr', config=aws_config)
         self._reponame = reponame
         self._oldest_image = oldest_image_date or datetime(2022, 1, 1)
-        self._since_date_mapping = {}
+        self._since_date_mapping: Dict[str, Dict] = {}
 
     def fetch(self):
         self._since_date_mapping = {}

@@ -18,6 +18,7 @@ import click
 import pandas as pd
 import pyarrow as pa
 import pyarrow.dataset as ds
+import pytz
 
 log = logging.getLogger(__name__)
 
@@ -108,7 +109,7 @@ def process_gt_subtasks(gt_id: str, work_folder: str, verbose: bool = False):
         config_hash = jobconf.compatible_hash_digest()
         latest_engine_image = ecr_repo_stash.active_image_asat(task_created)
         log.debug(latest_engine_image)
-        log.debug(f"task {task_id} hash: {config_hash}")
+        log.info(f"task: {task_id} hash: {config_hash} gt: {gt_id}  hazard_id: {query_res['hazard_solution']['id']}")
 
         yield SubtaskRecord(
             gt_id=gt_id,
@@ -190,10 +191,18 @@ def main(
 
     def generate_models():
         task_count = 0
+        found_start = False
         for subtask_info in process_gt_subtasks(gt_id, work_folder=work_folder, verbose=verbose):
             task_count += 1
-            # if task_count < 7:
+            # if task_count < 7: # the subtask to start with
             #     continue
+
+            if subtask_info.hazard_calc_id == "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODU2MA==":
+                found_start = True
+
+            if not found_start:
+                log.info(f"skipping {subtask_info.hazard_calc_id} in gt {gt_id}")
+                continue
 
             log.info(f"Processing calculation {subtask_info.hazard_calc_id} in gt {gt_id}")
             count = 0
@@ -201,18 +210,21 @@ def main(
                 subtask_info, source, partition, compatible_calc, verbose, update, dry_run=False
             ):
                 count += 1
+                # print(new_rlz.to_simple_dict())
                 yield new_rlz
+                # if count > 1:
+                #     break
             log.info(f"Produced {count} source objects from {subtask_info.hazard_calc_id} in {gt_id}")
             # crash out after some subtasks..
-            if task_count >= 12:
-                break
+            # if task_count >= 27: # 12:
+            #     break
 
     def chunked(iterable, chunk_size=100):
         count = 0
         chunk = []
         for item in iterable:
             chunk.append(item)
-            count +=1
+            count += 1
             if count % chunk_size == 0:
                 yield chunk
                 chunk = []
@@ -226,38 +238,68 @@ def main(
     elif target == 'ARROW':
         arrow_folder = pathlib.Path(work_folder) / 'ARROW'
 
-        def batch_builder(table_size):
+        # hrc_schema = pa.schema([
+        #     ('created', pa.timestamp('ms', tz='UTC')),
+        #     ('compatible_calc_fk', pa.string()),
+        #     ('producer_config_fk', pa.string()),
+        #     ('calculation_id', pa.string()),
+        #     ('values', pa.list_(pa.float32(), 44)),
+        #     # ('value-0_001', pa.float32()),
+        #     # ('value-0_002', pa.float32()),
+        #     ('imt', pa.string()),
+        #     ('vs30', pa.uint16()),
+        #     # ('site_vs30', pa.uint16()),
+        #     ('source_digest', pa.string()),
+        #     ('gmm_digest', pa.string()),
+        #     ('nloc_001', pa.string()),
+        #     ('partition_key', pa.string()),
+        #     ('sort_key', pa.string())
+        # ])
+
+        def groom_model(model: dict) -> dict:
+            for fld in ['nloc_1', 'nloc_01', 'sort_key', 'partition_key', 'uniq_id']:
+                del model[fld]
+            model['created'] = dt.datetime.fromtimestamp(model['created'], pytz.timezone("UTC"))
+            return model
+
+        def batch_builder(table_size, return_as_df=True):
+            """used in T1, T2"""
             n = 0
             for chunk in chunked(generate_models(), chunk_size=table_size):
-                df = pd.DataFrame([rlz.to_simple_dict() for rlz in chunk])
-                yield df # pa.Table.from_pandas(df)
-                n+=1
+                df = pd.DataFrame([groom_model(rlz.to_simple_dict()) for rlz in chunk])
+                if return_as_df:
+                    yield df
+                else:
+                    yield pa.Table.from_pandas(df)
+                n += 1
                 log.info(f"built dataframe {n}")
 
-        hrc_schema = pa.schema([
-            ('created', pa.timestamp('ms', tz='UTC')),
-            ('compatible_calc_fk', pa.string()),
-            ('producer_config_fk', pa.string()),
-            ('calculation_id', pa.string()),
-            ('values', pa.list_(pa.float32(), 44)),
-            ('imt', pa.string()),
-            ('vs30', pa.uint16()),
-            # ('site_vs30', pa.uint16()),
-            ('source_digests', pa.list_(pa.string(), -1)),
-            ('gmm_digests', pa.list_(pa.string(), -1)),
-            ('nloc_001', pa.string()),
-            ('partition_key', pa.string()),
-            ('sort_key', pa.string())
-        ])
+        # T1
+        # with pa.OSFile(f'{arrow_folder}/1st3-500k-dataframes-batched.arrow', 'wb') as sink:
+        #     with pa.ipc.new_file(sink, hrc_schema) as writer:
+        #         for table in batch_builder(10000):
+        #             batch = pa.record_batch(table, hrc_schema)
+        #             writer.write(batch)
 
-        with pa.OSFile(f'{arrow_folder}/bigfile.arrow', 'wb') as sink:
-            with pa.ipc.new_file(sink, hrc_schema) as writer:
-                for table in batch_builder(10000):
-                    batch = pa.record_batch(table, hrc_schema)
-                    writer.write(batch)
+        # #T2
+        # df = pd.DataFrame([rlz.to_simple_dict() for rlz in generate_models()])
+        # table = pa.Table.from_pandas(df)
+        # from pyarrow import fs
+        # local = fs.LocalFileSystem()
+
+        # with local.open_output_stream(f'{arrow_folder}/1st-big-dataframe.arrow') as file:
+        #    with pa.RecordBatchFileWriter(file, table.schema) as writer:
+        #       writer.write_table(table)
+
+        # T2.X
+        import pyarrow.parquet as pq
+
+        # Local dataset write
+        for table in batch_builder(200000, return_as_df=False):
+            pq.write_to_dataset(table, root_path=f'{arrow_folder}/pq-CDC', partition_cols=['nloc_0'])
 
         """
-        >>> reader = pa.ipc.open_file(open('WORKING/ARROW/bigfile.arrow', 'rb'))
+        >>> `/bigfile.arrow', 'rb'))
         >>> reader
         <pyarrow.ipc.RecordBatchFileReader object at 0x71fc83f705c0>
         >>> df = reader.read_pandas()

@@ -11,7 +11,7 @@ def locations_by_degree(
     grid_points: List[Tuple[float, float]], grid_res: float, point_res: float
 ) -> Dict[str, List[str]]:
     """Produce a dict of key_location:"""
-    binned = dict()
+    binned: Dict[str, List[str]] = dict()
     for pt in grid_points:
         bc = CodedLocation(*pt).downsample(grid_res).code
         if not binned.get(bc):

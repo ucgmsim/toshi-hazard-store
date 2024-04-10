@@ -101,8 +101,8 @@ class HazardRealizationCurve(LocationIndexedModel):
     sort_key = UnicodeAttribute(range_key=True)  # e.g ProducerID:MetaID
 
     compatible_calc_fk = ForeignKeyAttribute()
-    source_digests = ListAttribute(of=UnicodeAttribute)
-    gmm_digests = ListAttribute(of=UnicodeAttribute)
+    sources_digest = UnicodeAttribute()
+    gmms_digest = UnicodeAttribute()
     imt = EnumConstrainedUnicodeAttribute(IntensityMeasureTypeEnum)
 
     created = TimestampAttribute(default=datetime_now)
@@ -115,18 +115,18 @@ class HazardRealizationCurve(LocationIndexedModel):
     # a reference to where/how this calc done (URI URL, http://nshm-blah-blah/api-ref
     calculation_id = UnicodeAttribute(null=True)
 
-    def _sources_key(self):
-        return "s" + "|".join(self.source_digests)
+    # def _sources_key(self):
+    #     return "s" + "|".join(self.source_digests)
 
-    def _gmms_key(self):
-        return "g" + "|".join(self.gmm_digests)
+    # def _gmms_key(self):
+    #     return "g" + "|".join(self.gmm_digests)
 
     def build_sort_key(self):
         vs30s = str(self.vs30).zfill(VS30_KEYLEN)
         sort_key = f'{self.nloc_001}:{vs30s}:{self.imt}:'
         sort_key += f'{ForeignKeyAttribute().serialize(self.compatible_calc_fk)}:'
-        sort_key += self._sources_key() + ':'
-        sort_key += self._gmms_key()
+        sort_key += self.sources_digest + ':'
+        sort_key += self.gmms_digest
         return sort_key
 
     def set_location(self, location: CodedLocation):

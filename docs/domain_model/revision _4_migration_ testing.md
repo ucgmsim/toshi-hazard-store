@@ -425,6 +425,7 @@ compared 4943 realisations with 0 material differences
 
 # pyarrow experiments
 
+## Write Test 1 (T1)
 write to arrow file first 12 (25%) = 9.3GB in 10000 row df batched
 
 ```
@@ -437,3 +438,156 @@ INFO:scripts.ths_r4_migrate:built dataframe 1874
 
 real    122m58.576s
 ```
+
+#### read into memory_map...
+
+```
+>>> with pa.memory_map(fname) as src:
+...     loaded_array = pa.ipc.open_file(src).read_all()
+...
+>>> len(loaded_array)
+18735300
+>>> print("RSS: {}MB".format(pa.total_allocated_bytes() >> 20))
+RSS: 0MB
+```
+
+#### read into dataframe ...
+
+takes about 20 secs...
+
+```
+>>> with pa.memory_map(fname) as src:
+...     df = pa.ipc.open_file(src).read_pandas()
+...
+
+>>>
+>>> df
+                                  created compatible_calc_fk                                 producer_config_fk  ...         nloc_001 partition_key                                           sort_key
+0        1970-01-20 19:36:42.366000+00:00                A_A  A_461564345538.dkr.ecr.us-east-1.amazonaws.com...  ...  -46.100~166.400   -46.1~166.4  -46.100~166.400:0275:PGA:A_A:sb405b821313d:ga7...
+...                                   ...                ...                                                ...  ...              ...           ...                                                ...
+
+[18735300 rows x 12 columns]
+>>> print("RSS: {}MB".format(pa.total_allocated_bytes() >> 20))
+RSS: 3323MB
+>>>
+
+>>> df.imt.unique()
+array(['PGA', 'SA(0.1)', 'SA(0.2)', 'SA(0.3)', 'SA(0.4)', 'SA(0.5)',
+       'SA(0.7)', 'SA(1.0)', 'SA(1.5)', 'SA(2.0)', 'SA(3.0)', 'SA(4.0)',
+       'SA(5.0)', 'SA(6.0)', 'SA(7.5)', 'SA(10.0)', 'SA(0.15)',
+       'SA(0.25)', 'SA(0.35)', 'SA(0.6)', 'SA(0.8)', 'SA(0.9)',
+       'SA(1.25)', 'SA(1.75)', 'SA(2.5)', 'SA(3.5)', 'SA(4.5)'],
+      dtype=object)
+>>> df[df.imt == 'PGA'].count()
+created               693900
+```
+
+## Write Test 2 (T2)
+
+### Test 2.1
+
+write to arrow file first 3 (5%) using one large dataframe (1st3-one-big-dataframe.arrow) 3.7 GB
+
+```
+
+INFO:scripts.ths_r4_migrate:Processing calculation T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUyMg== in gt R2VuZXJhbFRhc2s6MTMyODQxNA==
+INFO:toshi_hazard_store.oq_import.migrate_v3_to_v4:Configure adapter: <class 'toshi_hazard_store.db_adapter.sqlite.sqlite_adapter.SqliteAdapter'>
+INFO:scripts.ths_r4_migrate:Produced 1249020 source objects from T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUyMg== in R2VuZXJhbFRhc2s6MTMyODQxNA==
+
+real    31m25.415s
+user    30m32.620s
+sys     0m22.681s
+
+```
+
+### Test 2.2
+
+write to arrow file first 3 (5%) using 500k batched dataframes (1st-big-dataframe.arrow) 2.3 GB
+
+
+```
+INFO:scripts.ths_r4_migrate:Produced 1249020 source objects from T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUyMg== in R2VuZXJhbFRhc2s6MTMyODQxNA==
+INFO:scripts.ths_r4_migrate:built dataframe 10
+
+real    30m26.898s
+user    29m48.461s
+sys     0m19.784s
+```
+
+
+# Test 2.3
+
+write to parquet dataset first 3 (5%)
+
+```
+        for table in batch_builder(10000, return_as_df=False):
+            pq.write_to_dataset(table,
+                root_path=f'{arrow_folder}/pq',
+                partition_cols=['nloc_1', 'vs30'])
+
+...
+INFO:scripts.ths_r4_migrate:Produced 1249020 source objects from T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUyMg== in R2VuZXJhbFRhc2s6MTMyODQxNA==
+INFO:scripts.ths_r4_migrate:built dataframe 469
+
+real    31m5.849s
+```
+
+# Test 2.4
+
+write to parquet dataset first 1 (2%)
+
+wrote ~150 files across ~65 folders, most between 1 and 10Mb
+
+```
+        for table in batch_builder(100000, return_as_df=False):
+            pq.write_to_dataset(table,
+                root_path=f'{arrow_folder}/pq-T2.4',
+                partition_cols=['gmm_digests'])
+
+Processing calculation T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUyNg== in gt R2VuZXJhbFRhc2s6MTMyODQxNA==
+
+INFO:scripts.ths_r4_migrate:built dataframe 21
+INFO:scripts.ths_r4_migrate:Produced 2185785 source objects from T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUyNg== in R2VuZXJhbFRhc2s6MTMyODQxNA==
+INFO:scripts.ths_r4_migrate:built dataframe 22
+
+real    14m44.866s
+
+```
+
+
+# Test 2.4 (b)
+write to parquet dataset next 2 (2%)
+
+```
+INFO:scripts.ths_r4_migrate:Processing calculation T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUxNA== in gt R2VuZXJhbFRhc2s6MTMyODQxNA==
+INFO:scripts.ths_r4_migrate:Processing calculation T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUyMg== in gt R2VuZXJhbFRhc2s6MTMyODQxNA==
+
+INFO:scripts.ths_r4_migrate:Produced 1249020 source objects from T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUyMg== in R2VuZXJhbFRhc2s6MTMyODQxNA==
+INFO:scripts.ths_r4_migrate:built dataframe 25
+
+real    15m59.439s
+```
+
+# Test 2.4 (c)
+write to parquet dataset next 3 (5%)
+
+```
+INFO:scripts.ths_r4_migrate:Processing calculation T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUyOQ== in gt R2VuZXJhbFRhc2s6MTMyODQxNA==
+INFO:scripts.ths_r4_migrate:Produced 1249020 source objects from T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUxOQ== in R2VuZXJhbFRhc2s6MTMyODQxNA==
+INFO:scripts.ths_r4_migrate:Processing calculation T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUxNw== in gt R2VuZXJhbFRhc2s6MTMyODQxNA==
+...
+real    40m58.635s
+
+```
+
+# Test for CDC
+
+write to parquet dataset 1st 7 with groomed models
+
+```
+INFO:scripts.ths_r4_migrate:Produced 1249020 source objects from T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUxNw== in R2VuZXJhbFRhc2s6MTMyODQxNA==
+INFO:scripts.ths_r4_migrate:built dataframe 54
+
+real    68m19.661s
+```
+

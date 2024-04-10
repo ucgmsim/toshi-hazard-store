@@ -1,4 +1,21 @@
 #! python3
+# flake8: noqa: F401
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import click
+
+    # from toshi_hazard_store.config import *
+    from toshi_hazard_store.config import DEPLOYMENT_STAGE
+    from toshi_hazard_store.config import DEPLOYMENT_STAGE as THS_STAGE
+    from toshi_hazard_store.config import LOCAL_CACHE_FOLDER, NUM_BATCH_WORKERS
+    from toshi_hazard_store.config import REGION
+    from toshi_hazard_store.config import REGION as THS_REGION
+    from toshi_hazard_store.config import USE_SQLITE_ADAPTER
+
+    API_URL = None
+
+
 def echo_settings(work_folder: str, verbose=True):
     global click
     global DEPLOYMENT_STAGE, API_URL, REGION, LOCAL_CACHE_FOLDER, THS_STAGE, THS_REGION, USE_SQLITE_ADAPTER

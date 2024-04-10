@@ -80,7 +80,7 @@ from toshi_hazard_store.oq_import import (  # noqa: E402
     get_compatible_calc,
     get_producer_config,
 )
-from toshi_hazard_store.oq_import.migrate_v3_to_v4 import ECR_REGISTRY_ID, ECR_REPONAME, SubtaskRecord
+from toshi_hazard_store.oq_import.migrate_v3_to_v4 import ECR_REGISTRY_ID, ECR_REPONAME
 
 from .core import echo_settings
 from .revision_4 import aws_ecr_docker_image as aws_ecr
@@ -113,6 +113,8 @@ except AttributeError as err:
 S3_URL = None
 DEPLOYMENT_STAGE = os.getenv('DEPLOYMENT_STAGE', 'LOCAL').upper()
 REGION = os.getenv('REGION', 'ap-southeast-2')  # SYDNEY
+
+SubtaskRecord = collections.namedtuple('SubtaskRecord', 'gt_id, hazard_calc_id, config_hash, image, hdf5_path, vs30')
 
 
 def handle_import_subtask_rev4(
