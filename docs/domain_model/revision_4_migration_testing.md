@@ -231,7 +231,7 @@ Goals: confirm that
 
 Checks:
 
-  - [ ] count of imported objects (LOCAL: **3639792**) matches the equivalent query against Dynamodb. PROD : **3411792** NO nw table is bigger by 200K!! (See below....)
+  - [ ] count of imported objects (LOCAL: **3639792**) matches the equivalent query against Dynamodb. PROD : **3411792** SO new table is bigger by 200K!! (See below....)
   - [X] spot-check 1000 random realisation curves. Random location, IMT, RLZ ID,
 
 
@@ -591,3 +591,6 @@ INFO:scripts.ths_r4_migrate:built dataframe 54
 real    68m19.661s
 ```
 
+### then the remainder - wiht arrghhh.... some duplications
+
+about 500 minutes worth

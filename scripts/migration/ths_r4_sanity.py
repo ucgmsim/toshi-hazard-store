@@ -11,6 +11,9 @@ import pathlib
 import random
 
 import click
+import pyarrow as pa
+import pyarrow.compute as pc
+import pyarrow.dataset as ds
 
 log = logging.getLogger()
 
@@ -19,6 +22,7 @@ logging.basicConfig(level=logging.INFO)
 logging.getLogger('botocore').setLevel(logging.WARNING)
 logging.getLogger('toshi_hazard_store').setLevel(logging.WARNING)
 
+from nzshm_common import location
 from nzshm_common.grids import load_grid
 from nzshm_common.location.code_location import CodedLocation
 from pynamodb.models import Model
@@ -39,6 +43,43 @@ from toshi_hazard_store.db_adapter.sqlite import (  # noqa this is needed to fin
 )
 
 nz1_grid = load_grid('NZ_0_1_NB_1_1')
+city_locs = location.LOCATION_LISTS["NZ"]["locations"]
+srwg_locs = location.LOCATION_LISTS["SRWG214"]["locations"]
+all_locs = set(nz1_grid + srwg_locs + city_locs)
+
+
+def get_random_args(gt_info, how_many):
+    for n in range(how_many):
+        yield dict(
+            tid=random.choice(
+                [
+                    edge['node']['child']["hazard_solution"]["id"]
+                    for edge in gt_info['data']['node']['children']['edges']
+                ]
+            ),
+            rlz=random.choice(range(20)),
+            locs=[CodedLocation(o[0], o[1], 0.001) for o in random.sample(nz1_grid, how_many)],
+        )
+
+
+def query_table(args):
+    # mRLZ = toshi_hazard_store.model.openquake_models.__dict__['OpenquakeRealization']
+    importlib.reload(toshi_hazard_store.query.hazard_query)
+    for res in toshi_hazard_store.query.hazard_query.get_rlz_curves_v3(
+        locs=[loc.code for loc in args['locs']], vs30s=[275], rlzs=[args['rlz']], tids=[args['tid']], imts=['PGA']
+    ):
+        yield (res)
+
+
+def get_table_rows(random_args_list):
+    result = {}
+    for args in random_args_list:
+        for res in query_table(args):
+            obj = res.to_simple_dict(force=True)
+            result[obj["sort_key"]] = obj
+    return result
+
+
 #  _ __ ___   __ _(_)_ __
 # | '_ ` _ \ / _` | | '_ \
 # | | | | | | (_| | | | | |
@@ -54,33 +95,112 @@ def main(context):
     # context.obj['work_folder'] = work_folder
 
 
+def report_count_loc_rlzs(ds_name, location, verbose):
+    loc = CodedLocation(lat=-39, lon=175.93, resolution=0.001)
+    dataset = ds.dataset(f'./WORKING/ARROW/{ds_name}/nloc_0={loc.resample(1).code}', format='parquet')
+
+    click.echo(f"querying arrow/parquet dataset {dataset}")
+    flt = (pc.field('imt') == pc.scalar("PGA")) & (pc.field("nloc_001") == pc.scalar(loc.code))
+    # flt = pc.field("nloc_001")==pc.scalar(loc.code)
+    df = dataset.to_table(filter=flt).to_pandas()
+
+    # get the unique hazard_calcluation ids...
+    hazard_calc_ids = list(df.calculation_id.unique())
+    count_all = 0
+    for calc_id in hazard_calc_ids:
+        df0 = df[df.calculation_id == calc_id]
+        click.echo(f"-42.450~171.210, {calc_id}, {df0.shape[0]}")
+        count_all += df0.shape[0]
+    click.echo()
+    click.echo(f"Grand total: {count_all}")
+
+    if verbose:
+        click.echo()
+        click.echo(df)
+
+
+def report_rlzs_grouped_by_calc(ds_name, verbose, bail_on_error=True):
+    dataset = ds.dataset(f'./WORKING/ARROW/{ds_name}', format='parquet')
+    click.echo(f"querying arrow/parquet dataset {ds_name}")
+    loc = CodedLocation(lat=-39, lon=175.93, resolution=0.001)
+    fltA = (pc.field('imt') == pc.scalar("PGA")) & (pc.field("nloc_001") == pc.scalar(loc.code))
+    df = dataset.to_table(filter=fltA).to_pandas()
+    hazard_calc_ids = list(df.calculation_id.unique())
+    count_all = 0
+    click.echo("calculation_id, uniq_rlzs, uniq_locs, uniq_imts, uniq_gmms, uniq_srcs, uniq_vs30, consistent")
+    click.echo("============================================================================================")
+    for calc_id in hazard_calc_ids:
+        flt = pc.field('calculation_id') == pc.scalar(calc_id)
+        df0 = dataset.to_table(filter=flt).to_pandas()
+        uniq_locs = len(list(df0.nloc_001.unique()))
+        uniq_imts = len(list(df0.imt.unique()))
+        uniq_gmms = len(list(df0.gmms_digest.unique()))
+        uniq_srcs = len(list(df0.sources_digest.unique()))
+        uniq_vs30 = len(list(df0.vs30.unique()))
+        consistent = (uniq_locs * uniq_imts * uniq_gmms * uniq_srcs * uniq_vs30) == df0.shape[0]
+        click.echo(
+            f"{calc_id}, {df0.shape[0]}, {uniq_locs}, {uniq_imts}, {uniq_gmms}, {uniq_srcs}, {uniq_vs30}, {consistent}"
+        )
+        count_all += df0.shape[0]
+
+        if bail_on_error and not consistent:
+            return
+
+    click.echo()
+    click.echo(f"Grand total: {count_all}")
+
+    if verbose:
+        click.echo()
+        click.echo(df0)
+
+
 @main.command()
 @click.option(
     '--source',
     '-S',
-    type=click.Choice(['AWS', 'LOCAL'], case_sensitive=False),
+    type=click.Choice(['AWS', 'LOCAL', 'ARROW'], case_sensitive=False),
     default='LOCAL',
     help="set the source store. defaults to LOCAL",
 )
+@click.option(
+    '--ds-name',
+    '-D',
+    type=str,
+    default='pq-CDC',
+    help="if dataset is used, then arrow/parquet is queried rather than sqliteas the source store",
+)
+@click.option(
+    '--report',
+    '-R',
+    type=click.Choice(['LOC', 'ALL'], case_sensitive=False),
+    default='LOC',
+)
+@click.option('-x', '--strict', is_flag=True, default=False, help="abort if consistency checks fail")
 @click.option('-v', '--verbose', is_flag=True, default=False)
 @click.option('-d', '--dry-run', is_flag=True, default=False)
 @click.pass_context
-def count_rlz(context, source, verbose, dry_run):
-    """Count the items in the table in SOURCE"""
+def count_rlz(context, source, ds_name, report, strict, verbose, dry_run):
+    """Count the realisations from SOURCE by calculation id
+
+    where LOCAL means local sqlite (v3)\n
+        and AWS means AWS (v3)\n
+        and ARROW means local arrow (v4)
+    """
 
     click.echo(f"NZ 0.1grid has {len(nz1_grid)} locations")
+    click.echo(f"All (0.1 grid + SRWG + NZ) has {len(all_locs)} locations")
+    click.echo(f"All (0.1 grid + SRWG) has {len(nz1_grid + srwg_locs)} locations")
 
-    if source == "OLD-LOCAL":
-        click.echo()
-        click.echo(
-            "count() not supported by adapter: please use `sqlite3> select count(*) from THS_OpenquakeRealization;` instead"
-        )
+    if (source == 'ARROW') and ds_name:
+        if report == 'LOC':
+            report_count_loc_rlzs(ds_name, location, verbose)
+        elif report == 'ALL':
+            report_rlzs_grouped_by_calc(ds_name, verbose, bail_on_error=strict)
         return
-    else:
+
+    if source in ['AWS', 'LOCAL']:
         # count_rlzs(locations, tids, rlzs)
-
         # mRLZ = toshi_hazard_store.model.openquake_models.OpenquakeRealization
-
         # print(mRLZ.Meta.region)
 
         #### MONKEYPATCH ...
@@ -90,18 +210,14 @@ def count_rlz(context, source, verbose, dry_run):
         ####
         mRLZ = toshi_hazard_store.model.openquake_models.OpenquakeRealization
 
-        gtfile = (
-            pathlib.Path(__file__).parent.parent.parent
-            / "toshi_hazard_store"
-            / "query"
-            / "GT_HAZ_IDs_R2VuZXJhbFRhc2s6MTMyODQxNA==.json"
-        )
+        gtfile = pathlib.Path(__file__).parent / "GT_HAZ_IDs_R2VuZXJhbFRhc2s6MTMyODQxNA==.json"
         gt_info = json.load(open(str(gtfile)))
         tids = [edge['node']['child']['hazard_solution']["id"] for edge in gt_info['data']['node']['children']['edges']]
 
         click.echo(tids)
         click.echo()
         count_all = 0
+
         for tid in tids:
             rlz_count = mRLZ.count(
                 "-42.4~171.2",
@@ -113,47 +229,58 @@ def count_rlz(context, source, verbose, dry_run):
 
         click.echo()
         click.echo(f"Grand total: {count_all}")
+        return
 
 
 @main.command()
 @click.argument('count', type=int)
 @click.pass_context
-def random_rlz(context, count):
-    """randomly select realisations loc, hazard_id, rlx and compare the results"""
+def random_rlz_new(context, count):
+    """randomly select realisations loc, hazard_id, rlx and compare the results
+
+    This time the comparison is local THS V3 and local arrow v4
+    """
 
     gtfile = pathlib.Path(__file__).parent / "GT_HAZ_IDs_R2VuZXJhbFRhc2s6MTMyODQxNA==.json"
     gt_info = json.load(open(str(gtfile)))
 
-    def get_random_args(how_many):
-        for n in range(how_many):
-            yield dict(
-                tid=random.choice(
-                    [
-                        edge['node']['child']["hazard_solution"]["id"]
-                        for edge in gt_info['data']['node']['children']['edges']
-                    ]
-                ),
-                rlz=random.choice(range(20)),
-                locs=[CodedLocation(o[0], o[1], 0.001).code for o in random.sample(nz1_grid, how_many)],
-            )
+    random_args_list = list(get_random_args(gt_info, count))
+    set_one = get_table_rows(random_args_list)
+    click.echo(set_one)
 
-    def query_table(args):
-        # mRLZ = toshi_hazard_store.model.openquake_models.__dict__['OpenquakeRealization']
-        importlib.reload(toshi_hazard_store.query.hazard_query)
-        for res in toshi_hazard_store.query.hazard_query.get_rlz_curves_v3(
-            locs=args['locs'], vs30s=[275], rlzs=[args['rlz']], tids=[args['tid']], imts=['PGA']
-        ):
-            yield (res)
+    def get_arrow_rlzs(random_args_list):
+        """This could be faster if locs were grouped into 1 degree bins"""
 
-    def get_table_rows(random_args_list):
         result = {}
         for args in random_args_list:
+            for loc in args['locs']:
+                """
+                hazard_query.get_rlz_curves_v3(
+                        locs=[loc.code for loc in args['locs']], vs30s=[275], rlzs=[args['rlz']], tids=[args['tid']], imts=['PGA']
+                    ):
+                """
+
+                dataset = ds.dataset(f'./WORKING/ARROW/pq-CDC/nloc_0={loc.resample(1).code}', format='parquet')
+                flt = (pc.field('imt') == pc.scalar("PGA")) & (pc.field("nloc_001") == pc.scalar(loc.code))
+
+                df = dataset.to_table(filter=flt).to_pandas()
+
             for res in query_table(args):
                 obj = res.to_simple_dict(force=True)
                 result[obj["sort_key"]] = obj
         return result
 
-    random_args_list = list(get_random_args(count))
+
+@main.command()
+@click.argument('count', type=int)
+@click.pass_context
+def random_rlz_og(context, count):
+    """randomly select realisations loc, hazard_id, rlx and compare the results"""
+
+    gtfile = pathlib.Path(__file__).parent / "GT_HAZ_IDs_R2VuZXJhbFRhc2s6MTMyODQxNA==.json"
+    gt_info = json.load(open(str(gtfile)))
+
+    random_args_list = list(get_random_args(gt_info, count))
 
     set_one = get_table_rows(random_args_list)
 
@@ -203,70 +330,6 @@ def random_rlz(context, count):
             diff_count += report_differences(obj, set_two[key], ignore_keys)
 
     click.echo(f"compared {len(set_one)} realisations with {diff_count} material differences")
-
-
-@main.command()
-@click.option(
-    '--source',
-    '-S',
-    type=click.Choice(['AWS', 'LOCAL'], case_sensitive=False),
-    default='LOCAL',
-    help="set the source store. defaults to LOCAL",
-)
-@click.option('-v', '--verbose', is_flag=True, default=False)
-@click.option('-d', '--dry-run', is_flag=True, default=False)
-@click.pass_context
-def find_extra_rlz(context, source, verbose, dry_run):
-    """Count the items in the table in SOURCE"""
-
-    click.echo(f"NZ 0.1grid has {len(nz1_grid)} locations")
-
-    # toshi_hazard_store.config.REGION = "ap-southeast-2"
-    # toshi_hazard_store.config.DEPLOYMENT_STAGE = "PROD"
-    importlib.reload(toshi_hazard_store.model.openquake_models)
-    mRLZ = toshi_hazard_store.model.openquake_models.OpenquakeRealization
-
-    gtfile = (
-        pathlib.Path(__file__).parent.parent.parent
-        / "toshi_hazard_store"
-        / "query"
-        / "GT_HAZ_IDs_R2VuZXJhbFRhc2s6MTMyODQxNA==.json"
-    )
-    gt_info = json.load(open(str(gtfile)))
-    tids = [edge['node']['child']["id"] for edge in gt_info['data']['node']['children']['edges']]
-
-    # check to hazard_sol outside what we expect .. (Maybe some trawsh left over ???)
-    click.echo(tids)
-    click.echo()
-    count_all = 0
-    for tid in tids:
-        rlz_count = mRLZ.count(
-            "-42.4~171.2",
-            mRLZ.sort_key >= f'-42.450~171.210:275:000000:{tid}',
-            filter_condition=(mRLZ.nloc_001 == "-42.450~171.210") & (mRLZ.hazard_solution_id == tid),
-        )
-        count_all += rlz_count
-        click.echo(f"-42.450~171.210, {tid}, {rlz_count}")
-
-    click.echo()
-    click.echo(f"Grand total: {count_all}")
-
-    locs = [CodedLocation(o['latitude'], o['longitude'], 0.001) for o in nz1_grid]
-    # # check count by loc dimension
-    # click.echo(tids)
-    # click.echo()
-    # count_all = 0
-    # for loc in locs:
-    #     rlz_count = mRLZ.count(
-    #         loc.resample(0,1).code,
-    #         mRLZ.sort_key >= f'{loc.code}:275',
-    #         filter_condition=(mRLZ.nloc_001 == loc.code) & (mRLZ.hazard_solution_id.is_in(*tids)
-    #         )
-    #     count_all += rlz_count
-    #     click.echo(f"{loc.code}, {rlz_count}")
-
-    # click.echo()
-    # click.echo(f"Grand total: {count_all}")
 
 
 if __name__ == "__main__":

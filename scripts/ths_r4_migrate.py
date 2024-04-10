@@ -8,6 +8,7 @@ This is NSHM process specific, as it assumes the following:
 
 
 """
+import csv
 import datetime as dt
 import logging
 import os
@@ -191,18 +192,18 @@ def main(
 
     def generate_models():
         task_count = 0
-        found_start = False
+        # found_start = False
         for subtask_info in process_gt_subtasks(gt_id, work_folder=work_folder, verbose=verbose):
             task_count += 1
             # if task_count < 7: # the subtask to start with
             #     continue
 
-            if subtask_info.hazard_calc_id == "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODU2MA==":
-                found_start = True
+            # if subtask_info.hazard_calc_id == "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODU2MA==":
+            #     found_start = True
 
-            if not found_start:
-                log.info(f"skipping {subtask_info.hazard_calc_id} in gt {gt_id}")
-                continue
+            # if not found_start:
+            #     log.info(f"skipping {subtask_info.hazard_calc_id} in gt {gt_id}")
+            #     continue
 
             log.info(f"Processing calculation {subtask_info.hazard_calc_id} in gt {gt_id}")
             count = 0
@@ -212,11 +213,11 @@ def main(
                 count += 1
                 # print(new_rlz.to_simple_dict())
                 yield new_rlz
-                # if count > 1:
+                # if count >= 10:
                 #     break
             log.info(f"Produced {count} source objects from {subtask_info.hazard_calc_id} in {gt_id}")
             # crash out after some subtasks..
-            # if task_count >= 27: # 12:
+            # if task_count >= 1: # 12:
             #     break
 
     def chunked(iterable, chunk_size=100):
@@ -295,8 +296,35 @@ def main(
         import pyarrow.parquet as pq
 
         # Local dataset write
-        for table in batch_builder(200000, return_as_df=False):
-            pq.write_to_dataset(table, root_path=f'{arrow_folder}/pq-CDC', partition_cols=['nloc_0'])
+
+        DS_PATH = arrow_folder / "pq-CDC2"
+        # METADATA = pathlib.Path(DS_PATH, "metadata")
+
+        def write_metadata(visited_file):
+            meta = [
+                pathlib.Path(visited_file.path).relative_to(DS_PATH),
+                visited_file.size,
+                visited_file.metadata.format_version,
+                visited_file.metadata.num_columns,
+                visited_file.metadata.num_row_groups,
+                visited_file.metadata.num_rows,
+            ]
+            hdr = ["path", "size", "format_version", "num_columns", "num_row_groups", "num_rows"]
+            meta_path = (
+                pathlib.Path(visited_file.path).parent / "_metadata.csv"
+            )  # note prefix, otherwise parquet read fails
+            write_header = False
+            if not meta_path.exists():
+                write_header = True
+            with open(meta_path, 'a') as outfile:
+                writer = csv.writer(outfile)
+                if write_header:
+                    writer.writerow(hdr)
+                writer.writerow(meta)
+            log.info(f"saved metadata to {meta_path}")
+
+        for table in batch_builder(250000, return_as_df=False):
+            pq.write_to_dataset(table, root_path=str(DS_PATH), partition_cols=['nloc_0'], file_visitor=write_metadata)
 
         """
         >>> `/bigfile.arrow', 'rb'))
