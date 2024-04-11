@@ -19,6 +19,7 @@ import click
 import pandas as pd
 import pyarrow as pa
 import pyarrow.dataset as ds
+import pyarrow.parquet as pq
 import pytz
 
 log = logging.getLogger(__name__)
@@ -213,7 +214,7 @@ def main(
                 count += 1
                 # print(new_rlz.to_simple_dict())
                 yield new_rlz
-                # if count >= 10:
+                # if count >= 1000:
                 #     break
             log.info(f"Produced {count} source objects from {subtask_info.hazard_calc_id} in {gt_id}")
             # crash out after some subtasks..
@@ -238,24 +239,6 @@ def main(
         log.info("Dry run completed")
     elif target == 'ARROW':
         arrow_folder = pathlib.Path(work_folder) / 'ARROW'
-
-        # hrc_schema = pa.schema([
-        #     ('created', pa.timestamp('ms', tz='UTC')),
-        #     ('compatible_calc_fk', pa.string()),
-        #     ('producer_config_fk', pa.string()),
-        #     ('calculation_id', pa.string()),
-        #     ('values', pa.list_(pa.float32(), 44)),
-        #     # ('value-0_001', pa.float32()),
-        #     # ('value-0_002', pa.float32()),
-        #     ('imt', pa.string()),
-        #     ('vs30', pa.uint16()),
-        #     # ('site_vs30', pa.uint16()),
-        #     ('source_digest', pa.string()),
-        #     ('gmm_digest', pa.string()),
-        #     ('nloc_001', pa.string()),
-        #     ('partition_key', pa.string()),
-        #     ('sort_key', pa.string())
-        # ])
 
         def groom_model(model: dict) -> dict:
             for fld in ['nloc_1', 'nloc_01', 'sort_key', 'partition_key', 'uniq_id']:
@@ -293,13 +276,8 @@ def main(
         #       writer.write_table(table)
 
         # T2.X
-        import pyarrow.parquet as pq
-
         # Local dataset write
-
-        DS_PATH = arrow_folder / "pq-CDC2"
-        # METADATA = pathlib.Path(DS_PATH, "metadata")
-
+        DS_PATH = arrow_folder / "pq-CDC4"
         def write_metadata(visited_file):
             meta = [
                 pathlib.Path(visited_file.path).relative_to(DS_PATH),
@@ -321,7 +299,7 @@ def main(
                 if write_header:
                     writer.writerow(hdr)
                 writer.writerow(meta)
-            log.info(f"saved metadata to {meta_path}")
+            log.debug(f"saved metadata to {meta_path}")
 
         for table in batch_builder(250000, return_as_df=False):
             pq.write_to_dataset(table, root_path=str(DS_PATH), partition_cols=['nloc_0'], file_visitor=write_metadata)

@@ -9,6 +9,7 @@ from typing import Iterator
 import pandas
 from nzshm_common.grids import load_grid
 from nzshm_common.location.code_location import CodedLocation
+from nzshm_common import location
 
 import toshi_hazard_store.model
 
@@ -130,31 +131,39 @@ def migrate_realisations_from_subtask(
     # build the realisation mapper
     rlz_map = rlz_mapper_from_dataframes(source_lt=source_lt, gsim_lt=gsim_lt, rlz_lt=rlz_lt)
 
-    grid = load_grid('NZ_0_1_NB_1_1')
+    # grid = load_grid('NZ_0_1_NB_1_1') ## BANG
+    nz1_grid = load_grid('NZ_0_1_NB_1_1')
+    city_locs = [(location.LOCATIONS_BY_ID[key]['latitude'], location.LOCATIONS_BY_ID[key]['longitude'])
+        for key in location.LOCATION_LISTS["NZ"]["locations"]]
+    srwg_locs = [(location.LOCATIONS_BY_ID[key]['latitude'], location.LOCATIONS_BY_ID[key]['longitude'])
+        for key in location.LOCATION_LISTS["SRWG214"]["locations"]]
+    # all_locs = set(nz1_grid + srwg_locs + city_locs)
 
-    for location in [CodedLocation(o[0], o[1], 0.1) for o in grid]:
-        for source_rlz in mRLZ_V3.query(
-            location.code,
-            mRLZ_V3.sort_key >= location.resample(0.001).code,
-            filter_condition=(mRLZ_V3.hazard_solution_id == subtask_info.hazard_calc_id)
-            & (mRLZ_V3.vs30 == subtask_info.vs30),
-        ):
-
-            realization = rlz_map[source_rlz.rlz]
-            for imt_values in source_rlz.values:
-                log.debug(realization)
-                target_realization = mRLZ_V4(
-                    compatible_calc_fk=compatible_calc.foreign_key(),
-                    producer_config_fk=producer_config.foreign_key(),
-                    created=source_rlz.created,
-                    calculation_id=subtask_info.hazard_calc_id,
-                    values=list(imt_values.vals),
-                    imt=imt_values.imt,
-                    vs30=source_rlz.vs30,
-                    site_vs30=source_rlz.site_vs30,
-                    sources_digest=realization.sources.hash_digest,
-                    gmms_digest=realization.gmms.hash_digest,
-                )
-                yield target_realization.set_location(
-                    CodedLocation(lat=source_rlz.lat, lon=source_rlz.lon, resolution=0.001)
-                )
+    # CBC try them in order
+    for location_list in [nz1_grid, srwg_locs, nz1_grid]:
+        partitions = set([CodedLocation(lat=loc[0], lon=loc[1], resolution=0.1) for loc in location_list])
+        for partition in partitions:
+            result = mRLZ_V3.query(
+                partition.resample(0.1).code,
+                mRLZ_V3.sort_key >= partition.resample(0.1).code[:3],
+                filter_condition=(mRLZ_V3.nloc_1 == partition.resample(0.1).code) & (mRLZ_V3.hazard_solution_id == subtask_info.hazard_calc_id)
+            )
+            for source_rlz in result:
+                realization = rlz_map[source_rlz.rlz]
+                for imt_values in source_rlz.values:
+                    log.debug(realization)
+                    target_realization = mRLZ_V4(
+                        compatible_calc_fk=compatible_calc.foreign_key(),
+                        producer_config_fk=producer_config.foreign_key(),
+                        created=source_rlz.created,
+                        calculation_id=subtask_info.hazard_calc_id,
+                        values=list(imt_values.vals),
+                        imt=imt_values.imt,
+                        vs30=source_rlz.vs30,
+                        site_vs30=source_rlz.site_vs30,
+                        sources_digest=realization.sources.hash_digest,
+                        gmms_digest=realization.gmms.hash_digest,
+                    )
+                    yield target_realization.set_location(
+                        CodedLocation(lat=source_rlz.lat, lon=source_rlz.lon, resolution=0.001)
+                    )
