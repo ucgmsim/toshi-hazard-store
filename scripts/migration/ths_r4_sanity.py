@@ -146,7 +146,9 @@ def report_v3_count_loc_rlzs(location, verbose):
 
 def report_rlzs_grouped_by_calc(ds_name, verbose, bail_on_error=True):
     """report on dataset realisations"""
-    dataset = ds.dataset(f'./WORKING/ARROW/{ds_name}', format='parquet')
+    dataset = ds.dataset(f'./WORKING/ARROW/{ds_name}',
+            partitioning='hive')
+            #, format='arrow')
     click.echo(f"querying arrow/parquet dataset {ds_name}")
     loc = CodedLocation(lat=-46, lon=169.5, resolution=0.001)
     fltA = (pc.field('imt') == pc.scalar("PGA")) & (pc.field("nloc_001") == pc.scalar(loc.code))
@@ -350,7 +352,7 @@ def random_rlz_new(context, count):
                     ):
                 """
 
-                dataset = ds.dataset(f'./WORKING/ARROW/pq-CDC/nloc_0={loc.resample(1).code}', format='parquet')
+                dataset = ds.dataset(f'./WORKING/ARROW/pq-CDC/nloc_0={loc.resample(1).code}', format='arrow')
                 flt = (pc.field('imt') == pc.scalar("PGA")) & (pc.field("nloc_001") == pc.scalar(loc.code))
 
                 df = dataset.to_table(filter=flt).to_pandas()

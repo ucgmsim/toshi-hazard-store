@@ -29,7 +29,7 @@ log = logging.getLogger(__name__)
 
 
 def migrate_realisations_from_subtask(
-    subtask_info: 'SubtaskRecord', source: str, partition: str, compatible_calc, verbose, update, dry_run=False
+    subtask_info: 'SubtaskRecord', source: str, partition: str, compatible_calc, verbose, update, dry_run=False, bail_after=None
 ) -> Iterator[toshi_hazard_store.model.openquake_models.OpenquakeRealization]:
     """
     Migrate all the realisations for the given subtask
@@ -137,33 +137,43 @@ def migrate_realisations_from_subtask(
         for key in location.LOCATION_LISTS["NZ"]["locations"]]
     srwg_locs = [(location.LOCATIONS_BY_ID[key]['latitude'], location.LOCATIONS_BY_ID[key]['longitude'])
         for key in location.LOCATION_LISTS["SRWG214"]["locations"]]
-    # all_locs = set(nz1_grid + srwg_locs + city_locs)
+    location_list = set(nz1_grid + srwg_locs + city_locs)
 
-    # CBC try them in order
-    for location_list in [nz1_grid, srwg_locs, nz1_grid]:
-        partitions = set([CodedLocation(lat=loc[0], lon=loc[1], resolution=0.1) for loc in location_list])
-        for partition in partitions:
-            result = mRLZ_V3.query(
-                partition.resample(0.1).code,
-                mRLZ_V3.sort_key >= partition.resample(0.1).code[:3],
-                filter_condition=(mRLZ_V3.nloc_1 == partition.resample(0.1).code) & (mRLZ_V3.hazard_solution_id == subtask_info.hazard_calc_id)
-            )
-            for source_rlz in result:
-                realization = rlz_map[source_rlz.rlz]
-                for imt_values in source_rlz.values:
-                    log.debug(realization)
-                    target_realization = mRLZ_V4(
-                        compatible_calc_fk=compatible_calc.foreign_key(),
-                        producer_config_fk=producer_config.foreign_key(),
-                        created=source_rlz.created,
-                        calculation_id=subtask_info.hazard_calc_id,
-                        values=list(imt_values.vals),
-                        imt=imt_values.imt,
-                        vs30=source_rlz.vs30,
-                        site_vs30=source_rlz.site_vs30,
-                        sources_digest=realization.sources.hash_digest,
-                        gmms_digest=realization.gmms.hash_digest,
-                    )
-                    yield target_realization.set_location(
-                        CodedLocation(lat=source_rlz.lat, lon=source_rlz.lon, resolution=0.001)
-                    )
+    # CBC try them in order NAH
+    # for location_list in [nz1_grid, srwg_locs, nz1_grid]:
+    partition_codes = sorted(set([CodedLocation(lat=loc[0], lon=loc[1], resolution=0.1).code for loc in location_list]))
+
+    processed_count = 0
+    yielded_count = 0
+    for partition_code in partition_codes:
+        result = mRLZ_V3.query(
+            partition_code,
+            mRLZ_V3.sort_key >= partition_code[:3],
+            filter_condition=(mRLZ_V3.nloc_1 == partition_code) & (mRLZ_V3.hazard_solution_id == subtask_info.hazard_calc_id)
+        )
+        for source_rlz in result:
+            realization = rlz_map[source_rlz.rlz]
+            for imt_values in source_rlz.values:
+                log.debug(realization)
+                target_realization = mRLZ_V4(
+                    compatible_calc_fk=compatible_calc.foreign_key(),
+                    producer_config_fk=producer_config.foreign_key(),
+                    created=source_rlz.created,
+                    calculation_id=subtask_info.hazard_calc_id,
+                    values=list(imt_values.vals),
+                    imt=imt_values.imt,
+                    vs30=source_rlz.vs30,
+                    site_vs30=source_rlz.site_vs30,
+                    sources_digest=realization.sources.hash_digest,
+                    gmms_digest=realization.gmms.hash_digest,
+                )
+                yield target_realization.set_location(
+                    CodedLocation(lat=source_rlz.lat, lon=source_rlz.lon, resolution=0.001)
+                )
+                yielded_count +=1
+
+            processed_count +=1
+
+            if bail_after and processed_count >= bail_after:
+                log.warning(f'bailing after creating {yielded_count} new rlz from {processed_count} source realisations')
+                return

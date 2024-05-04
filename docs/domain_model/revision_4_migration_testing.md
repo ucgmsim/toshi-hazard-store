@@ -594,3 +594,62 @@ real    68m19.661s
 ### then the remainder - wiht arrghhh.... some duplications
 
 about 500 minutes worth
+
+
+# PICKUP (May 3rd, 2024)
+
+Bail after one GT
+
+## PARQUET...
+
+`NZSHM22_HAZARD_STORE_STAGE=TEST_CBC time poetry run ths_r4_migrate -W WORKING/ R2VuZXJhbFRhc2s6MTMyODQxNA== A A_A -S LOCAL -T ARROW`
+
+```
+chrisbc@tryharder-ubuntu:/GNSDATA/LIB/toshi-hazard-store$ time NZSHM22_HAZARD_STORE_STAGE=TEST_CBC poetry run ths_r4_migrate -W WORKING/ R2VuZXJhbFRhc2s6MTMyODQxNA== A A_A -S LOCAL -T ARROW
+...
+INFO:scripts.ths_r4_migrate:task: T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDE3 hash: bdc5476361cd gt: R2VuZXJhbFRhc2s6MTMyODQxNA==  hazard_id: T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUyNg==
+INFO:scripts.ths_r4_migrate:Processing calculation T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUyNg== in gt R2VuZXJhbFRhc2s6MTMyODQxNA==
+INFO:toshi_hazard_store.oq_import.migrate_v3_to_v4:Configure adapter: <class 'toshi_hazard_store.db_adapter.sqlite.sqlite_adapter.SqliteAdapter'>
+INFO:scripts.ths_r4_migrate:Produced 2262897 source models from T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUyNg== in R2VuZXJhbFRhc2s6MTMyODQxNA==
+
+real    16m0.149s
+```
+
+
+### ARROW
+
+```
+chrisbc@tryharder-ubuntu:/GNSDATA/LIB/toshi-hazard-store$ time NZSHM22_HAZARD_STORE_STAGE=TEST_CBC poetry run ths_r4_migrate -W WORKING/ R2VuZXJhbFRhc2s6MTMyODQxNA== A A_A -S LOCAL -T ARROW
+...
+INFO:scripts.ths_r4_migrate:task: T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDE3 hash: bdc5476361cd gt: R2VuZXJhbFRhc2s6MTMyODQxNA==  hazard_id: T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUyNg==
+INFO:scripts.ths_r4_migrate:Processing calculation T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUyNg== in gt R2VuZXJhbFRhc2s6MTMyODQxNA==
+INFO:toshi_hazard_store.oq_import.migrate_v3_to_v4:Configure adapter: <class 'toshi_hazard_store.db_adapter.sqlite.sqlite_adapter.SqliteAdapter'>
+INFO:scripts.ths_r4_migrate:Produced 2262897 source models from T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUyNg== in R2VuZXJhbFRhc2s6MTMyODQxNA==
+
+real    15m46.751s
+```
+
+
+
+## Compacting existing datasets
+
+as we are building these dataset in many (~50) small pieces they are somewhat fragemented. This scipt does a simple compaction for each nloc0 partition
+
+```
+time poetry run python scripts/ths_arrow_compaction.py WORKING/ARROW/pq-CDC4 WORKING/ARROW/CDC4_compacted
+partition (nloc_0 == "-41.0~175.0")
+compacted WORKING/ARROW/CDC4_compacted
+partition (nloc_0 == "-46.0~171.0")
+compacted WORKING/ARROW/CDC4_compacted
+partition (nloc_0 == "-46.0~167.0")
+...
+compacted WORKING/ARROW/CDC4_compacted
+partition (nloc_0 == "-37.0~175.0")
+compacted WORKING/ARROW/CDC4_compacted
+compacted 64 partitions for WORKING/ARROW
+
+real    14m22.811s
+user    15m59.041s
+sys     7m13.684s
+
+```

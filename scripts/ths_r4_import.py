@@ -4,7 +4,7 @@ This is NSHM process specific, as it assumes the following:
  - hazard producer metadata is available from the NSHM toshi-api via **nshm-toshi-client** library
  - NSHM model characteristics are available in the **nzshm-model** library
 
-Hazard curves are stored using the new THS Rev4 tables which may also be used independently.
+Hazard curves are stored using the new THS Rev4 tables which support sqlite dbadapter .
 
 Given a general task containing hazard calcs used in NHSM, we want to iterate over the sub-tasks and do
 the setup required for importing the hazard curves:
@@ -440,7 +440,7 @@ def producers(
         # if count >= 6:
         #     break
 
-    click.echo("pyanmodb operation cost: %s units" % pyconhandler.consumed)
+    click.echo("pynamodb operation cost: %s units" % pyconhandler.consumed)
 
 
 if __name__ == "__main__":

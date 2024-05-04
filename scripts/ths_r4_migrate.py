@@ -1,11 +1,10 @@
 # flake8: noqa
-
-"""Console script for preparing to load NSHM hazard curves to new REV4 tables using General Task(s) and nzshm-model.
+"""
+Console script for preparing to load NSHM hazard curves to new REV4 tables using General Task(s) and nzshm-model.
 
 This is NSHM process specific, as it assumes the following:
  - hazard producer metadata is available from the NSHM toshi-api via **nshm-toshi-client** library
  - NSHM model characteristics are available in the **nzshm-model** library
-
 
 """
 import csv
@@ -21,6 +20,11 @@ import pyarrow as pa
 import pyarrow.dataset as ds
 import pyarrow.parquet as pq
 import pytz
+import uuid
+
+from dotenv import load_dotenv
+
+load_dotenv()  # take environment variables from .env.*
 
 log = logging.getLogger(__name__)
 
@@ -39,10 +43,10 @@ from nzshm_model.logic_tree.source_logic_tree.toshi_api import (  # noqa: E402 a
 )
 
 from toshi_hazard_store.config import DEPLOYMENT_STAGE as THS_STAGE
-from toshi_hazard_store.config import LOCAL_CACHE_FOLDER, NUM_BATCH_WORKERS
-from toshi_hazard_store.config import REGION as THS_REGION
-from toshi_hazard_store.config import USE_SQLITE_ADAPTER
-
+from toshi_hazard_store.config import USE_SQLITE_ADAPTER, SQLITE_ADAPTER_FOLDER
+# from toshi_hazard_store.config import LOCAL_CACHE_FOLDER, NUM_BATCH_WORKERS
+# from toshi_hazard_store.config import REGION as THS_REGION
+# from toshi_hazard_store.config import USE_SQLITE_ADAPTER
 # from toshi_hazard_store import model
 from toshi_hazard_store.model.revision_4 import hazard_models
 from toshi_hazard_store.multi_batch import save_parallel
@@ -53,6 +57,9 @@ from .core import echo_settings
 from .revision_4 import aws_ecr_docker_image as aws_ecr
 from .revision_4 import toshi_api_client  # noqa: E402
 from .revision_4 import oq_config
+
+
+print(THS_STAGE, USE_SQLITE_ADAPTER, SQLITE_ADAPTER_FOLDER)
 
 # Get API key from AWS secrets manager
 API_URL = os.getenv('NZSHM22_TOSHI_API_URL', "http://127.0.0.1:5000/graphql")
@@ -127,15 +134,6 @@ def process_gt_subtasks(gt_id: str, work_folder: str, verbose: bool = False):
 # | | | | | | (_| | | | | |
 # |_| |_| |_|\__,_|_|_| |_|
 
-# @click.group()
-# @click.pass_context
-# def main(context, work_folder):
-#     """Import NSHM Model hazard curves to new revision 4 models."""
-
-#     context.ensure_object(dict)
-#     context.obj['work_folder'] = work_folder
-
-
 @click.command()
 @click.argument('gt_id')
 @click.argument('partition')
@@ -159,7 +157,7 @@ def process_gt_subtasks(gt_id: str, work_folder: str, verbose: bool = False):
     '-T',
     type=click.Choice(['AWS', 'LOCAL', 'ARROW'], case_sensitive=False),
     default='LOCAL',
-    help="set the target store. defaults to LOCAL",
+    help="set the target store. defaults to LOCAL. ARROW does produces parquet instead of dynamoDB tables",
 )
 @click.option('-W', '--work_folder', default=lambda: os.getcwd(), help="defaults to Current Working Directory")
 @click.option('-v', '--verbose', is_flag=True, default=False)
@@ -191,47 +189,36 @@ def main(
         click.echo()
         click.echo('fetching General Task subtasks')
 
-    def generate_models():
-        task_count = 0
-        # found_start = False
-        for subtask_info in process_gt_subtasks(gt_id, work_folder=work_folder, verbose=verbose):
-            task_count += 1
-            # if task_count < 7: # the subtask to start with
-            #     continue
+    # def generate_models():
+    #     task_count = 0
+    #     # found_start = False
+    #     for subtask_info in process_gt_subtasks(gt_id, work_folder=work_folder, verbose=verbose):
+    #         task_count += 1
+    #         # if task_count < 7: # the subtask to start with
+    #         #     continue
 
-            # if subtask_info.hazard_calc_id == "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODU2MA==":
-            #     found_start = True
+    #         # if subtask_info.hazard_calc_id == "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODU2MA==":
+    #         #     found_start = True
 
-            # if not found_start:
-            #     log.info(f"skipping {subtask_info.hazard_calc_id} in gt {gt_id}")
-            #     continue
+    #         # if not found_start:
+    #         #     log.info(f"skipping {subtask_info.hazard_calc_id} in gt {gt_id}")
+    #         #     continue
 
-            log.info(f"Processing calculation {subtask_info.hazard_calc_id} in gt {gt_id}")
-            count = 0
-            for new_rlz in migrate_realisations_from_subtask(
-                subtask_info, source, partition, compatible_calc, verbose, update, dry_run=False
-            ):
-                count += 1
-                # print(new_rlz.to_simple_dict())
-                yield new_rlz
-                # if count >= 1000:
-                #     break
-            log.info(f"Produced {count} source objects from {subtask_info.hazard_calc_id} in {gt_id}")
-            # crash out after some subtasks..
-            # if task_count >= 1: # 12:
-            #     break
+    #         log.info(f"Processing calculation {subtask_info.hazard_calc_id} in gt {gt_id}")
+    #         count = 0
+    #         for new_rlz in migrate_realisations_from_subtask(
+    #             subtask_info, source, partition, compatible_calc, verbose, update, dry_run=False
+    #         ):
+    #             count += 1
+    #             # print(new_rlz.to_simple_dict())
+    #             yield new_rlz
+    #             # if count >= 1000:
+    #             #     break
+    #         log.info(f"Produced {count} source objects from {subtask_info.hazard_calc_id} in {gt_id}")
+    #         # crash out after some subtasks..
+    #         # if task_count >= 1: # 12:
+    #         #     break
 
-    def chunked(iterable, chunk_size=100):
-        count = 0
-        chunk = []
-        for item in iterable:
-            chunk.append(item)
-            count += 1
-            if count % chunk_size == 0:
-                yield chunk
-                chunk = []
-        if chunk:
-            yield chunk
 
     if dry_run:
         for itm in generate_models():
@@ -246,48 +233,23 @@ def main(
             model['created'] = dt.datetime.fromtimestamp(model['created'], pytz.timezone("UTC"))
             return model
 
-        def batch_builder(table_size, return_as_df=True):
-            """used in T1, T2"""
-            n = 0
-            for chunk in chunked(generate_models(), chunk_size=table_size):
-                df = pd.DataFrame([groom_model(rlz.to_simple_dict()) for rlz in chunk])
-                if return_as_df:
-                    yield df
-                else:
-                    yield pa.Table.from_pandas(df)
-                n += 1
-                log.info(f"built dataframe {n}")
-
-        # T1
-        # with pa.OSFile(f'{arrow_folder}/1st3-500k-dataframes-batched.arrow', 'wb') as sink:
-        #     with pa.ipc.new_file(sink, hrc_schema) as writer:
-        #         for table in batch_builder(10000):
-        #             batch = pa.record_batch(table, hrc_schema)
-        #             writer.write(batch)
-
-        # #T2
-        # df = pd.DataFrame([rlz.to_simple_dict() for rlz in generate_models()])
-        # table = pa.Table.from_pandas(df)
-        # from pyarrow import fs
-        # local = fs.LocalFileSystem()
-
-        # with local.open_output_stream(f'{arrow_folder}/1st-big-dataframe.arrow') as file:
-        #    with pa.RecordBatchFileWriter(file, table.schema) as writer:
-        #       writer.write_table(table)
-
-        # T2.X
-        # Local dataset write
-        DS_PATH = arrow_folder / "pq-CDC4"
         def write_metadata(visited_file):
             meta = [
                 pathlib.Path(visited_file.path).relative_to(DS_PATH),
                 visited_file.size,
+            ]
+            header_row = ["path", "size"]
+
+            #NB metadata property does not exist for arrow format
+            if visited_file.metadata:
+                meta += [
                 visited_file.metadata.format_version,
                 visited_file.metadata.num_columns,
                 visited_file.metadata.num_row_groups,
                 visited_file.metadata.num_rows,
-            ]
-            hdr = ["path", "size", "format_version", "num_columns", "num_row_groups", "num_rows"]
+                ]
+                header_row += ["format_version", "num_columns", "num_row_groups", "num_rows"]
+
             meta_path = (
                 pathlib.Path(visited_file.path).parent / "_metadata.csv"
             )  # note prefix, otherwise parquet read fails
@@ -297,22 +259,39 @@ def main(
             with open(meta_path, 'a') as outfile:
                 writer = csv.writer(outfile)
                 if write_header:
-                    writer.writerow(hdr)
+                    writer.writerow(header_row)
                 writer.writerow(meta)
             log.debug(f"saved metadata to {meta_path}")
 
-        for table in batch_builder(250000, return_as_df=False):
-            pq.write_to_dataset(table, root_path=str(DS_PATH), partition_cols=['nloc_0'], file_visitor=write_metadata)
+        # NEW MAIN LOOP
 
-        """
-        >>> `/bigfile.arrow', 'rb'))
-        >>> reader
-        <pyarrow.ipc.RecordBatchFileReader object at 0x71fc83f705c0>
-        >>> df = reader.read_pandas()
-        """
-        # ds.write_dataset(scanner(), str(arrow_folder), format="parquet",
-        #     partitioning=ds.partitioning(pa.schema([("range_key", pa.string())]))
-        # )
+        DS_PATH = arrow_folder / "PICKUP_0_ARROW"
+        DATASET_FORMAT = 'arrow' #'parquet' #
+        BAIL_AFTER = 0  # 0 => don't bail
+
+        task_count = 0
+        for subtask_info in process_gt_subtasks(gt_id, work_folder=work_folder, verbose=verbose):
+            task_count += 1
+            log.info(f"Processing calculation {subtask_info.hazard_calc_id} in gt {gt_id}")
+            models = []
+            for new_rlz in migrate_realisations_from_subtask(
+                subtask_info, source, partition, compatible_calc, verbose, update, dry_run=False, bail_after=BAIL_AFTER
+                ):
+                models.append(groom_model(new_rlz.to_simple_dict()))
+            df = pd.DataFrame(models)
+            table = pa.Table.from_pandas(df)
+            log.info(f"Produced {df.shape[0]} source models from {subtask_info.hazard_calc_id} in {gt_id}")
+
+            ds.write_dataset(table,
+                base_dir=str(DS_PATH),
+                basename_template = "%s-part-{i}.%s" % (uuid.uuid4(), DATASET_FORMAT),
+                partitioning=['nloc_0'],
+                partitioning_flavor="hive",
+                existing_data_behavior = "overwrite_or_ignore",
+                format=DATASET_FORMAT,
+                file_visitor=write_metadata)
+
+            break
 
     else:
         workers = 1 if target == 'LOCAL' else NUM_BATCH_WORKERS
