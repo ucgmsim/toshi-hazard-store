@@ -3,7 +3,7 @@
 import unittest
 
 from nzshm_common.grids.region_grid import load_grid
-from nzshm_common.location.code_location import CodedLocation
+from nzshm_common.location.coded_location import CodedLocation
 
 
 class TestCodedLocation(unittest.TestCase):
@@ -13,7 +13,7 @@ class TestCodedLocation(unittest.TestCase):
     def test_load_wlg_0_005(self):
         self.assertEqual(len(self.grid), 62)
 
-    def test_code_location(self):
+    def test_coded_location(self):
         # print(grid)
         loc = CodedLocation(*self.grid[0], 0.001)
         print(f'loc {loc}')

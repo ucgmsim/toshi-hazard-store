@@ -4,7 +4,7 @@ import logging
 from datetime import datetime, timezone
 
 import numpy as np
-from nzshm_common.location.code_location import CodedLocation
+from nzshm_common.location.coded_location import CodedLocation
 from pynamodb.attributes import UnicodeAttribute
 from pynamodb_attributes import FloatAttribute
 

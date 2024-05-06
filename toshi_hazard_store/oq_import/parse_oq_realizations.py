@@ -1,5 +1,5 @@
 """
-Convert openquake realizataions using nzshm_model.branch_registry
+Convert openquake realisations using nzshm_model.branch_registry
 
 NB maybe this belongs in the nzshm_model.psha_adapter.openquake package ??
 """

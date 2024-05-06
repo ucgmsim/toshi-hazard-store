@@ -4,6 +4,12 @@
 ## [0.9.0] - 2024-03
 ### Added
  - V4 epic tables:
+ - scripts for conversion
+ - script for sanity checking
+ - parquet support
+
+### Changed
+  - move to nzshm-common#pre-release
 
 ## [0.8.0] - 2024-02
 ### Added

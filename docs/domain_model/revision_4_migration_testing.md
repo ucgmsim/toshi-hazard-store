@@ -260,7 +260,7 @@ and with a little python set analysis....
 ['-34.300~172.900', '-34.300~173.000', '-34.300~173.100', '-34.400~172.600', '-34.400~172.700', '-34.400~172.800', '-34.400~172.900', '-34.400~173.000', '-34.400~173.100', '-34.500~172.600']
 >>>
 >>> from nzshm_common.grids import load_grid
->>> from nzshm_common.location.code_location import CodedLocation
+>>> from nzshm_common.location.coded_location import CodedLocation
 >>> nz1_grid = load_grid('NZ_0_1_NB_1_1')
 >>> grid_locs = [CodedLocation(o[0], o[1], 0.001).code for o in nz1_grid]
 >>> gs = set(grid_locs)

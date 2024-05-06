@@ -5,7 +5,7 @@ from unittest import mock
 
 import pytest
 from moto import mock_dynamodb
-from nzshm_common.location.code_location import CodedLocation
+from nzshm_common.location.coded_location import CodedLocation
 from nzshm_common.location.location import LOCATIONS_BY_ID
 from pynamodb.models import Model
 

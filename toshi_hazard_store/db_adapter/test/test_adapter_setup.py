@@ -1,5 +1,5 @@
 # from moto import mock_dynamodb
-# from nzshm_common.location.code_location import CodedLocation
+# from nzshm_common.location.coded_location import CodedLocation
 import pytest
 from moto import mock_dynamodb
 from pytest_lazyfixture import lazy_fixture

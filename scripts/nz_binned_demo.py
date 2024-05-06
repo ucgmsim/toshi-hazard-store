@@ -3,7 +3,7 @@
 from typing import Dict, List, Tuple
 
 from nzshm_common.grids.region_grid import load_grid
-from nzshm_common.location.code_location import CodedLocation
+from nzshm_common.location.coded_location import CodedLocation
 from nzshm_common.location.location import LOCATIONS_BY_ID
 
 

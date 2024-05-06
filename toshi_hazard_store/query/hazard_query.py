@@ -15,7 +15,7 @@ import itertools
 import logging
 from typing import Iterable, Iterator, Union
 
-from nzshm_common.location.code_location import CodedLocation
+from nzshm_common.location.coded_location import CodedLocation
 
 from toshi_hazard_store.model import openquake_models
 from toshi_hazard_store.model.openquake_models import HazardAggregation, OpenquakeRealization, ToshiOpenquakeMeta

@@ -1,6 +1,6 @@
 """Common utilities."""
 
-from nzshm_common.location.code_location import CodedLocation
+from nzshm_common.location.coded_location import CodedLocation
 
 
 def normalise_site_code(oq_site_object: tuple, force_normalized: bool = False) -> CodedLocation:

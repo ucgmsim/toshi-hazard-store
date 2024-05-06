@@ -3,7 +3,7 @@ import os
 import subprocess
 from pathlib import Path
 
-from nzshm_common.location.code_location import CodedLocation
+from nzshm_common.location.coded_location import CodedLocation
 from nzshm_common.location.location import location_by_id
 
 import toshi_hazard_store

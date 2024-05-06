@@ -6,7 +6,7 @@ import sys
 
 import click
 import pandas as pd
-from nzshm_common.location.code_location import CodedLocation
+from nzshm_common.location.coded_location import CodedLocation
 from nzshm_common.location.location import LOCATIONS, location_by_id
 
 # Monkey-patch temporary

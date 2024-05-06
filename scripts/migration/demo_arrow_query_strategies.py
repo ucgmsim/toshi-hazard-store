@@ -16,7 +16,7 @@ import inspect, sys
 
 from nzshm_common import location
 from nzshm_common.grids import load_grid
-from nzshm_common.location.code_location import CodedLocation
+from nzshm_common.location.coded_location import CodedLocation
 
 nz1_grid = load_grid('NZ_0_1_NB_1_1')
 # city_locs = [(location.LOCATIONS_BY_ID[key]['latitude'], location.LOCATIONS_BY_ID[key]['longitude'])

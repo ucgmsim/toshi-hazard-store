@@ -2553,21 +2553,28 @@ files = [
 
 [[package]]
 name = "nzshm-common"
-version = "0.6.1"
+version = "0.7.0"
 description = "A small pure python library for shared NZ NSHM data like locations."
 optional = false
 python-versions = ">=3.8,<4.0.0"
-files = [
-    {file = "nzshm_common-0.6.1-py3-none-any.whl", hash = "sha256:06bd0b6a35b5adc05d080742885bb7273469ef7d08a9502f5ef30bb1f794aa0f"},
-    {file = "nzshm_common-0.6.1.tar.gz", hash = "sha256:97081e615fa311bae8161628bbb89d6b3799c7f246953325200c60cfc63e00f2"},
-]
+files = []
+develop = false
 
 [package.extras]
+dev = []
+doc = []
 geometry = ["shapely (>=2.0.2,<3.0.0)"]
+test = []
+
+[package.source]
+type = "git"
+url = "https://github.com/GNS-Science/nzshm-common-py.git"
+reference = "pre-release"
+resolved_reference = "937ae0f7842ea2486d69f64c4151a206392d5c46"
 
 [[package]]
 name = "nzshm-model"
-version = "0.10.3"
+version = "0.10.4"
 description = "The logic tree definitions, final configurations, and versioning of the New Zealand | Aotearoa National Seismic Hazard Model"
 optional = false
 python-versions = ">=3.9,<4.0"
@@ -4345,4 +4352,4 @@ openquake = ["fiona", "networkx", "numba", "nzshm-model", "openquake-engine"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.13"
-content-hash = "08d8d6e105b0c31deafd2a8f7b17b1625b097a2341bf5bc3be2182b84370e1a9"
+content-hash = "8d11d18a5cc66ee006eaf9b067d254d25381cb6bdd9baeceb6160e76773c4396"

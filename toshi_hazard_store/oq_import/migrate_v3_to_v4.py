@@ -7,9 +7,8 @@ import sys
 from typing import Iterator
 
 import pandas
-from nzshm_common.grids import load_grid
-from nzshm_common.location.code_location import CodedLocation
-from nzshm_common import location
+from nzshm_common.location import coded_location, location
+from nzshm_common.grids import get_location_grid
 
 import toshi_hazard_store.model
 
@@ -131,17 +130,10 @@ def migrate_realisations_from_subtask(
     # build the realisation mapper
     rlz_map = rlz_mapper_from_dataframes(source_lt=source_lt, gsim_lt=gsim_lt, rlz_lt=rlz_lt)
 
-    # grid = load_grid('NZ_0_1_NB_1_1') ## BANG
-    nz1_grid = load_grid('NZ_0_1_NB_1_1')
-    city_locs = [(location.LOCATIONS_BY_ID[key]['latitude'], location.LOCATIONS_BY_ID[key]['longitude'])
-        for key in location.LOCATION_LISTS["NZ"]["locations"]]
-    srwg_locs = [(location.LOCATIONS_BY_ID[key]['latitude'], location.LOCATIONS_BY_ID[key]['longitude'])
-        for key in location.LOCATION_LISTS["SRWG214"]["locations"]]
-    location_list = set(nz1_grid + srwg_locs + city_locs)
-
-    # CBC try them in order NAH
-    # for location_list in [nz1_grid, srwg_locs, nz1_grid]:
-    partition_codes = sorted(set([CodedLocation(lat=loc[0], lon=loc[1], resolution=0.1).code for loc in location_list]))
+    # using new binned locations from nzshm-common#pre-release
+    nz1_grid = get_location_grid('NZ_0_1_NB_1_1', 0.1)
+    location_list = set(nz1_grid + location.get_location_list(["NZ", "SRWG214"]))
+    partition_codes = coded_location.bin_locations(location_list, at_resolution=0.1)
 
     processed_count = 0
     yielded_count = 0
@@ -168,7 +160,7 @@ def migrate_realisations_from_subtask(
                     gmms_digest=realization.gmms.hash_digest,
                 )
                 yield target_realization.set_location(
-                    CodedLocation(lat=source_rlz.lat, lon=source_rlz.lon, resolution=0.001)
+                    coded_location.CodedLocation(lat=source_rlz.lat, lon=source_rlz.lon, resolution=0.001)
                 )
                 yielded_count +=1
 

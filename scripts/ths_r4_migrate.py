@@ -277,6 +277,7 @@ def main(
             for new_rlz in migrate_realisations_from_subtask(
                 subtask_info, source, partition, compatible_calc, verbose, update, dry_run=False, bail_after=BAIL_AFTER
                 ):
+                assert 0
                 models.append(groom_model(new_rlz.to_simple_dict()))
             df = pd.DataFrame(models)
             table = pa.Table.from_pandas(df)

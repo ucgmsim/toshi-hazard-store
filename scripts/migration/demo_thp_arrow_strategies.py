@@ -23,7 +23,7 @@ import duckdb
 import inspect, sys
 
 from nzshm_common.grids import load_grid
-from nzshm_common.location.code_location import CodedLocation
+from nzshm_common.location.coded_location import CodedLocation
 
 nz1_grid = load_grid('NZ_0_1_NB_1_1')
 partition_codes = [CodedLocation(lat=loc[0], lon=loc[1], resolution=1) for loc in nz1_grid]

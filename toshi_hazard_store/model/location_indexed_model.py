@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from nzshm_common.location.code_location import CodedLocation
+from nzshm_common.location.coded_location import CodedLocation
 from pynamodb.attributes import UnicodeAttribute, VersionAttribute
 from pynamodb.models import Model
 from pynamodb_attributes import FloatAttribute, TimestampAttribute

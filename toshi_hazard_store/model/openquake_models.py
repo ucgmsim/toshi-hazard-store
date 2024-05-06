@@ -3,7 +3,7 @@
 import logging
 from typing import Iterable, Iterator, Sequence, Union
 
-from nzshm_common.location.code_location import CodedLocation
+from nzshm_common.location.coded_location import CodedLocation
 from pynamodb.attributes import JSONAttribute, ListAttribute, NumberAttribute, UnicodeAttribute, UnicodeSetAttribute
 from pynamodb.indexes import AllProjection, LocalSecondaryIndex
 from pynamodb.models import Model

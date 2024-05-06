@@ -14,7 +14,7 @@ import logging
 import time
 from typing import Iterable, Iterator
 
-from nzshm_common.location.code_location import CodedLocation
+from nzshm_common.location.coded_location import CodedLocation
 
 from toshi_hazard_store.model.revision_4 import hazard_models
 

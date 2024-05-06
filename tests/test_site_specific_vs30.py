@@ -1,7 +1,7 @@
 import random
 
 import pytest
-from nzshm_common.location.code_location import CodedLocation
+from nzshm_common.location.coded_location import CodedLocation
 
 from toshi_hazard_store import model
 

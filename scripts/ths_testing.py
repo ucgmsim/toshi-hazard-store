@@ -10,7 +10,7 @@ import sys
 import click
 import pandas as pd
 from nzshm_common.grids.region_grid import load_grid
-from nzshm_common.location.code_location import CodedLocation
+from nzshm_common.location.coded_location import CodedLocation
 from nzshm_common.location.location import LOCATIONS, location_by_id
 
 from toshi_hazard_store import configure_adapter, model, query, query_v3
