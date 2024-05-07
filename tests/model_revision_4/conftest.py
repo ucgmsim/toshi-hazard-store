@@ -13,7 +13,7 @@ from toshi_hazard_store import model  # noqa
 from toshi_hazard_store.db_adapter import ensure_class_bases_begin_with
 from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
 from toshi_hazard_store.model.revision_4 import hazard_models  # noqa
-from toshi_hazard_store.model.revision_4 import hazard_realization_curve
+from toshi_hazard_store.model.revision_4 import hazard_aggregate_curve, hazard_realization_curve
 
 log = logging.getLogger(__name__)
 
@@ -29,16 +29,20 @@ def adapted_model(request, tmp_path):
     """This fixture reconfigures adaption of all table in the hazard_models module"""
     models = hazard_models.get_tables()
 
+    class AdaptedModelFixture:
+        HazardRealizationCurve = None
+        HazardCurveProducerConfig = None
+        CompatibleHazardCalculation = None
+        HazardAggregateCurve = None
+
     def set_adapter(model_klass, adapter):
         print(f'*** setting {model_klass.__name__} to adapter {adapter}')
         if model_klass.__name__ == 'HazardRealizationCurve':
-            ensure_class_bases_begin_with(
-                namespace=hazard_realization_curve.__dict__, class_name=str('LocationIndexedModel'), base_class=adapter
-            )
+
             ensure_class_bases_begin_with(
                 namespace=hazard_realization_curve.__dict__,
                 class_name=str('HazardRealizationCurve'),  # `str` type differs on Python 2 vs. 3.
-                base_class=hazard_realization_curve.LocationIndexedModel,
+                base_class=adapter,
             )
         else:
             ensure_class_bases_begin_with(
@@ -47,22 +51,42 @@ def adapted_model(request, tmp_path):
                 base_class=adapter,
             )
 
+    def new_model_fixture():
+        model_fixture = AdaptedModelFixture()
+        model_fixture.HazardRealizationCurve = globals()['hazard_realization_curve'].HazardRealizationCurve
+        model_fixture.HazardCurveProducerConfig = globals()['hazard_models'].HazardCurveProducerConfig
+        model_fixture.CompatibleHazardCalculation = globals()['hazard_models'].CompatibleHazardCalculation
+        model_fixture.HazardAggregateCurve = globals()['hazard_aggregate_curve'].HazardAggregateCurve
+        return model_fixture
+
+    def migrate_models():
+        hazard_models.migrate()
+        hazard_realization_curve.migrate()
+        hazard_aggregate_curve.migrate()
+
+    def drop_models():
+        hazard_models.drop_tables()
+        hazard_realization_curve.drop_tables()
+        hazard_aggregate_curve.drop_tables()
+
     if request.param == 'pynamodb':
         with mock_dynamodb():
             for model_klass in models:
                 set_adapter(model_klass, Model)
-            hazard_models.migrate()
-            yield hazard_models
-            hazard_models.drop_tables()
+
+            migrate_models()
+            yield new_model_fixture()
+            drop_models()
 
     elif request.param == 'sqlite':
         envvars = {"THS_SQLITE_FOLDER": str(tmp_path), "THS_USE_SQLITE_ADAPTER": "TRUE"}
         with mock.patch.dict(os.environ, envvars, clear=True):
             for model_klass in models:
                 set_adapter(model_klass, SqliteAdapter)
-            hazard_models.migrate()
-            yield hazard_models
-            hazard_models.drop_tables()
+            migrate_models()
+            yield new_model_fixture()
+            drop_models()
+
     else:
         raise ValueError("invalid internal test config")
 
@@ -106,3 +130,4 @@ def generate_rev4_rlz_models(many_rlz_args, adapted_model):
             ).set_location(loc)
 
     yield model_generator
+

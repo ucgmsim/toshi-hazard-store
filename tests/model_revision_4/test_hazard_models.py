@@ -2,12 +2,33 @@
 Basic model migration, structure
 """
 
-# from datetime import datetime, timezone
-
+import pyarrow.dataset as ds
+import pytest
+import itertools
 from moto import mock_dynamodb
+from pyarrow import fs
 
 from toshi_hazard_store.model import drop_r4, migrate_r4
+from toshi_hazard_store.model.revision_4 import pyarrow_dataset
+from toshi_hazard_store.model.revision_4 import hazard_aggregate_curve
 
+@pytest.fixture(scope='function')
+def generate_rev4_aggregation_models(many_rlz_args, adapted_model):
+    def model_generator():
+        values = list(map(lambda x: x / 1e6, range(1, 51)))
+        for loc, vs30, imt, agg in itertools.product(
+            many_rlz_args["locs"][:5], many_rlz_args["vs30s"], many_rlz_args["imts"], ['mean', 'cov', '0.95']
+        ):
+            yield hazard_aggregate_curve.HazardAggregateCurve(
+                compatible_calc_fk=("A", "AA"),
+                hazard_model_id="NSHM_DUMMY_MODEL",
+                values=values,
+                imt=imt,
+                vs30=vs30,
+                agg=agg,
+            ).set_location(loc)
+
+    yield model_generator
 
 @mock_dynamodb
 class TestRevisionFourModelCreation_PynamoDB:
@@ -101,3 +122,45 @@ class TestRevisionFourModelCreation_WithAdaption:
         # assert res.sources_key() == 'c9d8be924ee7'
         # assert res.rlz == m.rlz TODO: need string coercion for sqladapter!
         # assert 0
+
+    def test_HazardAggregation_table_save_get(self, adapted_model, generate_rev4_aggregation_models):
+
+        m = next(generate_rev4_aggregation_models())
+        print(m)
+        mHAG = adapted_model.HazardAggregateCurve
+        m.save()
+        res = next(
+            mHAG.query(
+                m.partition_key,
+                mHAG.sort_key == m.sort_key,
+                # (mHRC.compatible_calc_fk == m.compatible_calc_fk)
+                # & (mHRC.producer_config_fk == m.producer_config_fk)
+                # & (mHRC.vs30 == m.vs30),  # filter_condition
+            )
+        )
+
+        print(res)
+        assert res.created.timestamp() == int(m.created.timestamp())  # approx
+        assert res.vs30 == m.vs30
+        assert res.imt == m.imt
+        assert res.values[0] == m.values[0]
+        assert res.sort_key == '-38.160~178.247:0250:PGA:mean:NSHM_DUMMY_MODEL'
+
+    def test_HazardAggregation_roundtrip_dataset(self, generate_rev4_aggregation_models, tmp_path):
+
+        output_folder = tmp_path / "ds"
+
+        models = generate_rev4_aggregation_models()
+
+        # write the dataset
+        model_count = pyarrow_dataset.append_models_to_dataset(models, output_folder)
+
+        # read and check the dataset
+        filesystem = fs.LocalFileSystem()
+        dataset = ds.dataset(output_folder, filesystem=filesystem, format='parquet', partitioning='hive')
+        table = dataset.to_table()
+        df = table.to_pandas()
+
+        assert table.shape[0] == model_count
+        assert df.shape[0] == model_count
+        print(df)

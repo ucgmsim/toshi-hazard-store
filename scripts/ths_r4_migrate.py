@@ -15,7 +15,7 @@ import pathlib
 import click
 from dotenv import load_dotenv
 
-from toshi_hazard_store.model.revision_4 import hazard_models, hazard_realization_curve
+from toshi_hazard_store.model.revision_4 import hazard_models, pyarrow_dataset
 from toshi_hazard_store.model.revision_4.migrate_v3_to_v4 import (
     ECR_REPONAME,
     SubtaskRecord,
@@ -230,9 +230,7 @@ def main(
                 subtask_info, source, partition, compatible_calc, verbose, update, dry_run=False, bail_after=bail_after
             )
 
-            model_count = hazard_realization_curve.append_models_to_dataset(
-                model_generator, output_folder, dataset_format
-            )
+            model_count = pyarrow_dataset.append_models_to_dataset(model_generator, output_folder, dataset_format)
             rlz_count += model_count
             log.info(f"Produced {model_count} source models from {subtask_info.hazard_calc_id} in {gt_id}")
 

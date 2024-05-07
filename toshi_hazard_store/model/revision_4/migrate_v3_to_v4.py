@@ -161,7 +161,7 @@ def migrate_realisations_from_subtask(
                     values=list(imt_values.vals),
                     imt=imt_values.imt,
                     vs30=source_rlz.vs30,
-                    site_vs30=source_rlz.site_vs30,
+                    # site_vs30=source_rlz.site_vs30,
                     sources_digest=realization.sources.hash_digest,
                     gmms_digest=realization.gmms.hash_digest,
                 )

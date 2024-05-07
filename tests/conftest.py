@@ -82,7 +82,8 @@ def force_model_reload(monkeypatch):
     # importlib.reload(sys.modules['toshi_hazard_store.model.openquake_models'])
     importlib.reload(sys.modules['toshi_hazard_store.model.revision_4.hazard_models'])
     from toshi_hazard_store.model import openquake_models  # noqa
-    from toshi_hazard_store.model.revision_4 import hazard_models  # noqa
+
+    # from toshi_hazard_store.model.revision_4 import hazard_models  # noqa
 
     log.info('fixture: force_model_reload')
 

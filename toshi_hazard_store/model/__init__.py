@@ -19,6 +19,7 @@ from .openquake_models import migrate as migrate_openquake
 from .openquake_models import vs30_nloc001_gt_rlz_index
 from .revision_4 import (  # , HazardRealizationMeta
     CompatibleHazardCalculation,
+    HazardAggregateCurve,
     HazardCurveProducerConfig,
     HazardRealizationCurve,
 )
@@ -65,6 +66,7 @@ def configure_adapter(adapter_model: Type[PynamodbAdapterInterface]):
         class_name=str('HazardAggregation'),
         base_class=adapter_model,
     )
+
     ### New Rev 4 tables
     ensure_class_bases_begin_with(
         namespace=revision_4.hazard_realization_curve.__dict__,
@@ -79,5 +81,10 @@ def configure_adapter(adapter_model: Type[PynamodbAdapterInterface]):
     ensure_class_bases_begin_with(
         namespace=revision_4.hazard_models.__dict__,
         class_name=str('CompatibleHazardCalculation'),
+        base_class=adapter_model,
+    )
+    ensure_class_bases_begin_with(
+        namespace=revision_4.hazard_aggregate_curve.__dict__,
+        class_name=str('HazardAggregateCurve'),
         base_class=adapter_model,
     )
