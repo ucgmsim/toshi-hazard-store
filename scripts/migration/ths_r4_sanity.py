@@ -44,10 +44,14 @@ from toshi_hazard_store.db_adapter.sqlite import (  # noqa this is needed to fin
 )
 
 nz1_grid = load_grid('NZ_0_1_NB_1_1')
-city_locs = [(location.LOCATIONS_BY_ID[key]['latitude'], location.LOCATIONS_BY_ID[key]['longitude'])
-    for key in location.LOCATION_LISTS["NZ"]["locations"]]
-srwg_locs = [(location.LOCATIONS_BY_ID[key]['latitude'], location.LOCATIONS_BY_ID[key]['longitude'])
-    for key in location.LOCATION_LISTS["SRWG214"]["locations"]]
+city_locs = [
+    (location.LOCATIONS_BY_ID[key]['latitude'], location.LOCATIONS_BY_ID[key]['longitude'])
+    for key in location.LOCATION_LISTS["NZ"]["locations"]
+]
+srwg_locs = [
+    (location.LOCATIONS_BY_ID[key]['latitude'], location.LOCATIONS_BY_ID[key]['longitude'])
+    for key in location.LOCATION_LISTS["SRWG214"]["locations"]
+]
 
 all_locs = set(nz1_grid + srwg_locs + city_locs)
 
@@ -111,6 +115,7 @@ def report_arrow_count_loc_rlzs(ds_name, location, verbose):
     click.echo()
     click.echo(f"Grand total: {count_all}")
 
+
 def report_v3_count_loc_rlzs(location, verbose):
     #### MONKEYPATCH ...
     # toshi_hazard_store.config.REGION = "ap-southeast-2"
@@ -144,11 +149,11 @@ def report_v3_count_loc_rlzs(location, verbose):
 
 # report_row = namedtuple("ReportRow", "task-id, uniq_locs, uniq_imts, uniq_gmms, uniq_srcs, uniq_vs30s, consistent)")
 
+
 def report_rlzs_grouped_by_calc(ds_name, verbose, bail_on_error=True):
     """report on dataset realisations"""
-    dataset = ds.dataset(f'./WORKING/ARROW/{ds_name}',
-            partitioning='hive')
-            #, format='arrow')
+    dataset = ds.dataset(f'./WORKING/ARROW/{ds_name}', partitioning='hive')
+    # , format='arrow')
     click.echo(f"querying arrow/parquet dataset {ds_name}")
     loc = CodedLocation(lat=-46, lon=169.5, resolution=0.001)
     fltA = (pc.field('imt') == pc.scalar("PGA")) & (pc.field("nloc_001") == pc.scalar(loc.code))
@@ -210,7 +215,7 @@ def report_v3_grouped_by_calc(verbose, bail_on_error=True):
         for partition in all_partitions:
             result = mRLZ.query(
                 partition.resample(0.1).code,
-                mRLZ.sort_key >= ' ', # partition.resample(0.1).code[:3],
+                mRLZ.sort_key >= ' ',  # partition.resample(0.1).code[:3],
                 filter_condition=(mRLZ.hazard_solution_id == calc_id) & (mRLZ.nloc_1 == partition.resample(0.1).code),
             )
             # print(partition.resample(1).code)
@@ -241,10 +246,12 @@ def report_v3_grouped_by_calc(verbose, bail_on_error=True):
     click.echo(f"Grand total: {count_all}")
     return
 
+
 #  _ __ ___   __ _(_)_ __
 # | '_ ` _ \ / _` | | '_ \
 # | | | | | | (_| | | | | |
 # |_| |_| |_|\__,_|_|_| |_|
+
 
 @click.group()
 @click.pass_context

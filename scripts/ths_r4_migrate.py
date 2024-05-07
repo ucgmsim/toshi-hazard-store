@@ -1,4 +1,3 @@
-# flake8: noqa
 """
 Console script for preparing to load NSHM hazard curves to new REV4 tables using General Task(s) and nzshm-model.
 
@@ -7,24 +6,32 @@ This is NSHM process specific, as it assumes the following:
  - NSHM model characteristics are available in the **nzshm-model** library
 
 """
-import csv
+
 import datetime as dt
 import logging
 import os
 import pathlib
 
-# import time
 import click
-import pandas as pd
-import pyarrow as pa
-import pyarrow.dataset as ds
-import pyarrow.parquet as pq
-import pytz
-import uuid
-
 from dotenv import load_dotenv
 
-load_dotenv()  # take environment variables from .env.*
+from toshi_hazard_store.model.revision_4 import hazard_models, hazard_realization_curve
+from toshi_hazard_store.model.revision_4.migrate_v3_to_v4 import (
+    ECR_REPONAME,
+    SubtaskRecord,
+    migrate_realisations_from_subtask,
+)
+from toshi_hazard_store.multi_batch import save_parallel
+from toshi_hazard_store.oq_import import get_compatible_calc
+
+from .core import echo_settings
+from .revision_4 import aws_ecr_docker_image as aws_ecr
+from .revision_4 import toshi_api_client  # noqa: E402
+from .revision_4 import oq_config
+
+# from toshi_hazard_store.config import DEPLOYMENT_STAGE as THS_STAGE
+# from toshi_hazard_store.config import USE_SQLITE_ADAPTER, SQLITE_ADAPTER_FOLDER
+
 
 log = logging.getLogger(__name__)
 
@@ -37,45 +44,15 @@ logging.getLogger('gql.transport').setLevel(logging.WARNING)
 logging.getLogger('urllib3').setLevel(logging.INFO)
 logging.getLogger('toshi_hazard_store.db_adapter.sqlite.sqlite_store').setLevel(logging.WARNING)
 
-
-from nzshm_model.logic_tree.source_logic_tree.toshi_api import (  # noqa: E402 and this function be in the client !
-    get_secret,
-)
-
-from toshi_hazard_store.config import DEPLOYMENT_STAGE as THS_STAGE
-from toshi_hazard_store.config import USE_SQLITE_ADAPTER, SQLITE_ADAPTER_FOLDER
-
-from toshi_hazard_store.model.revision_4 import hazard_models
-from toshi_hazard_store.multi_batch import save_parallel
-from toshi_hazard_store.oq_import import get_compatible_calc
-from toshi_hazard_store.oq_import.migrate_v3_to_v4 import ECR_REPONAME, SubtaskRecord, migrate_realisations_from_subtask
-
-from .core import echo_settings
-from .revision_4 import aws_ecr_docker_image as aws_ecr
-from .revision_4 import toshi_api_client  # noqa: E402
-from .revision_4 import oq_config
-
-
-print(THS_STAGE, USE_SQLITE_ADAPTER, SQLITE_ADAPTER_FOLDER)
+load_dotenv()  # take environment variables from .env.*
 
 API_URL = os.getenv('NZSHM22_TOSHI_API_URL', "http://127.0.0.1:5000/graphql")
 API_KEY = os.getenv('NZSHM22_TOSHI_API_KEY', "")
-
-# Get API key from AWS secrets manager TOO SLOW
-# try:
-#     if 'TEST' in API_URL.upper():
-#         API_KEY = get_secret("NZSHM22_TOSHI_API_SECRET_TEST", "us-east-1").get("NZSHM22_TOSHI_API_KEY_TEST")
-#     elif 'PROD' in API_URL.upper():
-#         API_KEY = get_secret("NZSHM22_TOSHI_API_SECRET_PROD", "us-east-1").get("NZSHM22_TOSHI_API_KEY_PROD")
-#     else:
-#         API_KEY = os.getenv('NZSHM22_TOSHI_API_KEY', "")
-#     # print(f"key: {API_KEY}")
-# except AttributeError as err:
-#     print(f"unable to get secret from secretmanager: {err}")
-#     API_KEY = os.getenv('NZSHM22_TOSHI_API_KEY', "")
 S3_URL = None
 DEPLOYMENT_STAGE = os.getenv('DEPLOYMENT_STAGE', 'LOCAL').upper()
 REGION = os.getenv('REGION', 'ap-southeast-2')  # SYDNEY
+
+NUM_BATCH_WORKERS = 4
 
 
 def process_gt_subtasks(gt_id: str, work_folder: str, verbose: bool = False):
@@ -133,6 +110,7 @@ def process_gt_subtasks(gt_id: str, work_folder: str, verbose: bool = False):
 # | | | | | | (_| | | | | |
 # |_| |_| |_|\__,_|_|_| |_|
 
+
 @click.command()
 @click.argument('gt_id')
 @click.argument('partition')
@@ -158,15 +136,23 @@ def process_gt_subtasks(gt_id: str, work_folder: str, verbose: bool = False):
     default='LOCAL',
     help="set the target store. defaults to LOCAL. ARROW does produces parquet instead of dynamoDB tables",
 )
-@click.option('-W', '--work_folder',
-    default=lambda: os.getcwd(), help="defaults to Current Working Directory")
-@click.option('-O', '--output_folder',
+@click.option('-W', '--work_folder', default=lambda: os.getcwd(), help="defaults to Current Working Directory")
+@click.option(
+    '-O',
+    '--output_folder',
     type=click.Path(path_type=pathlib.Path, exists=False),
-    help="arrow target folder (only used with `-T ARROW`")
-@click.option('-fmt', '--dataset_format',
+    help="arrow target folder (only used with `-T ARROW`",
+)
+@click.option(
+    '-fmt',
+    '--dataset_format',
     type=click.Choice(['arrow', 'parquet']),
-    default='parquet', help="arrow serialisation format")
-@click.option('-b', '--bail_after', type=int, default=0, help="finish after processing the given number of realisations")
+    default='parquet',
+    help="arrow serialisation format",
+)
+@click.option(
+    '-b', '--bail_after', type=int, default=0, help="finish after processing the given number of realisations"
+)
 @click.option('-v', '--verbose', is_flag=True, default=False)
 @click.option('-d', '--dry-run', is_flag=True, default=False)
 def main(
@@ -199,112 +185,60 @@ def main(
         click.echo()
         click.echo('fetching General Task subtasks')
 
-    # def generate_models():
-    #     task_count = 0
-    #     # found_start = False
-    #     for subtask_info in process_gt_subtasks(gt_id, work_folder=work_folder, verbose=verbose):
-    #         task_count += 1
-    #         # if task_count < 7: # the subtask to start with
-    #         #     continue
+    def generate_models():
+        task_count = 0
+        # found_start = False
+        for subtask_info in process_gt_subtasks(gt_id, work_folder=work_folder, verbose=verbose):
+            task_count += 1
+            # if task_count < 7: # the subtask to start with
+            #     continue
 
-    #         # if subtask_info.hazard_calc_id == "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODU2MA==":
-    #         #     found_start = True
+            # if subtask_info.hazard_calc_id == "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODU2MA==":
+            #     found_start = True
 
-    #         # if not found_start:
-    #         #     log.info(f"skipping {subtask_info.hazard_calc_id} in gt {gt_id}")
-    #         #     continue
+            # if not found_start:
+            #     log.info(f"skipping {subtask_info.hazard_calc_id} in gt {gt_id}")
+            #     continue
 
-    #         log.info(f"Processing calculation {subtask_info.hazard_calc_id} in gt {gt_id}")
-    #         count = 0
-    #         for new_rlz in migrate_realisations_from_subtask(
-    #             subtask_info, source, partition, compatible_calc, verbose, update, dry_run=False
-    #         ):
-    #             count += 1
-    #             # print(new_rlz.to_simple_dict())
-    #             yield new_rlz
-    #             # if count >= 1000:
-    #             #     break
-    #         log.info(f"Produced {count} source objects from {subtask_info.hazard_calc_id} in {gt_id}")
-    #         # crash out after some subtasks..
-    #         # if task_count >= 1: # 12:
-    #         #     break
-
+            log.info(f"Processing calculation {subtask_info.hazard_calc_id} in gt {gt_id}")
+            count = 0
+            for new_rlz in migrate_realisations_from_subtask(
+                subtask_info, source, partition, compatible_calc, verbose, update, dry_run=False
+            ):
+                count += 1
+                # print(new_rlz.to_simple_dict())
+                yield new_rlz
+                # if count >= 1000:
+                #     break
+            log.info(f"Produced {count} source objects from {subtask_info.hazard_calc_id} in {gt_id}")
+            # crash out after some subtasks..
+            # if task_count >= 1: # 12:
+            #     break
 
     if dry_run:
         for itm in generate_models():
             pass
         log.info("Dry run completed")
     elif target == 'ARROW':
-
         assert output_folder.parent.exists() & output_folder.parent.is_dir(), "check we have a good output folder"
-        # arrow_folder = pathlib.Path(work_folder) / 'ARROW'
-
-        def groom_model(model: dict) -> dict:
-            for fld in ['nloc_1', 'nloc_01', 'sort_key', 'partition_key', 'uniq_id']:
-                del model[fld]
-            model['created'] = dt.datetime.fromtimestamp(model['created'], pytz.timezone("UTC"))
-            return model
-
-        def write_metadata(visited_file):
-            meta = [
-                pathlib.Path(visited_file.path).relative_to(output_folder),
-                visited_file.size,
-            ]
-            header_row = ["path", "size"]
-
-            #NB metadata property does not exist for arrow format
-            if visited_file.metadata:
-                meta += [
-                visited_file.metadata.format_version,
-                visited_file.metadata.num_columns,
-                visited_file.metadata.num_row_groups,
-                visited_file.metadata.num_rows,
-                ]
-                header_row += ["format_version", "num_columns", "num_row_groups", "num_rows"]
-
-            meta_path = (
-                pathlib.Path(visited_file.path).parent / "_metadata.csv"
-            )  # note prefix, otherwise parquet read fails
-            write_header = False
-            if not meta_path.exists():
-                write_header = True
-            with open(meta_path, 'a') as outfile:
-                writer = csv.writer(outfile)
-                if write_header:
-                    writer.writerow(header_row)
-                writer.writerow(meta)
-            log.debug(f"saved metadata to {meta_path}")
-
-        # NEW MAIN LOOP
-
         task_count = 0
         rlz_count = 0
         for subtask_info in process_gt_subtasks(gt_id, work_folder=work_folder, verbose=verbose):
             task_count += 1
             log.info(f"Processing calculation {subtask_info.hazard_calc_id} in gt {gt_id}")
-            models = []
-            for new_rlz in migrate_realisations_from_subtask(
+            model_generator = migrate_realisations_from_subtask(
                 subtask_info, source, partition, compatible_calc, verbose, update, dry_run=False, bail_after=bail_after
-                ):
-                models.append(groom_model(new_rlz.to_simple_dict()))
-            df = pd.DataFrame(models)
-            table = pa.Table.from_pandas(df)
-            rlz_count += df.shape[0]
-            log.info(f"Produced {df.shape[0]} source models from {subtask_info.hazard_calc_id} in {gt_id}")
+            )
 
-            ds.write_dataset(table,
-                base_dir=str(output_folder),
-                basename_template = "%s-part-{i}.%s" % (uuid.uuid4(), dataset_format),
-                partitioning=['nloc_0'],
-                partitioning_flavor="hive",
-                existing_data_behavior = "overwrite_or_ignore",
-                format=dataset_format,
-                file_visitor=write_metadata)
+            model_count = hazard_realization_curve.append_models_to_dataset(
+                model_generator, output_folder, dataset_format
+            )
+            rlz_count += model_count
+            log.info(f"Produced {model_count} source models from {subtask_info.hazard_calc_id} in {gt_id}")
 
             if bail_after and rlz_count >= bail_after:
                 log.warning(f'bailing after creating {rlz_count} new rlz from {task_count} subtasks')
                 break
-
     else:
         workers = 1 if target == 'LOCAL' else NUM_BATCH_WORKERS
         batch_size = 100 if target == 'LOCAL' else 25

@@ -67,7 +67,7 @@ def configure_adapter(adapter_model: Type[PynamodbAdapterInterface]):
     )
     ### New Rev 4 tables
     ensure_class_bases_begin_with(
-        namespace=revision_4.hazard_models.__dict__,
+        namespace=revision_4.hazard_realization_curve.__dict__,
         class_name=str('HazardRealizationCurve'),
         base_class=adapter_model,
     )

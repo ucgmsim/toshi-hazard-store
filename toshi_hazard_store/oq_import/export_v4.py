@@ -7,7 +7,7 @@ import random
 from typing import List, Optional, Tuple, Union
 
 from toshi_hazard_store.config import NUM_BATCH_WORKERS, USE_SQLITE_ADAPTER
-from toshi_hazard_store.model.revision_4 import hazard_models
+from toshi_hazard_store.model.revision_4 import hazard_models, hazard_realization_curve
 from toshi_hazard_store.multi_batch import save_parallel
 from toshi_hazard_store.utils import normalise_site_code
 
@@ -104,7 +104,7 @@ def export_rlzs_rev4(
     vs30: int,
     return_rlz=True,
     update_producer=False,
-) -> Union[List[hazard_models.HazardRealizationCurve], None]:
+) -> Union[List[hazard_realization_curve.HazardRealizationCurve], None]:
 
     # first check the FKs are available
     if get_compatible_calc(compatible_calc.foreign_key()) is None:
@@ -178,7 +178,7 @@ def export_rlzs_rev4(
 
                     realization = rlz_map[i_rlz]
                     log.debug(realization)
-                    oq_realization = hazard_models.HazardRealizationCurve(
+                    oq_realization = hazard_realization_curve.HazardRealizationCurve(
                         compatible_calc_fk=compatible_calc.foreign_key(),
                         producer_config_fk=producer_config.foreign_key(),
                         calculation_id=hazard_calc_id,
@@ -197,5 +197,5 @@ def export_rlzs_rev4(
     if return_rlz:
         return list(generate_models())
 
-    save_parallel("", generate_models(), hazard_models.HazardRealizationCurve, NUM_BATCH_WORKERS, BATCH_SIZE)
+    save_parallel("", generate_models(), hazard_realization_curve.HazardRealizationCurve, NUM_BATCH_WORKERS, BATCH_SIZE)
     return None

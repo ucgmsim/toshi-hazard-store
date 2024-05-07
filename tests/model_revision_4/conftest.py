@@ -13,6 +13,7 @@ from toshi_hazard_store import model  # noqa
 from toshi_hazard_store.db_adapter import ensure_class_bases_begin_with
 from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
 from toshi_hazard_store.model.revision_4 import hazard_models  # noqa
+from toshi_hazard_store.model.revision_4 import hazard_realization_curve
 
 log = logging.getLogger(__name__)
 
@@ -29,14 +30,15 @@ def adapted_model(request, tmp_path):
     models = hazard_models.get_tables()
 
     def set_adapter(model_klass, adapter):
-        if model_klass == hazard_models.HazardRealizationCurve:
+        print(f'*** setting {model_klass.__name__} to adapter {adapter}')
+        if model_klass.__name__ == 'HazardRealizationCurve':
             ensure_class_bases_begin_with(
-                namespace=hazard_models.__dict__, class_name=str('LocationIndexedModel'), base_class=adapter
+                namespace=hazard_realization_curve.__dict__, class_name=str('LocationIndexedModel'), base_class=adapter
             )
             ensure_class_bases_begin_with(
-                namespace=hazard_models.__dict__,
+                namespace=hazard_realization_curve.__dict__,
                 class_name=str('HazardRealizationCurve'),  # `str` type differs on Python 2 vs. 3.
-                base_class=hazard_models.LocationIndexedModel,
+                base_class=hazard_realization_curve.LocationIndexedModel,
             )
         else:
             ensure_class_bases_begin_with(
@@ -89,7 +91,7 @@ def generate_rev4_rlz_models(many_rlz_args, adapted_model):
             many_rlz_args["sources"],
             many_rlz_args["gmms"],
         ):
-            yield hazard_models.HazardRealizationCurve(
+            yield hazard_realization_curve.HazardRealizationCurve(
                 compatible_calc_fk=("A", "AA"),
                 producer_config_fk=("B", "BB"),
                 values=values,

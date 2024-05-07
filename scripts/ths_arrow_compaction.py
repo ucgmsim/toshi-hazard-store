@@ -3,23 +3,24 @@
 Console script for compacting THS datasets
 """
 
+import csv
 import datetime as dt
 import logging
 import os
 import pathlib
-import csv
+import uuid
+from functools import partial
 
 # import time
 import click
 import pandas as pd
 import pyarrow as pa
-import pyarrow.dataset as ds
+
 # import pyarrow.parquet as pq
 import pyarrow.compute as pc
+import pyarrow.dataset as ds
 import pytz
-import uuid
 from pyarrow import fs
-from functools import partial
 
 log = logging.getLogger(__name__)
 
@@ -33,19 +34,17 @@ def write_metadata(base_path, visited_file):
     ]
     header_row = ["path", "size"]
 
-    #NB metadata property does not exist for arrow format
+    # NB metadata property does not exist for arrow format
     if visited_file.metadata:
         meta += [
-        visited_file.metadata.format_version,
-        visited_file.metadata.num_columns,
-        visited_file.metadata.num_row_groups,
-        visited_file.metadata.num_rows,
+            visited_file.metadata.format_version,
+            visited_file.metadata.num_columns,
+            visited_file.metadata.num_row_groups,
+            visited_file.metadata.num_rows,
         ]
         header_row += ["format_version", "num_columns", "num_row_groups", "num_rows"]
 
-    meta_path = (
-        pathlib.Path(visited_file.path).parent / "_metadata.csv"
-    )  # note prefix, otherwise parquet read fails
+    meta_path = pathlib.Path(visited_file.path).parent / "_metadata.csv"  # note prefix, otherwise parquet read fails
     write_header = False
     if not meta_path.exists():
         write_header = True
@@ -55,7 +54,6 @@ def write_metadata(base_path, visited_file):
             writer.writerow(header_row)
         writer.writerow(meta)
     log.debug(f"saved metadata to {meta_path}")
-
 
 
 @click.command()
@@ -69,9 +67,7 @@ def main(
     verbose,
     dry_run,
 ):
-    """Compact the realisations dataset within each loc0 partition
-
-    """
+    """Compact the realisations dataset within each loc0 partition"""
     source_folder = pathlib.Path(source)
     target_folder = pathlib.Path(target)
     target_parent = target_folder.parent
@@ -82,33 +78,34 @@ def main(
     assert target_parent.exists(), f'folder {target_parent} is not found'
     assert target_parent.is_dir(), f'folder {target_parent} is not a directory'
 
-    DATASET_FORMAT = 'parquet' # TODO: make this an argument
+    DATASET_FORMAT = 'parquet'  # TODO: make this an argument
     BAIL_AFTER = 0  # 0 => don't bail
 
-    #no optimising parallel stuff yet
+    # no optimising parallel stuff yet
     filesystem = fs.LocalFileSystem()
-    dataset = ds.dataset(source_folder, filesystem=filesystem, format=DATASET_FORMAT,
-        partitioning='hive')
+    dataset = ds.dataset(source_folder, filesystem=filesystem, format=DATASET_FORMAT, partitioning='hive')
 
     writemeta_fn = partial(write_metadata, target_folder)
 
     count = 0
     for partition_folder in source_folder.iterdir():
 
-        flt0 = (pc.field('nloc_0') == pc.scalar(partition_folder.name.split('=')[1]))
+        flt0 = pc.field('nloc_0') == pc.scalar(partition_folder.name.split('=')[1])
         click.echo(f'partition {str(flt0)}')
 
         arrow_scanner = ds.Scanner.from_dataset(dataset, filter=flt0)
-        #table = arrow_scanner.to_table()
+        # table = arrow_scanner.to_table()
 
-        ds.write_dataset(arrow_scanner,
+        ds.write_dataset(
+            arrow_scanner,
             base_dir=str(target_folder),
-            basename_template = "%s-part-{i}.%s" % (uuid.uuid4(), DATASET_FORMAT),
-            partitioning=['nloc_0', 'imt'], # TODO: make this an argument
+            basename_template="%s-part-{i}.%s" % (uuid.uuid4(), DATASET_FORMAT),
+            partitioning=['nloc_0', 'imt'],  # TODO: make this an argument
             partitioning_flavor="hive",
-            existing_data_behavior = "delete_matching",
+            existing_data_behavior="delete_matching",
             format=DATASET_FORMAT,
-            file_visitor=writemeta_fn)
+            file_visitor=writemeta_fn,
+        )
         count += 1
 
         click.echo(f'compacted {target_folder}')

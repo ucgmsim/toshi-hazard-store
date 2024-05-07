@@ -1,29 +1,29 @@
+# flake8: noqa
 '''
 This modeul dmemonstrates way to use pyarrow to most efficiently perform queries used in THP project.
 
 goals are:
- - load data as fast as possible frmo filesystem
+ - load data as fast as possible from filesystem
  - use minimum memory
  - perform aggregation computations with space.time efficiency
  - share data between different threads / processes of a compute node
  - store data effiently
 '''
+
+import inspect
 import os
 import pathlib
-import time
 import random
+import sys
+import time
 
+import duckdb
 import pyarrow as pa
 import pyarrow.compute as pc
 import pyarrow.dataset as ds
-from pyarrow import fs
-
-import duckdb
-
-import inspect, sys
-
 from nzshm_common.grids import load_grid
 from nzshm_common.location.coded_location import CodedLocation
+from pyarrow import fs
 
 nz1_grid = load_grid('NZ_0_1_NB_1_1')
 partition_codes = [CodedLocation(lat=loc[0], lon=loc[1], resolution=1) for loc in nz1_grid]
@@ -33,6 +33,7 @@ ARROW_DIR = CWD.parent.parent / 'WORKING' / 'ARROW' / 'pq-CDC4'
 
 RLZ_COUNT = 912
 print(ARROW_DIR)
+
 
 def baseline_thp_first_cut(loc: CodedLocation, imt="PGA", vs30=275, compat_key="A_A"):
     """
@@ -56,7 +57,7 @@ def baseline_thp_first_cut(loc: CodedLocation, imt="PGA", vs30=275, compat_key="
     df0 = df[ind]
     t3 = time.monotonic()
 
-    for branch in range(RLZ_COUNT): # this is NSHM count
+    for branch in range(RLZ_COUNT):  # this is NSHM count
         sources_digest = 'ef55f8757069'
         gmms_digest = 'a7d8c5d537e1'
         tic = time.perf_counter()
@@ -66,8 +67,11 @@ def baseline_thp_first_cut(loc: CodedLocation, imt="PGA", vs30=275, compat_key="
             assert 0
     t4 = time.monotonic()
 
-    print(f"load ds: {round(t1-t0, 6)}, table_pandas:{round(t2-t1, 6)}: filt_1: {round(t3-t2, 6)} iter_filt_2: {round(t4-t3, 6)}")
+    print(
+        f"load ds: {round(t1-t0, 6)}, table_pandas:{round(t2-t1, 6)}: filt_1: {round(t3-t2, 6)} iter_filt_2: {round(t4-t3, 6)}"
+    )
     print("RSS: {}MB".format(pa.total_allocated_bytes() >> 20))
+
 
 def more_arrow(loc: CodedLocation, imt="PGA", vs30=275, compat_key="A_A"):
     """
@@ -89,14 +93,14 @@ def more_arrow(loc: CodedLocation, imt="PGA", vs30=275, compat_key="A_A"):
         & (pc.field('compatible_calc_fk') == pc.scalar(compat_key))
     )
     columns = ['sources_digest', 'gmms_digest', 'values']
-    table0 = dataset.to_table(columns=columns, filter = flt0)
+    table0 = dataset.to_table(columns=columns, filter=flt0)
     t2 = time.monotonic()
 
     # print(table0.shape)
     df0 = table0.to_pandas()
     t3 = time.monotonic()
 
-    for branch in range(RLZ_COUNT): # this is NSHM count
+    for branch in range(RLZ_COUNT):  # this is NSHM count
         sources_digest = 'ef55f8757069'
         gmms_digest = 'a7d8c5d537e1'
         tic = time.perf_counter()
@@ -107,7 +111,9 @@ def more_arrow(loc: CodedLocation, imt="PGA", vs30=275, compat_key="A_A"):
 
     t4 = time.monotonic()
 
-    print(f"load ds: {round(t1-t0, 6)}, table_flt:{round(t2-t1, 6)}: to_pandas: {round(t3-t2, 6)} iter_filt_2: {round(t4-t3, 6)}")
+    print(
+        f"load ds: {round(t1-t0, 6)}, table_flt:{round(t2-t1, 6)}: to_pandas: {round(t3-t2, 6)} iter_filt_2: {round(t4-t3, 6)}"
+    )
 
     print("RSS: {}MB".format(pa.total_allocated_bytes() >> 20))
 
@@ -125,7 +131,6 @@ def duckdb_wont_quack_arrow(loc: CodedLocation, imt="PGA", vs30=275, compat_key=
     dataset = ds.dataset(f'{root}/{partition}', format='parquet', filesystem=filesystem)
     t1 = time.monotonic()
 
-
     # We transform the nyc dataset into a DuckDB relation
     duckie = duckdb.arrow(dataset)
     t2 = time.monotonic()
@@ -142,7 +147,7 @@ def duckdb_wont_quack_arrow(loc: CodedLocation, imt="PGA", vs30=275, compat_key=
     print(table0.shape)
     df0 = table0.to_pandas()
     t4 = time.monotonic()
-    for branch in range(912): # this is NSHM count
+    for branch in range(912):  # this is NSHM count
         sources_digest = 'ef55f8757069'
         gmms_digest = 'a7d8c5d537e1'
         tic = time.perf_counter()
@@ -153,7 +158,9 @@ def duckdb_wont_quack_arrow(loc: CodedLocation, imt="PGA", vs30=275, compat_key=
 
     t5 = time.monotonic()
 
-    print(f"load ds: {round(t1-t0, 6)}, ducked:{round(t2-t1, 6)} duck_sql:{round(t3-t2, 6)}: to_pandas: {round(t4-t3, 6)} iter_filt_2: {round(t5-t4, 6)}")
+    print(
+        f"load ds: {round(t1-t0, 6)}, ducked:{round(t2-t1, 6)} duck_sql:{round(t3-t2, 6)}: to_pandas: {round(t4-t3, 6)} iter_filt_2: {round(t5-t4, 6)}"
+    )
     print("RSS: {}MB".format(pa.total_allocated_bytes() >> 20))
 
 
@@ -178,25 +185,27 @@ def duckdb_attempt_two(loc: CodedLocation, imt="PGA", vs30=275, compat_key="A_A"
         & (pc.field('compatible_calc_fk') == pc.scalar(compat_key))
     )
     columns = ['sources_digest', 'gmms_digest', 'values']
-    arrow_scanner = ds.Scanner.from_dataset(dataset, filter = flt0, columns = columns)
+    arrow_scanner = ds.Scanner.from_dataset(dataset, filter=flt0, columns=columns)
     t2 = time.monotonic()
 
     con = duckdb.connect()
-    results = con.execute(f"SELECT sources_digest, gmms_digest, values from arrow_scanner;")
+    results = con.execute("SELECT sources_digest, gmms_digest, values from arrow_scanner;")
     t3 = time.monotonic()
     table = results.arrow()
     print(table.shape)
     t4 = time.monotonic()
-    print(f"load ds: {round(t1-t0, 6)}, scanner:{round(t2-t1, 6)} duck_sql:{round(t3-t2, 6)}: to_arrow {round(t4-t3, 6)}")
+    print(
+        f"load ds: {round(t1-t0, 6)}, scanner:{round(t2-t1, 6)} duck_sql:{round(t3-t2, 6)}: to_arrow {round(t4-t3, 6)}"
+    )
     print("RSS: {}MB".format(pa.total_allocated_bytes() >> 20))
 
     return table
+
 
 test_loc = random.choice(nz1_grid)
 location = CodedLocation(lat=test_loc[0], lon=test_loc[1], resolution=0.001)
 
 if __name__ == '__main__':
-
 
     t0 = time.monotonic()
     baseline_thp_first_cut(loc=location)

@@ -1,22 +1,22 @@
+# flake8: noqa
 """
 test performance of a few key arrow queries - initially for THP
 """
 
+import inspect
 import os
 import pathlib
-import time
 import random
+import sys
+import time
 
 import pyarrow as pa
 import pyarrow.compute as pc
 import pyarrow.dataset as ds
-from pyarrow import fs
-
-import inspect, sys
-
 from nzshm_common import location
 from nzshm_common.grids import load_grid
 from nzshm_common.location.coded_location import CodedLocation
+from pyarrow import fs
 
 nz1_grid = load_grid('NZ_0_1_NB_1_1')
 # city_locs = [(location.LOCATIONS_BY_ID[key]['latitude'], location.LOCATIONS_BY_ID[key]['longitude'])
@@ -62,16 +62,15 @@ class TimedDatasetTests:
 
     def _open_dataset(self) -> ds:
         if self.source == 'S3':
-            filesystem  = fs.S3FileSystem(region='ap-southeast-2')
+            filesystem = fs.S3FileSystem(region='ap-southeast-2')
             root = 'ths-poc-arrow-test'
         else:
             root = ARROW_DIR
             filesystem = fs.LocalFileSystem()
         if self.partition:
-            return ds.dataset(f'{root}/{self.dataset_name}/nloc_0={self.partition}',
-                format='parquet',
-                filesystem=filesystem
-                )
+            return ds.dataset(
+                f'{root}/{self.dataset_name}/nloc_0={self.partition}', format='parquet', filesystem=filesystem
+            )
         else:
             return ds.dataset(f'{root}/{self.dataset_name}', format='parquet', filesystem=filesystem)
 
@@ -89,10 +88,14 @@ class TimedDatasetTests:
     def time_open_dataset(self):
         self.random_new_location()
         t0 = time.monotonic()
-        dataset = self._open_dataset() #
+        dataset = self._open_dataset()  #
         elapsed_time = time.monotonic() - t0
         fn = inspect.currentframe().f_code.co_name
-        self.log_timing(fn, elapsed_time, self.partition,)
+        self.log_timing(
+            fn,
+            elapsed_time,
+            self.partition,
+        )
 
     def time_query_df_one_location(self):
         t0 = time.monotonic()
@@ -103,8 +106,11 @@ class TimedDatasetTests:
         # hazard_calc_ids = list(df.calculation_id.unique())
         elapsed_time = time.monotonic() - t0
         fn = inspect.currentframe().f_code.co_name
-        self.log_timing(fn, elapsed_time, self.partition,)
-
+        self.log_timing(
+            fn,
+            elapsed_time,
+            self.partition,
+        )
 
     def time_query_many_locations_naive(self, count=2):
         t0 = time.monotonic()
@@ -121,8 +127,7 @@ class TimedDatasetTests:
         # hazard_calc_ids = list(df.calculation_id.unique())
         elapsed_time = time.monotonic() - t0
         fn = inspect.currentframe().f_code.co_name
-        self.log_timing(fn, elapsed_time -tr, f"{count} locations")
-
+        self.log_timing(fn, elapsed_time - tr, f"{count} locations")
 
     def time_query_many_locations_better(self, count):
         t0 = time.monotonic()
@@ -139,13 +144,13 @@ class TimedDatasetTests:
         # hazard_calc_ids = list(df.calculation_id.unique())
         elapsed_time = time.monotonic() - t0
         fn = inspect.currentframe().f_code.co_name
-        self.log_timing(fn, elapsed_time -tr, f"{count} locations")
+        self.log_timing(fn, elapsed_time - tr, f"{count} locations")
 
     def time_query_many_locations_better_again(self, count):
         t0 = time.monotonic()
         tr = 0
         dataset = self._open_dataset()
-        df = dataset.to_table().to_pandas() # filter=(pc.field('imt') == pc.scalar("SA(0.5)")
+        df = dataset.to_table().to_pandas()  # filter=(pc.field('imt') == pc.scalar("SA(0.5)")
         for test in range(count):
 
             t1 = time.monotonic()
@@ -162,14 +167,13 @@ class TimedDatasetTests:
         # hazard_calc_ids = list(df.calculation_id.unique())
         elapsed_time = time.monotonic() - t0
         fn = inspect.currentframe().f_code.co_name
-        self.log_timing(fn, elapsed_time -tr, f"{count} locations")
+        self.log_timing(fn, elapsed_time - tr, f"{count} locations")
 
-
-   def time_query_many_locations_better_again(self, count):
+    def time_query_many_locations_better_again(self, count):
         t0 = time.monotonic()
         tr = 0
         dataset = self._open_dataset()
-        df = dataset.to_table().to_pandas() # filter=(pc.field('imt') == pc.scalar("SA(0.5)")
+        df = dataset.to_table().to_pandas()  # filter=(pc.field('imt') == pc.scalar("SA(0.5)")
         for test in range(count):
 
             t1 = time.monotonic()
@@ -186,11 +190,7 @@ class TimedDatasetTests:
         # hazard_calc_ids = list(df.calculation_id.unique())
         elapsed_time = time.monotonic() - t0
         fn = inspect.currentframe().f_code.co_name
-        self.log_timing(fn, elapsed_time -tr, f"{count} locations")
-
-
-
-
+        self.log_timing(fn, elapsed_time - tr, f"{count} locations")
 
     def run_timings(self):
         self.time_open_dataset()
@@ -206,7 +206,6 @@ class TimedDatasetTests:
 
 
 if __name__ == '__main__':
-
 
     # partition = random.choice(partition_codes)
     # tloc = random.choice(list(all_locs))

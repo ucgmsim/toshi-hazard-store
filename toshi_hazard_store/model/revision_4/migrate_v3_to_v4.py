@@ -7,12 +7,10 @@ import sys
 from typing import Iterator
 
 import pandas
-from nzshm_common.location import coded_location, location
 from nzshm_common.grids import get_location_grid
+from nzshm_common.location import coded_location, location
 
 import toshi_hazard_store.model
-
-#
 from toshi_hazard_store.db_adapter import ensure_class_bases_begin_with
 from toshi_hazard_store.db_adapter.sqlite import SqliteAdapter
 from toshi_hazard_store.oq_import import create_producer_config, get_producer_config
@@ -28,7 +26,14 @@ log = logging.getLogger(__name__)
 
 
 def migrate_realisations_from_subtask(
-    subtask_info: 'SubtaskRecord', source: str, partition: str, compatible_calc, verbose, update, dry_run=False, bail_after=None
+    subtask_info: 'SubtaskRecord',
+    source: str,
+    partition: str,
+    compatible_calc,
+    verbose,
+    update,
+    dry_run=False,
+    bail_after=None,
 ) -> Iterator[toshi_hazard_store.model.openquake_models.OpenquakeRealization]:
     """
     Migrate all the realisations for the given subtask
@@ -136,12 +141,13 @@ def migrate_realisations_from_subtask(
     partition_codes = coded_location.bin_locations(location_list, at_resolution=0.1)
 
     processed_count = 0
-    yielded_count = 0
+    yield_count = 0
     for partition_code in partition_codes:
         result = mRLZ_V3.query(
             partition_code,
             mRLZ_V3.sort_key >= partition_code[:3],
-            filter_condition=(mRLZ_V3.nloc_1 == partition_code) & (mRLZ_V3.hazard_solution_id == subtask_info.hazard_calc_id)
+            filter_condition=(mRLZ_V3.nloc_1 == partition_code)
+            & (mRLZ_V3.hazard_solution_id == subtask_info.hazard_calc_id),
         )
         for source_rlz in result:
             realization = rlz_map[source_rlz.rlz]
@@ -162,10 +168,10 @@ def migrate_realisations_from_subtask(
                 yield target_realization.set_location(
                     coded_location.CodedLocation(lat=source_rlz.lat, lon=source_rlz.lon, resolution=0.001)
                 )
-                yielded_count +=1
+                yield_count += 1
 
-            processed_count +=1
+            processed_count += 1
 
             if bail_after and processed_count >= bail_after:
-                log.warning(f'bailing after creating {yielded_count} new rlz from {processed_count} source realisations')
+                log.warning(f'bailing after creating {yield_count} new rlz from {processed_count} source realisations')
                 return
