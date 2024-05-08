@@ -130,4 +130,3 @@ def generate_rev4_rlz_models(many_rlz_args, adapted_model):
             ).set_location(loc)
 
     yield model_generator
-

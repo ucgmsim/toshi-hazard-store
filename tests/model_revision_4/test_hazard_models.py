@@ -2,15 +2,16 @@
 Basic model migration, structure
 """
 
+import itertools
+
 import pyarrow.dataset as ds
 import pytest
-import itertools
 from moto import mock_dynamodb
 from pyarrow import fs
 
 from toshi_hazard_store.model import drop_r4, migrate_r4
-from toshi_hazard_store.model.revision_4 import pyarrow_dataset
-from toshi_hazard_store.model.revision_4 import hazard_aggregate_curve
+from toshi_hazard_store.model.revision_4 import hazard_aggregate_curve, pyarrow_dataset
+
 
 @pytest.fixture(scope='function')
 def generate_rev4_aggregation_models(many_rlz_args, adapted_model):
@@ -29,6 +30,7 @@ def generate_rev4_aggregation_models(many_rlz_args, adapted_model):
             ).set_location(loc)
 
     yield model_generator
+
 
 @mock_dynamodb
 class TestRevisionFourModelCreation_PynamoDB:
@@ -152,11 +154,12 @@ class TestRevisionFourModelCreation_WithAdaption:
 
         models = generate_rev4_aggregation_models()
 
+        filesystem = fs.LocalFileSystem()
+
         # write the dataset
-        model_count = pyarrow_dataset.append_models_to_dataset(models, output_folder)
+        model_count = pyarrow_dataset.append_models_to_dataset(models, output_folder, filesystem=filesystem)
 
         # read and check the dataset
-        filesystem = fs.LocalFileSystem()
         dataset = ds.dataset(output_folder, filesystem=filesystem, format='parquet', partitioning='hive')
         table = dataset.to_table()
         df = table.to_pandas()
