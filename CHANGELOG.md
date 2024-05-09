@@ -1,7 +1,6 @@
 # Changelog
 
-
-## [0.9.0] - 2024-03
+## [0.9.0-alpha] - 2024-05-09
 ### Added
  - V4 epic tables:
  - scripts for conversion
@@ -9,7 +8,8 @@
  - parquet support
 
 ### Changed
-  - move to nzshm-common#pre-release
+  - switch to nzshm-common#pre-release branch
+  - switch to nzshm-model#pre-release branch
 
 ## [0.8.0] - 2024-02
 ### Added
