@@ -43,6 +43,7 @@ def save_file(filepath: pathlib.Path, url: str):
     if r.ok:
         with open(filepath, 'wb') as f:
             f.write(r.content)
+            log.info(f"saving download to {filepath}")
         return filepath
     else:
         raise (RuntimeError(f'Error downloading file {filepath.name}: Status code {r.status_code}'))

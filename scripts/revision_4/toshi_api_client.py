@@ -1,8 +1,8 @@
 import logging
 
-log = logging.getLogger()
-
 from nshm_toshi_client import toshi_client_base  # noqa: E402
+
+log = logging.getLogger(__name__)
 
 
 class ApiClient(toshi_client_base.ToshiClientBase):

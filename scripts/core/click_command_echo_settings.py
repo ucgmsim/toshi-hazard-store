@@ -1,9 +1,9 @@
 #! python3
 # flake8: noqa: F401
+import click
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    import click
 
     # from toshi_hazard_store.config import *
     from toshi_hazard_store.config import DEPLOYMENT_STAGE
@@ -33,7 +33,7 @@ def echo_settings(work_folder: str, verbose=True):
         pass
 
     click.echo('\nfrom THS config:')
-    click.echo(f'   using LOCAL_CACHE_FOLDER: {LOCAL_CACHE_FOLDER}')
+    # click.echo(f'   using LOCAL_CACHE_FOLDER: {LOCAL_CACHE_FOLDER}')
     click.echo(f'   using THS_STAGE: {THS_STAGE}')
     click.echo(f'   using THS_REGION: {THS_REGION}')
     click.echo(f'   using USE_SQLITE_ADAPTER: {USE_SQLITE_ADAPTER}')

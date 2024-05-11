@@ -4,7 +4,9 @@ This is NSHM process specific, as it assumes the following:
  - hazard producer metadata is available from the NSHM toshi-api via **nshm-toshi-client** library
  - NSHM model characteristics are available in the **nzshm-model** library
 
-Hazard curves are stored using the new THS Rev4 tables which support sqlite dbadapter .
+Hazard curves are stored using either:
+    - the new THS Rev4 tables which support dynamodb and sqlite dbadapter .
+    - directly to parquet data
 
 Given a general task containing hazard calcs used in NHSM, we want to iterate over the sub-tasks and do
 the setup required for importing the hazard curves:
@@ -13,10 +15,6 @@ the setup required for importing the hazard curves:
     - optionally create new producer configs automatically, and record info about these
        - NB if new producer configs are created, then it is the users responsibility to assign
          a CompatibleCalculation to each
-
-These things may get a separate script
-    - OPTION to download HDF5 and load hazard curves from there
-    - OPTION to import V3 hazard curves from DynamodDB and extract ex
 """
 
 import collections
@@ -30,49 +28,19 @@ import click
 
 from .store_hazard_v3 import extract_and_save
 
-
-class PyanamodbConsumedHandler(logging.Handler):
-    def __init__(self, level=0) -> None:
-        super().__init__(level)
-        self.consumed = 0
-
-    def reset(self):
-        self.consumed = 0
-
-    def emit(self, record):
-        if "pynamodb/connection/base.py" in record.pathname and record.msg == "%s %s consumed %s units":
-            # print(record.msg)
-            # print(self.consumed)
-            # ('', 'BatchWriteItem', [{'TableName': 'THS_R4_HazardRealizationCurve-TEST_CBC', 'CapacityUnits': 25.0}])
-            if isinstance(record.args[2], list):  # # handle batch-write
-                for itm in record.args[2]:
-                    # print(itm)
-                    self.consumed += itm['CapacityUnits']
-                # print(self.consumed)
-                # assert 0
-            else:
-                self.consumed += record.args[2]
-            # print("CONSUMED:",  self.consumed)
-
-
-log = logging.getLogger()
-
-pyconhandler = PyanamodbConsumedHandler(logging.DEBUG)
-log.addHandler(pyconhandler)
-
-logging.getLogger('pynamodb').setLevel(logging.DEBUG)
-
-logging.basicConfig(level=logging.DEBUG)
-# logging.getLogger('pynamodb').setLevel(logging.INFO)
+logging.basicConfig(level=logging.INFO)
+logging.getLogger('pynamodb').setLevel(logging.INFO)
 logging.getLogger('botocore').setLevel(logging.INFO)
 logging.getLogger('toshi_hazard_store').setLevel(logging.INFO)
 logging.getLogger('nzshm_model').setLevel(logging.INFO)
 logging.getLogger('gql.transport').setLevel(logging.WARNING)
 logging.getLogger('urllib3').setLevel(logging.INFO)
+logging.getLogger('root').setLevel(logging.INFO)
+
+log = logging.getLogger(__name__)
 
 import toshi_hazard_store  # noqa: E402
 
-# from toshi_hazard_store import model
 from toshi_hazard_store.model.revision_4 import hazard_models
 from toshi_hazard_store.oq_import import (  # noqa: E402
     create_producer_config,
@@ -80,7 +48,7 @@ from toshi_hazard_store.oq_import import (  # noqa: E402
     get_compatible_calc,
     get_producer_config,
 )
-from toshi_hazard_store.oq_import.migrate_v3_to_v4 import ECR_REGISTRY_ID, ECR_REPONAME
+from toshi_hazard_store.model.revision_4.migrate_v3_to_v4 import ECR_REGISTRY_ID, ECR_REPONAME
 
 from .core import echo_settings
 from .revision_4 import aws_ecr_docker_image as aws_ecr
@@ -97,25 +65,14 @@ from nzshm_model.logic_tree.source_logic_tree.toshi_api import (  # noqa: E402 a
     get_secret,
 )
 
-# Get API key from AWS secrets manager
 API_URL = os.getenv('NZSHM22_TOSHI_API_URL', "http://127.0.0.1:5000/graphql")
-try:
-    if 'TEST' in API_URL.upper():
-        API_KEY = get_secret("NZSHM22_TOSHI_API_SECRET_TEST", "us-east-1").get("NZSHM22_TOSHI_API_KEY_TEST")
-    elif 'PROD' in API_URL.upper():
-        API_KEY = get_secret("NZSHM22_TOSHI_API_SECRET_PROD", "us-east-1").get("NZSHM22_TOSHI_API_KEY_PROD")
-    else:
-        API_KEY = os.getenv('NZSHM22_TOSHI_API_KEY', "")
-    # print(f"key: {API_KEY}")
-except AttributeError as err:
-    print(f"unable to get secret from secretmanager: {err}")
-    API_KEY = os.getenv('NZSHM22_TOSHI_API_KEY', "")
+API_KEY = os.getenv('NZSHM22_TOSHI_API_KEY', "")
 S3_URL = None
+
 DEPLOYMENT_STAGE = os.getenv('DEPLOYMENT_STAGE', 'LOCAL').upper()
 REGION = os.getenv('REGION', 'ap-southeast-2')  # SYDNEY
 
 SubtaskRecord = collections.namedtuple('SubtaskRecord', 'gt_id, hazard_calc_id, config_hash, image, hdf5_path, vs30')
-
 
 def handle_import_subtask_rev4(
     subtask_info: 'SubtaskRecord', partition, compatible_calc, verbose, update, with_rlzs, dry_run=False
@@ -175,40 +132,71 @@ def handle_import_subtask_rev4(
         )
 
 
+def handle_subtasks(gt_id: str, gtapi: toshi_api_client.ApiClient, subtask_ids: Iterable, work_folder:str, with_rlzs: bool, verbose: bool):
+
+    subtasks_folder = pathlib.Path(work_folder, gt_id, 'subtasks')
+    subtasks_folder.mkdir(parents=True, exist_ok=True)
+
+    if verbose:
+        click.echo('fetching ECR stash')
+
+    ecr_repo_stash = aws_ecr.ECRRepoStash(
+        ECR_REPONAME, oldest_image_date=dt.datetime(2023, 3, 20, tzinfo=dt.timezone.utc)
+    ).fetch()
+
+    for task_id in subtask_ids:
+
+        # completed already
+        # if task_id in ['T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDE3', 'T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI3']:
+        #     continue
+
+        # # problems
+        # if task_id in ['T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDE4', 'T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI0',
+        #  "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI2",
+        #  "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDMy"]: # "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI5",
+        #     continue
+
+        query_res = gtapi.get_oq_hazard_task(task_id)
+        log.debug(query_res)
+        task_created = dt.datetime.fromisoformat(query_res["created"])  # "2023-03-20T09:02:35.314495+00:00",
+        log.debug(f"task created: {task_created}")
+
+        oq_config.download_artefacts(gtapi, task_id, query_res, subtasks_folder)
+        jobconf = oq_config.config_from_task(task_id, subtasks_folder)
+
+        config_hash = jobconf.compatible_hash_digest()
+        latest_engine_image = ecr_repo_stash.active_image_asat(task_created)
+        log.debug(latest_engine_image)
+
+        log.debug(f"task {task_id} hash: {config_hash}")
+
+        if with_rlzs:
+            hdf5_path = oq_config.process_hdf5(gtapi, task_id, query_res, subtasks_folder, manipulate=True)
+        else:
+            hdf5_path = None
+
+        yield SubtaskRecord(
+            gt_id=gt_id,
+            hazard_calc_id=query_res['hazard_solution']['id'],
+            image=latest_engine_image,
+            config_hash=config_hash,
+            hdf5_path=hdf5_path,
+            vs30=jobconf.config.get('site_params', 'reference_vs30_value'),
+        )
+
 #  _ __ ___   __ _(_)_ __
 # | '_ ` _ \ / _` | | '_ \
 # | | | | | | (_| | | | | |
 # |_| |_| |_|\__,_|_|_| |_|
-
-
+#
 @click.group()
-@click.option('--work_folder', '-W', default=lambda: os.getcwd(), help="defaults to Current Working Directory")
-@click.pass_context
-def main(context, work_folder):
+def main():
     """Import NSHM Model hazard curves to new revision 4 models."""
 
-    context.ensure_object(dict)
-    context.obj['work_folder'] = work_folder
-
-
 @main.command()
-@click.option(
-    '--process_v3',
-    '-P3',
-    is_flag=True,
-    default=False,
-    help="V3 instead of v4",
-)
-@click.pass_context
-def create_tables(context, process_v3):
-
-    if process_v3:
-        click.echo('Ensuring V3 openquake tables exist.')
-        toshi_hazard_store.model.migrate_openquake()
-    else:
-        click.echo('Ensuring Rev4 tables exist.')
-        toshi_hazard_store.model.migrate_r4()
-
+def create_tables():
+    click.echo('Ensuring Rev4 tables exist.')
+    toshi_hazard_store.model.migrate_r4()
 
 @main.command()
 @click.argument('partition')
@@ -284,6 +272,23 @@ def prod_from_gtfile(
 @click.argument('gt_id')
 @click.argument('partition')
 @click.option(
+    '-T',
+    '--target',
+    type=click.Choice(['AWS', 'LOCAL', 'ARROW'], case_sensitive=False),
+    default='LOCAL',
+    help="set the target store. defaults to LOCAL. ARROW does produces parquet instead of dynamoDB tables",
+)
+@click.option(
+    '-W',
+    '--work_folder',
+    default=lambda: os.getcwd(), help="defaults to current directory")
+@click.option(
+    '-O',
+    '--output_folder',
+    type=click.Path(path_type=pathlib.Path, exists=False),
+    help="arrow target folder (only used with `-T ARROW`",
+)
+@click.option(
     '--compatible_calc_fk',
     '-CCF',
     default="A_A",
@@ -304,25 +309,20 @@ def prod_from_gtfile(
     default=False,
     help="also get the realisations",
 )
-@click.option(
-    '--process_v3',
-    '-P3',
-    is_flag=True,
-    default=False,
-    help="V3 instead of v4",
-)
+
 @click.option('-v', '--verbose', is_flag=True, default=False)
 @click.option('-d', '--dry-run', is_flag=True, default=False)
-@click.pass_context
 def producers(
-    context,
     # model_id,
     gt_id,
     partition,
+    target,
+    work_folder,
+    output_folder,
     compatible_calc_fk,
     update,
     with_rlzs,
-    process_v3,
+    # process_v3,
     # software, version, hashed, config, notes,
     verbose,
     dry_run,
@@ -336,111 +336,43 @@ def producers(
     - pull the configs and check we have a compatible producer config\n
     - optionally, create any new producer configs
     """
-    pyconhandler.reset()
 
-    work_folder = context.obj['work_folder']
+    #if verbose:
+    #    echo_settings(work_folder)
 
     headers = {"x-api-key": API_KEY}
     gtapi = toshi_api_client.ApiClient(API_URL, None, with_schema_validation=False, headers=headers)
 
     if verbose:
-        echo_settings(work_folder)
-
-    if verbose:
-        click.echo('fetching ECR stash')
-    ecr_repo_stash = aws_ecr.ECRRepoStash(
-        ECR_REPONAME, oldest_image_date=dt.datetime(2023, 3, 20, tzinfo=dt.timezone.utc)
-    ).fetch()
-
-    if verbose:
         click.echo('fetching General Task subtasks')
-    query_res = gtapi.get_gt_subtasks(gt_id)
-
-    SubtaskRecord = collections.namedtuple(
-        'SubtaskRecord', 'gt_id, hazard_calc_id, config_hash, image, hdf5_path, vs30'
-    )
-
-    def handle_subtasks(gt_id: str, subtask_ids: Iterable):
-        subtasks_folder = pathlib.Path(work_folder, gt_id, 'subtasks')
-        subtasks_folder.mkdir(parents=True, exist_ok=True)
-
-        for task_id in subtask_ids:
-
-            # completed already
-            # if task_id in ['T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDE3', 'T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI3']:
-            #     continue
-
-            # # problems
-            # if task_id in ['T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDE4', 'T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI0',
-            #  "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI2",
-            #  "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDMy"]: # "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI5",
-            #     continue
-
-            query_res = gtapi.get_oq_hazard_task(task_id)
-            log.debug(query_res)
-            task_created = dt.datetime.fromisoformat(query_res["created"])  # "2023-03-20T09:02:35.314495+00:00",
-            log.debug(f"task created: {task_created}")
-
-            oq_config.download_artefacts(gtapi, task_id, query_res, subtasks_folder)
-            jobconf = oq_config.config_from_task(task_id, subtasks_folder)
-
-            config_hash = jobconf.compatible_hash_digest()
-            latest_engine_image = ecr_repo_stash.active_image_asat(task_created)
-            log.debug(latest_engine_image)
-
-            log.debug(f"task {task_id} hash: {config_hash}")
-
-            if with_rlzs:
-                hdf5_path = oq_config.process_hdf5(gtapi, task_id, query_res, subtasks_folder, manipulate=True)
-            else:
-                hdf5_path = None
-
-            yield SubtaskRecord(
-                gt_id=gt_id,
-                hazard_calc_id=query_res['hazard_solution']['id'],
-                image=latest_engine_image,
-                config_hash=config_hash,
-                hdf5_path=hdf5_path,
-                vs30=jobconf.config.get('site_params', 'reference_vs30_value'),
-            )
 
     def get_hazard_task_ids(query_res):
         for edge in query_res['children']['edges']:
             yield edge['node']['child']['id']
 
+    #query the API for general task and
+    query_res = gtapi.get_gt_subtasks(gt_id)
+
     count = 0
-    for subtask_info in handle_subtasks(gt_id, get_hazard_task_ids(query_res)):
+    for subtask_info in handle_subtasks(
+        gt_id,
+        gtapi,
+        get_hazard_task_ids(query_res),
+        work_folder,
+        with_rlzs,
+        verbose
+        ):
+
         count += 1
-        # skip some subtasks..
-        if count <= 6:
+        if dry_run:
+            click.echo(f'DRY RUN. otherwise, would be processing subtask {count} {subtask_info} ')
             continue
-        if process_v3:
-            ArgsRecord = collections.namedtuple(
-                'ArgsRecord',
-                'calc_id, source_tags, source_ids, toshi_hazard_id, toshi_gt_id, locations_id, verbose, meta_data_only',
-            )
-            args = ArgsRecord(
-                calc_id=subtask_info.hdf5_path,
-                toshi_gt_id=subtask_info.gt_id,
-                toshi_hazard_id=subtask_info.hazard_calc_id,
-                source_tags="",
-                source_ids="",
-                locations_id="",
-                verbose=verbose,
-                meta_data_only=False,
-            )
-            extract_and_save(args)
-        else:
-            compatible_calc = get_compatible_calc(compatible_calc_fk.split("_"))
-            if compatible_calc is None:
-                raise ValueError(f'compatible_calc: {compatible_calc_fk} was not found')
-            handle_import_subtask_rev4(subtask_info, partition, compatible_calc, verbose, update, with_rlzs, dry_run)
 
-        # # crash out after some subtasks..
-        # if count >= 6:
-        #     break
-
-    click.echo("pynamodb operation cost: %s units" % pyconhandler.consumed)
+        #normal processing
+        compatible_calc = get_compatible_calc(compatible_calc_fk.split("_"))
+        if compatible_calc is None:
+            raise ValueError(f'compatible_calc: {compatible_calc_fk} was not found')
+        handle_import_subtask_rev4(subtask_info, partition, compatible_calc, verbose, update, with_rlzs, dry_run)
 
 
 if __name__ == "__main__":
