@@ -13,6 +13,8 @@ import os
 import pathlib
 
 import click
+import pyarrow as pa
+import pandas as pd
 from dotenv import load_dotenv
 
 from toshi_hazard_store.model.revision_4 import hazard_models, pyarrow_dataset
@@ -31,7 +33,7 @@ from .revision_4 import oq_config
 
 # from toshi_hazard_store.config import DEPLOYMENT_STAGE as THS_STAGE
 # from toshi_hazard_store.config import USE_SQLITE_ADAPTER, SQLITE_ADAPTER_FOLDER
-
+# from toshi_hazard_store.model.revision_4 import extract_classical_hdf5
 
 log = logging.getLogger(__name__)
 
@@ -225,18 +227,25 @@ def main(
         rlz_count = 0
         for subtask_info in process_gt_subtasks(gt_id, work_folder=work_folder, verbose=verbose):
             task_count += 1
-            log.info(f"Processing calculation {subtask_info.hazard_calc_id} in gt {gt_id}")
-            model_generator = migrate_realisations_from_subtask(
-                subtask_info, source, partition, compatible_calc, verbose, update, dry_run=False, bail_after=bail_after
-            )
+            log.info(f"Processing calculation {subtask_info.hazard_calc_id} in gt {gt_id} using {target}")
 
-            model_count = pyarrow_dataset.append_models_to_dataset(model_generator, output_folder, dataset_format)
+            if target == 'ARROW':
+                model_generator = migrate_realisations_from_subtask(
+                    subtask_info, source, partition, compatible_calc, verbose, update, dry_run=False, bail_after=bail_after
+                )
+
+            models= [model.as_pandas_model() for model in model_generator]
+            model_count = len(models)
             rlz_count += model_count
             log.info(f"Produced {model_count} source models from {subtask_info.hazard_calc_id} in {gt_id}")
+
+            table = pa.Table.from_pandas(pd.DataFrame(models))
+            pyarrow_dataset.append_models_to_dataset(table, output_folder, dataset_format)
 
             if bail_after and rlz_count >= bail_after:
                 log.warning(f'bailing after creating {rlz_count} new rlz from {task_count} subtasks')
                 break
+
     else:
         workers = 1 if target == 'LOCAL' else NUM_BATCH_WORKERS
         batch_size = 100 if target == 'LOCAL' else 25

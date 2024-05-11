@@ -50,25 +50,20 @@ def write_metadata(output_folder: pathlib.Path, visited_file: pyarrow.dataset.Wr
 
 
 def append_models_to_dataset(
-    models: Iterable[Union['HazardRealizationCurve', 'HazardAggregation']],
+    table_or_batchreader: Union[pa.Table, pa.RecordBatchReader],
     base_dir: str,
     dataset_format: str = 'parquet',
     filesystem: Optional[fs.FileSystem] = None,
-) -> int:
+    ):
     """
     append realisation models to dataset using the pyarrow library
 
     TODO: option to BAIL if realisation exists, assume this is a duplicated operation
     TODO: schema checks
     """
-
-    df = pd.DataFrame([model.as_pandas_model() for model in models])
-    table = pa.Table.from_pandas(df)
-
     write_metadata_fn = partial(write_metadata, base_dir)
-
     ds.write_dataset(
-        table,
+        table_or_batchreader,
         base_dir=base_dir,
         basename_template="%s-part-{i}.%s" % (uuid.uuid4(), dataset_format),
         partitioning=['nloc_0'],
@@ -79,4 +74,3 @@ def append_models_to_dataset(
         filesystem=filesystem,
     )
 
-    return df.shape[0]
