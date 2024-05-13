@@ -32,61 +32,6 @@ from toshi_hazard_store.oq_import.oq_manipulate_hdf5 import migrate_gsim_row, re
 from toshi_hazard_store.model.revision_4 import extract_classical_hdf5
 
 
-def disaggs_to_record_batch_reader(hdf5_file: str) -> pa.RecordBatchReader:
-    """extract disagg statistics from from a 'disaggregation' openquake calc file as a pyarrow batch reader"""
-    extractor = Extractor(str(hdf5_file))
-
-    # oqparam contains the job specs, lots of different stuff for disaggs
-    oqparam = json.loads(extractor.get('oqparam').json)
-
-    assert oqparam['calculation_mode'] == 'disaggregation', "calculation_mode is not 'disaggregation'"
-
-    rlz_map = build_rlz_mapper(extractor)
-
-    # ref https://github.com/gem/oq-engine/blob/75e96a90bbb88cd9ac0bb580a5283341c091b82b/openquake/calculators/extract.py#L1113
-    #
-    # different disagg kinds (from oqparam['disagg_outputs'])
-    # e.g. ['TRT', 'Mag', 'Dist', 'Mag_Dist', 'TRT_Mag_Dist_Eps']
-    da_trt = extractor.get('disagg?kind=TRT&imt=SA(0.5)&site_id=0&poe_id=0&spec=stats', asdict=True)
-    da_mag = extractor.get('disagg?kind=Mag&imt=SA(0.5)&site_id=0&poe_id=0&spec=stats', asdict=True)
-    da_dist = extractor.get('disagg?kind=Dist&imt=SA(0.5)&site_id=0&poe_id=0&spec=stats', asdict=True)
-    da_mag_dist = extractor.get('disagg?kind=Mag_Dist&imt=SA(0.5)&site_id=0&poe_id=0&spec=stats', asdict=True)
-    da_trt_mag_dist_eps = extractor.get(
-        'disagg?kind=TRT_Mag_Dist_Eps&imt=SA(0.5)&site_id=0&poe_id=0&spec=stats', asdict=True
-    )
-
-    '''
-    >>> spec=stats
-    >>> da_trt_mag_dist_eps['array'].shape
-    (1, 24, 17, 16, 1, 1)
-    >>> da_trt_mag_dist_eps.keys()
-    dict_keys(['kind', 'imt', 'site_id', 'poe_id', 'spec', 'trt', 'mag', 'dist', 'eps', 'poe', 'traditional', 'shape_descr', 'extra', 'array'])
-    '''
-
-    '''
-    >>> # STATS
-    >>> da_trt = extractor.get('disagg?kind=TRT&imt=SA(0.5)&site_id=0&poe_id=0&spec=stats', asdict=True)
-    >>> da_trt
-    {'kind': ['TRT'], 'imt': ['SA(0.5)'], 'site_id': [0], 'poe_id': [0], 'spec': ['stats'], 'trt': array([b'Subduction Interface'], dtype='|S20'),
-        'poe': array([9.99412581e-05]), 'traditional': False, 'shape_descr': ['trt', 'imt', 'poe'], 'extra': ['mean'],
-        'array': array([[[9.99466419e-05]]])
-    }
-
-    >>> # RLZS
-    >>> da_trt = extractor.get('disagg?kind=TRT&imt=SA(0.5)&site_id=0&poe_id=0&spec=rlzs', asdict=True)
-    >>> da_trt
-    {'kind': ['TRT'], 'imt': ['SA(0.5)'], 'site_id': [0], 'poe_id': [0], 'spec': ['rlzs'], 'trt':
-        array([b'Subduction Interface'], dtype='|S20'), 'poe': array([9.99412581e-05]), 'traditional': False, 'shape_descr': ['trt', 'imt', 'poe'],
-        'weights': [0.1080000102519989, 0.07200000435113907, 0.09600000828504562, 0.09600000828504562, 0.10000000894069672, 0.07500001043081284, 0.07200000435113907, 0.07200000435113907, 0.08100000768899918, 0.08100000768899918, 0.07200000435113907, 0.07500001043081284],
-        'extra': ['rlz1', 'rlz9', 'rlz10', 'rlz7', 'rlz4', 'rlz3', 'rlz6', 'rlz11', 'rlz0', 'rlz2', 'rlz8', 'rlz5'],
-        'array': array([[[7.27031471e-05, 1.40205725e-04, 6.89674751e-05, 4.83588026e-05,
-             4.67680530e-05, 2.16860247e-04, 2.23101109e-04, 3.09774654e-05,
-             3.68397989e-04, 8.67261109e-06, 6.76580881e-06, 6.21581990e-06]]])}
-    >>>
-    >>>
-    '''
-
-
 @pytest.mark.skip('showing my working')
 def test_binning_locations():
 
@@ -107,7 +52,6 @@ def test_binning_locations():
     # print(nloc_0_dict)
 
     assert 0
-
 
 @pytest.mark.skip('large inputs not checked in')
 def test_logic_tree_registry_lookup():
