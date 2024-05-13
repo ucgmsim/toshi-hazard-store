@@ -335,3 +335,14 @@ if __name__ == '__main__':
     random_spot_checks(df0, df2)
 
     # print(df.head(225))
+
+
+def reshape_csv_classic_dataframe(df1):
+    collapse_cols = [cname for cname in df1.columns if 'poe' in cname]
+    def generate_subtables(df1, collapse_cols):
+        for idx, key in enumerate(collapse_cols):
+            drop_cols = collapse_cols.copy()
+            drop_cols.remove(key)
+            sub_df = df1.drop(columns=drop_cols)
+            yield sub_df.rename(columns = {key:"poe"})
+    return pd.concat(generate_subtables(df1, collapse_cols))

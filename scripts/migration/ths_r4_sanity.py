@@ -404,13 +404,13 @@ def random_rlz_new(context, count):
                         locs=[loc.code for loc in args['locs']], vs30s=[275], rlzs=[args['rlz']], tids=[args['tid']], imts=['PGA']
                     ):
                 """
-                print('rlz', f"rlz-{args['rlz']:03d}")
+                # print('rlz', f"rlz-{args['rlz']:03d}")
 
-                dataset = ds.dataset(f'./WORKING/ARROW/CDC4_compacted/nloc_0={loc.resample(1).code}', format='parquet')
+                dataset = ds.dataset(f'./WORKING/ARROW/DIRECT_CLASSIC/nloc_0={loc.resample(1).code}', format='parquet')
                 # dataset = ds.dataset(dataset_folder, format='parquet', partitioning='hive')
                 flt = (pc.field("nloc_001") == pc.scalar(loc.code)) & \
-                    (pc.field("imt") == pc.scalar(args['imt'])) & \
-                    (pc.field('calculation_id') == pc.scalar(args['tid']))
+                    (pc.field("imt") == pc.scalar(args['imt']))
+                    # (pc.field('calculation_id') == pc.scalar(args['tid']))
                     # (pc.field('rlz') == pc.scalar(f"rlz-{args['rlz']:03d}")) #& \
                 df = dataset.to_table(filter=flt).to_pandas()
 
@@ -422,13 +422,19 @@ def random_rlz_new(context, count):
                             raise ValueError(f"dataframe shape error {row.shape} for args {args}")
 
                         row_values = row['values'].tolist()[0]
-                        print(row_values)
                         model_values = np.array(model['values'][0]['vals'], dtype=np.float32)
-                        print(model_values)
 
                         if model['values'][0] == args['imt']:
                             raise ValueError(f"model values error {row.shape} for args {args['imt']}")
+
                         if not (row_values == model_values).all():
+                            print(model)
+                            print()
+                            print('dynamodb:',  model_values)
+                            print()
+                            print(row)
+                            print('dataset: ', row_values)
+                            print()
                             raise ValueError(f"list values differ for args {args}")
                         click.echo(f'model match {args}')
                         # except AssertionError:
@@ -448,6 +454,12 @@ def random_rlz_new(context, count):
     diff_arrow_rlzs(random_args_list, dynamo_models)
 
 
+
+def wip():
+    '''
+    df = dataset.to_table(filter=flt).to_pandas()
+    flt2 = (df.sources_digest == 'c8b5c5b43dbd') & (df.gmms_digest == 'a005ffbbdf4e') & (df.imt == 'SA(1.0)')
+    '''
 
 @main.command()
 @click.argument('count', type=int)
