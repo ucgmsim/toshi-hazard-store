@@ -2,7 +2,7 @@
 """
 Console script for querying tables before and after import/migration to ensure that we have what we expect
 """
-
+import ast
 import importlib
 import itertools
 import json
@@ -14,6 +14,7 @@ import click
 import pyarrow as pa
 import pyarrow.compute as pc
 import pyarrow.dataset as ds
+import numpy as np
 
 log = logging.getLogger()
 
@@ -27,6 +28,10 @@ from nzshm_common import location
 from nzshm_common.grids import load_grid
 from nzshm_common.location.coded_location import CodedLocation
 from pynamodb.models import Model
+
+from nzshm_model import branch_registry
+from nzshm_model.psha_adapter.openquake import gmcm_branch_from_element_text
+from toshi_hazard_store.oq_import.oq_manipulate_hdf5 import migrate_nshm_uncertainty_string
 
 import toshi_hazard_store  # noqa: E402
 import toshi_hazard_store.config
@@ -59,6 +64,7 @@ all_locs = set(nz1_grid + srwg_locs + city_locs)
 # print(srwg_locs[:10])
 # print(city_locs[:10])
 
+registry = branch_registry.Registry()
 
 def get_random_args(gt_info, how_many):
     for n in range(how_many):
@@ -69,6 +75,7 @@ def get_random_args(gt_info, how_many):
                     for edge in gt_info['data']['node']['children']['edges']
                 ]
             ),
+            imt=random.choice(['PGA', 'SA(0.5)', 'SA(1.0)']),
             rlz=random.choice(range(20)),
             locs=[CodedLocation(o[0], o[1], 0.001) for o in random.sample(nz1_grid, how_many)],
         )
@@ -78,17 +85,48 @@ def query_table(args):
     # mRLZ = toshi_hazard_store.model.openquake_models.__dict__['OpenquakeRealization']
     importlib.reload(toshi_hazard_store.query.hazard_query)
     for res in toshi_hazard_store.query.hazard_query.get_rlz_curves_v3(
-        locs=[loc.code for loc in args['locs']], vs30s=[275], rlzs=[args['rlz']], tids=[args['tid']], imts=['PGA']
+        locs=[loc.code for loc in args['locs']], vs30s=[275], rlzs=[args['rlz']], tids=[args['tid']], imts=[args['imt']]
     ):
         yield (res)
+
+def query_hazard_meta(args):
+    # mRLZ = toshi_hazard_store.model.openquake_models.__dict__['OpenquakeRealization']
+    importlib.reload(toshi_hazard_store.query.hazard_query)
+    for res in toshi_hazard_store.query.hazard_query.get_hazard_metadata_v3(haz_sol_ids=[args['tid']], vs30_vals=[275]):
+        yield (res)
+
+
 
 
 def get_table_rows(random_args_list):
     result = {}
     for args in random_args_list:
+        meta = next(query_hazard_meta(args))
+        gsim_lt = ast.literal_eval(meta.gsim_lt)
+        src_lt = ast.literal_eval(meta.src_lt)
+        assert len(src_lt['branch']) == 1
+
+        # print(gsim_lt['uncertainty'])
+
+        # source digest
+        srcs = "|".join(sorted(src_lt['branch']['A'].split('|')))
+        src_id = registry.source_registry.get_by_identity(srcs)
+
         for res in query_table(args):
             obj = res.to_simple_dict(force=True)
+            # gmm_digest
+            gsim = gmcm_branch_from_element_text(migrate_nshm_uncertainty_string(gsim_lt['uncertainty'][str(obj['rlz'])]))
+            # print(gsim)
+            gsim_id = registry.gmm_registry.get_by_identity(gsim.registry_identity)
+
+            obj['slt_sources'] = src_lt['branch']['A']
+            obj['sources_digest'] = src_id.hash_digest
+            obj['gsim_uncertainty'] = gsim
+            obj['gmms_digest'] = gsim_id.hash_digest
             result[obj["sort_key"]] = obj
+            # print()
+            # print( obj )
+
     return result
 
 
@@ -330,7 +368,12 @@ def count_rlz(context, source, ds_name, report, strict, verbose, dry_run):
         elif report == 'ALL':
             report_v3_grouped_by_calc(verbose, bail_on_error=strict)
 
-
+#############
+#
+# HHHEHRHHHE
+#
+#
+#############
 @main.command()
 @click.argument('count', type=int)
 @click.pass_context
@@ -344,13 +387,16 @@ def random_rlz_new(context, count):
     gt_info = json.load(open(str(gtfile)))
 
     random_args_list = list(get_random_args(gt_info, count))
-    set_one = get_table_rows(random_args_list)
-    click.echo(set_one)
+    dynamo_models = get_table_rows(random_args_list)
+    print(list(dynamo_models.values())[:2])
+    #click.echo(dynamo_models)
 
-    def get_arrow_rlzs(random_args_list):
+    def diff_arrow_rlzs(random_args_list, dynamo_models):
         """This could be faster if locs were grouped into 1 degree bins"""
 
         result = {}
+
+
         for args in random_args_list:
             for loc in args['locs']:
                 """
@@ -358,16 +404,49 @@ def random_rlz_new(context, count):
                         locs=[loc.code for loc in args['locs']], vs30s=[275], rlzs=[args['rlz']], tids=[args['tid']], imts=['PGA']
                     ):
                 """
+                print('rlz', f"rlz-{args['rlz']:03d}")
 
-                dataset = ds.dataset(f'./WORKING/ARROW/pq-CDC/nloc_0={loc.resample(1).code}', format='arrow')
-                flt = (pc.field('imt') == pc.scalar("PGA")) & (pc.field("nloc_001") == pc.scalar(loc.code))
-
+                dataset = ds.dataset(f'./WORKING/ARROW/CDC4_compacted/nloc_0={loc.resample(1).code}', format='parquet')
+                # dataset = ds.dataset(dataset_folder, format='parquet', partitioning='hive')
+                flt = (pc.field("nloc_001") == pc.scalar(loc.code)) & \
+                    (pc.field("imt") == pc.scalar(args['imt'])) & \
+                    (pc.field('calculation_id') == pc.scalar(args['tid']))
+                    # (pc.field('rlz') == pc.scalar(f"rlz-{args['rlz']:03d}")) #& \
                 df = dataset.to_table(filter=flt).to_pandas()
+
+                for model in dynamo_models.values():
+                    if model['nloc_001'] == loc.code:
+                        flt = ((df.sources_digest == model['sources_digest']) & (df.gmms_digest == model['gmms_digest']))
+                        row =  df[flt]
+                        if not row.shape[0] == 1:
+                            raise ValueError(f"dataframe shape error {row.shape} for args {args}")
+
+                        row_values = row['values'].tolist()[0]
+                        print(row_values)
+                        model_values = np.array(model['values'][0]['vals'], dtype=np.float32)
+                        print(model_values)
+
+                        if model['values'][0] == args['imt']:
+                            raise ValueError(f"model values error {row.shape} for args {args['imt']}")
+                        if not (row_values == model_values).all():
+                            raise ValueError(f"list values differ for args {args}")
+                        click.echo(f'model match {args}')
+                        # except AssertionError:
+                        #     print
+                        #     print(row)
+                        #     print(args)
+                        #     break
+                # print(df)
+                # print(df.columns)
+                # assert 0
 
             for res in query_table(args):
                 obj = res.to_simple_dict(force=True)
                 result[obj["sort_key"]] = obj
         return result
+
+    diff_arrow_rlzs(random_args_list, dynamo_models)
+
 
 
 @main.command()
@@ -381,7 +460,11 @@ def random_rlz_og(context, count):
 
     random_args_list = list(get_random_args(gt_info, count))
 
+    print(random_args_list)
+    assert 0
     set_one = get_table_rows(random_args_list)
+    print(set_one)
+    assert 0
 
     #### MONKEYPATCH ...
     toshi_hazard_store.config.REGION = "ap-southeast-2"

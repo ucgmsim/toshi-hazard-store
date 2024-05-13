@@ -1,4 +1,5 @@
-"""Console script for preparing to load NSHM hazard curves to new REV4 tables using General Task(s) and nzshm-model.
+"""
+Console script for preparing to load NSHM hazard curves to new REV4 tables using General Task(s) and nzshm-model.
 
 This is NSHM process specific, as it assumes the following:
  - hazard producer metadata is available from the NSHM toshi-api via **nshm-toshi-client** library
