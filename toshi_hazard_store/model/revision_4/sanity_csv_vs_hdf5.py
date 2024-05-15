@@ -47,7 +47,7 @@ extractor = Extractor(str(hdf5_file))
 
 oqparam = json.loads(extractor.get('oqparam').json)
 #sites = extractor.get('sitecol').to_dframe()
-# rlzs = extractor.get('hcurves?kind=rlzs', asdict=True)
+#
 
 ### OLD => OK, only up to SA(2.0)
 oq = extractor.dstore['oqparam'] # old way
@@ -83,8 +83,12 @@ mystery_array = np.asarray(
      2.8224134e-09, 1.1749444e-09, 4.9472115e-10, 2.0887614e-10]
     )
 
+# NEWER most efficeint way
+# 23 secs
+# rlzs = extractor.get('hcurves?kind=rlzs', asdict=True)
 
-# print('imtl_keys', imtl_keys)
+imtl_keys = sorted(imtl_keys)
+print('sorted imtl_keys', imtl_keys)
 # assert 0
 
 # for imt_label, rlz_idx in itertools.product(imtl_keys, rlz_indices):
@@ -92,20 +96,21 @@ rlz_indices = range(21)
 for rlz_idx in rlz_indices:
 
     for imt_label in imtl_keys:
-
-        # the old way (pre Oct 2023)
         imt_idx = imtl_keys.index(imt_label)
 
-        # CDC suggestion
+        # CDC suggestion, use imt in query string
         rlzs = extractor.get(f'hcurves?kind=rlzs&imt={imt_label}', asdict=True)
-        # print(rlzs.keys())
+        hdf5_values = rlzs[f'rlz-{rlz_idx:03d}'][site_idx][0]
 
+        # print(rlzs.keys())
         # print(rlzs[f'rlz-{rlz_idx:03d}'].shape)
         # assert 0
 
         # GET data from 3D array
-        # NEW WAY (works partly)
-        hdf5_values = rlzs[f'rlz-{rlz_idx:03d}'][site_idx][0]
+        # NEW WAY (works only if imt_labels are sorted
+        '''
+        hdf5_values = rlzs[f'rlz-{rlz_idx:03d}'][site_idx][imt_idx]
+        '''
 
         # # OLD WAY
         # old_hdf5_values=extractor.dstore['hcurves-rlzs'][site_idx][rlz_idx][imt_idx]

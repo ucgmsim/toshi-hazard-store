@@ -84,6 +84,10 @@ def get_producer_config(
     foreign_key: Tuple[str, str], compatible_calc: hazard_models.CompatibleHazardCalculation
 ) -> Optional[hazard_models.HazardCurveProducerConfig]:
     mHCPC = hazard_models.HazardCurveProducerConfig
+    # print(compatible_calc)
+    # print(type(compatible_calc))
+    # print(compatible_calc.foreign_key)
+    assert isinstance(compatible_calc, hazard_models.CompatibleHazardCalculation)
     try:
         return next(
             mHCPC.query(

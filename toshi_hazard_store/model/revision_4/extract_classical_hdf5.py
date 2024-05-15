@@ -6,6 +6,7 @@ import uuid
 import numpy as np
 import pyarrow as pa
 import pyarrow.dataset as ds
+import logging
 
 from typing import Dict, List, Optional
 
@@ -23,6 +24,7 @@ from nzshm_common.location import coded_location
 from nzshm_common.location import location
 from toshi_hazard_store.oq_import.parse_oq_realizations import build_rlz_mapper
 
+log = logging.getLogger(__name__)
 
 def build_nloc_0_mapping(nloc_001_locations: List[coded_location.CodedLocation]) -> Dict[str, int]:
     """a dictionary mapping CodedLocatoin.codes at res=1.0 to a unique integer index"""
@@ -51,6 +53,8 @@ def rlzs_to_record_batch_reader(
         producer_config_fk:  str
     ) -> pa.RecordBatchReader:
     """extract realizations from a 'classical' openquake calc file as a pyarrow batch reader"""
+    log.info(f'rlzs_to_record_batch_reader called with {hdf5_file}, {calculation_id}, {compatible_calc_fk}, {producer_config_fk}')
+
     extractor = Extractor(str(hdf5_file))
     oqparam = json.loads(extractor.get('oqparam').json)
     assert oqparam['calculation_mode'] == 'classical', "calculation_mode is not 'classical'"
@@ -58,7 +62,9 @@ def rlzs_to_record_batch_reader(
     vs30 = int(oqparam['reference_vs30_value'])
 
     # get the IMT props
-    imtls = oqparam['hazard_imtls']  # dict of imt and the levels used at each imt e.g {'PGA': [0.011. 0.222]}
+    # imtls = oqparam['hazard_imtls']  # dict of imt and the levels used at each imt e.g {'PGA': [0.011. 0.222]}
+    oq = extractor.dstore['oqparam'] # old skool way
+    imtl_keys = sorted(list(oq.imtls.keys()))
 
     def generate_rlz_record_batches(extractor, vs30) -> pa.RecordBatch:
 
@@ -79,7 +85,7 @@ def rlzs_to_record_batch_reader(
         sources_digests = [r.sources.hash_digest for i, r in rlz_map.items()]
         gmms_digests = [r.gmms.hash_digest for i, r in rlz_map.items()]
 
-        # iterate through all the rlzs, yielding the pyarrow record bacthes
+        # iterate through all the rlzs, yielding the pyarrow record batches
         for r_idx, rlz_key in enumerate(rlz_keys):
             a3d = rlzs[rlz_key]  # 3D array for the given rlz_key
 
@@ -102,7 +108,7 @@ def rlzs_to_record_batch_reader(
             calculation_id_cat = pa.DictionaryArray.from_arrays(calculation_id_idx, [calculation_id])
             nloc_001_cat = pa.DictionaryArray.from_arrays(nloc_001_idx, [l.code for l in nloc_001_locations])
             nloc_0_cat = pa.DictionaryArray.from_arrays(nloc_0_idx, nloc_0_map.keys())
-            imt_cat = pa.DictionaryArray.from_arrays(imt_idx, imtls.keys())
+            imt_cat = pa.DictionaryArray.from_arrays(imt_idx, imtl_keys)
             rlz_cat = pa.DictionaryArray.from_arrays(
                 rlz_idx, rlz_keys
             )  # there's only one value in the dictionary on each rlz loop
@@ -130,22 +136,22 @@ def rlzs_to_record_batch_reader(
             yield batch
 
     # create a schema...
-    values_type = pa.list_(pa.float64())  ## CHECK if this is enough res, or float32 float64
+    values_type = pa.list_(pa.float32())  ## CHECK if this is enough res, or float32 float64
     vs30_type = pa.int32()
     dict_type = pa.dictionary(pa.int32(), pa.string(), True)
     schema = pa.schema(
         [
-            ("compatible_calc_fk", dict_type),
-            ("producer_config_fk", dict_type),
-            ("calculation_id", dict_type),
-            ("nloc_001", dict_type),
-            ("nloc_0", dict_type),
-            ('imt', dict_type),
-            ('vs30', vs30_type),
-            ('rlz', dict_type),
-            ('sources_digest', dict_type),
-            ('gmms_digest', dict_type),
-            ("values", values_type),
+            ("compatible_calc_fk", dict_type),      # id for hazard-calc equivalence, for PSHA engines interoperability
+            # ("producer_config_fk", dict_type),    # id for the look up
+            ("calculation_id", dict_type),          # a refernce to the original calculation that produced this item
+            ("nloc_001", dict_type),                # the location string to three places e.g. "-38.330~17.550"
+            ("nloc_0", dict_type),                  # the location string to zero places e.g.  "-38.0~17.0" (used for partioning)
+            ('imt', dict_type),                     # the imt label e.g. 'PGA', 'SA(5.0)''
+            ('vs30', vs30_type),                    # the VS30 integer
+            ('rlz', dict_type),                     # the rlz id from the the original calculation
+            ('sources_digest', dict_type),          # a unique hash id for the NSHM LTB source branch
+            ('gmms_digest', dict_type),             # a unique hash id for the NSHM LTB gsim branch
+            ("values", values_type),                # a list of the 44 IMTL values
         ]
     )
 
@@ -177,7 +183,8 @@ if __name__ == '__main__':
             compatible_calc_fk="A_A",
             producer_config_fk="A_B"
         )
-        model_count = pyarrow_dataset.append_models_to_dataset(model_generator, OUTPUT_FOLDER)
-        rlz_count += model_count
-        # log.info(f"Produced {model_count} source models from {subtask_info.hazard_calc_id} in {GT_FOLDER}")
-        print(f"processed {model_count} models in {hdf5_file.parent.name}")
+        pyarrow_dataset.append_models_to_dataset(model_generator, OUTPUT_FOLDER)
+        # rlz_count += model_count
+        # # log.info(f"Produced {model_count} source models from {subtask_info.hazard_calc_id} in {GT_FOLDER}")
+        print(f"processed all models in {hdf5_file.parent.name}")
+        break

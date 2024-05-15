@@ -66,19 +66,21 @@ from nzshm_model.logic_tree.source_logic_tree.toshi_api import (  # noqa: E402 a
     get_secret,
 )
 
+from toshi_hazard_store.model.revision_4 import extract_classical_hdf5
+from toshi_hazard_store.model.revision_4 import pyarrow_dataset
+
 API_URL = os.getenv('NZSHM22_TOSHI_API_URL', "http://127.0.0.1:5000/graphql")
 API_KEY = os.getenv('NZSHM22_TOSHI_API_KEY', "")
 S3_URL = None
 
-DEPLOYMENT_STAGE = os.getenv('DEPLOYMENT_STAGE', 'LOCAL').upper()
+# DEPLOYMENT_STAGE = os.getenv('DEPLOYMENT_STAGE', 'LOCAL').upper()
 REGION = os.getenv('REGION', 'ap-southeast-2')  # SYDNEY
 
 SubtaskRecord = collections.namedtuple('SubtaskRecord', 'gt_id, hazard_calc_id, config_hash, image, hdf5_path, vs30')
 
 def handle_import_subtask_rev4(
-    subtask_info: 'SubtaskRecord', partition, compatible_calc, verbose, update, with_rlzs, dry_run=False
+    subtask_info: 'SubtaskRecord', partition, compatible_calc, target, output_folder, verbose, update, with_rlzs, dry_run=False
 ):
-
     if verbose:
         click.echo(subtask_info)
 
@@ -89,7 +91,6 @@ def handle_import_subtask_rev4(
     configuration_hash = subtask_info.config_hash
     pc_key = (partition, f"{producer_software}:{producer_version_id}:{configuration_hash}")
 
-    # check for existing
     producer_config = get_producer_config(pc_key, compatible_calc)
     if producer_config:
         if verbose:
@@ -121,16 +122,28 @@ def handle_import_subtask_rev4(
             )
 
     if with_rlzs:
-        extractor = Extractor(str(subtask_info.hdf5_path))
-        export_rlzs_rev4(
-            extractor,
-            compatible_calc=compatible_calc,
-            producer_config=producer_config,
-            hazard_calc_id=subtask_info.hazard_calc_id,
-            vs30=subtask_info.vs30,
-            return_rlz=False,
-            update_producer=True,
-        )
+        if target == 'ARROW':
+            # this uses the direct to parquet dataset exporter, approx 100times faster
+            model_generator = extract_classical_hdf5.rlzs_to_record_batch_reader(
+                hdf5_file = str(subtask_info.hdf5_path),
+                calculation_id = subtask_info.hazard_calc_id,
+                compatible_calc_fk = compatible_calc.foreign_key()[1], # TODO DROPPING the partition = awkward!
+                producer_config_fk = producer_config.foreign_key()[1], # DROPPING the partition
+            )
+            pyarrow_dataset.append_models_to_dataset(model_generator, output_folder)
+        else:
+            # this uses the pynamodb model exporter
+            extractor = Extractor(str(subtask_info.hdf5_path))
+            export_rlzs_rev4(
+                extractor,
+                compatible_calc=compatible_calc,
+                producer_config=producer_config,
+                hazard_calc_id=subtask_info.hazard_calc_id,
+                vs30=subtask_info.vs30,
+                return_rlz=False,
+                update_producer=True,
+            )
+            print(f"exported all models in {hdf5_file.parent.name} to {target}")
 
 
 def handle_subtasks(gt_id: str, gtapi: toshi_api_client.ApiClient, subtask_ids: Iterable, work_folder:str, with_rlzs: bool, verbose: bool):
@@ -371,9 +384,10 @@ def producers(
 
         #normal processing
         compatible_calc = get_compatible_calc(compatible_calc_fk.split("_"))
+        # print("CC ", compatible_calc)
         if compatible_calc is None:
             raise ValueError(f'compatible_calc: {compatible_calc_fk} was not found')
-        handle_import_subtask_rev4(subtask_info, partition, compatible_calc, verbose, update, with_rlzs, dry_run)
+        handle_import_subtask_rev4(subtask_info, partition, compatible_calc, target, output_folder, verbose, update, with_rlzs, dry_run)
 
 
 if __name__ == "__main__":
