@@ -27,7 +27,11 @@ def pytest_generate_tests(metafunc):
 @pytest.fixture
 def adapted_model(request, tmp_path):
     """This fixture reconfigures adaption of all table in the hazard_models module"""
-    models = hazard_models.get_tables()
+    models = itertools.chain(
+        hazard_models.get_tables(),
+        hazard_realization_curve.get_tables(),
+        hazard_aggregate_curve.get_tables()
+    )
 
     class AdaptedModelFixture:
         HazardRealizationCurve = None
@@ -37,11 +41,16 @@ def adapted_model(request, tmp_path):
 
     def set_adapter(model_klass, adapter):
         print(f'*** setting {model_klass.__name__} to adapter {adapter}')
-        if model_klass.__name__ == 'HazardRealizationCurve':
-
+        if model_klass.__name__ == 'HazardAggregateCurve':
+            ensure_class_bases_begin_with(
+                namespace=hazard_aggregate_curve.__dict__,
+                class_name=model_klass.__name__,  # `str` type differs on Python 2 vs. 3.
+                base_class=adapter,
+            )
+        elif model_klass.__name__ == 'HazardRealizationCurve':
             ensure_class_bases_begin_with(
                 namespace=hazard_realization_curve.__dict__,
-                class_name=str('HazardRealizationCurve'),  # `str` type differs on Python 2 vs. 3.
+                class_name=model_klass.__name__,  # `str` type differs on Python 2 vs. 3.
                 base_class=adapter,
             )
         else:
