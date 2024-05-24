@@ -27,8 +27,6 @@ from typing import Iterable
 
 import click
 
-from .store_hazard_v3 import extract_and_save
-
 logging.basicConfig(level=logging.INFO)
 logging.getLogger('pynamodb').setLevel(logging.INFO)
 logging.getLogger('botocore').setLevel(logging.INFO)
@@ -41,17 +39,15 @@ logging.getLogger('root').setLevel(logging.INFO)
 log = logging.getLogger(__name__)
 
 import toshi_hazard_store  # noqa: E402
-
 from toshi_hazard_store.model.revision_4 import hazard_models
+from toshi_hazard_store.model.revision_4.migrate_v3_to_v4 import ECR_REGISTRY_ID, ECR_REPONAME
 from toshi_hazard_store.oq_import import (  # noqa: E402
     create_producer_config,
     export_rlzs_rev4,
     get_compatible_calc,
     get_producer_config,
 )
-from toshi_hazard_store.model.revision_4.migrate_v3_to_v4 import ECR_REGISTRY_ID, ECR_REPONAME
 
-from .core import echo_settings
 from .revision_4 import aws_ecr_docker_image as aws_ecr
 from .revision_4 import toshi_api_client  # noqa: E402
 from .revision_4 import oq_config
@@ -61,13 +57,7 @@ try:
 except (ModuleNotFoundError, ImportError):
     print("WARNING: the transform module uses the optional openquake dependencies - h5py, pandas and openquake.")
 
-
-from nzshm_model.logic_tree.source_logic_tree.toshi_api import (  # noqa: E402 and this function be in the client !
-    get_secret,
-)
-
-from toshi_hazard_store.model.revision_4 import extract_classical_hdf5
-from toshi_hazard_store.model.revision_4 import pyarrow_dataset
+from toshi_hazard_store.model.revision_4 import extract_classical_hdf5, pyarrow_dataset
 
 API_URL = os.getenv('NZSHM22_TOSHI_API_URL', "http://127.0.0.1:5000/graphql")
 API_KEY = os.getenv('NZSHM22_TOSHI_API_KEY', "")
@@ -78,8 +68,17 @@ REGION = os.getenv('REGION', 'ap-southeast-2')  # SYDNEY
 
 SubtaskRecord = collections.namedtuple('SubtaskRecord', 'gt_id, hazard_calc_id, config_hash, image, hdf5_path, vs30')
 
+
 def handle_import_subtask_rev4(
-    subtask_info: 'SubtaskRecord', partition, compatible_calc, target, output_folder, verbose, update, with_rlzs, dry_run=False
+    subtask_info: 'SubtaskRecord',
+    partition,
+    compatible_calc,
+    target,
+    output_folder,
+    verbose,
+    update,
+    with_rlzs,
+    dry_run=False,
 ):
     if verbose:
         click.echo(subtask_info)
@@ -125,10 +124,10 @@ def handle_import_subtask_rev4(
         if target == 'ARROW':
             # this uses the direct to parquet dataset exporter, approx 100times faster
             model_generator = extract_classical_hdf5.rlzs_to_record_batch_reader(
-                hdf5_file = str(subtask_info.hdf5_path),
-                calculation_id = subtask_info.hazard_calc_id,
-                compatible_calc_fk = compatible_calc.foreign_key()[1], # TODO DROPPING the partition = awkward!
-                producer_config_fk = producer_config.foreign_key()[1], # DROPPING the partition
+                hdf5_file=str(subtask_info.hdf5_path),
+                calculation_id=subtask_info.hazard_calc_id,
+                compatible_calc_fk=compatible_calc.foreign_key()[1],  # TODO DROPPING the partition = awkward!
+                producer_config_fk=producer_config.foreign_key()[1],  # DROPPING the partition
             )
             pyarrow_dataset.append_models_to_dataset(model_generator, output_folder)
         else:
@@ -143,10 +142,17 @@ def handle_import_subtask_rev4(
                 return_rlz=False,
                 update_producer=True,
             )
-            print(f"exported all models in {hdf5_file.parent.name} to {target}")
+            print(f"exported all models in {subtask_info.hdf5_path.parent.name} to {target}")
 
 
-def handle_subtasks(gt_id: str, gtapi: toshi_api_client.ApiClient, subtask_ids: Iterable, work_folder:str, with_rlzs: bool, verbose: bool):
+def handle_subtasks(
+    gt_id: str,
+    gtapi: toshi_api_client.ApiClient,
+    subtask_ids: Iterable,
+    work_folder: str,
+    with_rlzs: bool,
+    verbose: bool,
+):
 
     subtasks_folder = pathlib.Path(work_folder, gt_id, 'subtasks')
     subtasks_folder.mkdir(parents=True, exist_ok=True)
@@ -198,6 +204,7 @@ def handle_subtasks(gt_id: str, gtapi: toshi_api_client.ApiClient, subtask_ids: 
             vs30=jobconf.config.get('site_params', 'reference_vs30_value'),
         )
 
+
 #  _ __ ___   __ _(_)_ __
 # | '_ ` _ \ / _` | | '_ \
 # | | | | | | (_| | | | | |
@@ -207,10 +214,12 @@ def handle_subtasks(gt_id: str, gtapi: toshi_api_client.ApiClient, subtask_ids: 
 def main():
     """Import NSHM Model hazard curves to new revision 4 models."""
 
+
 @main.command()
 def create_tables():
     click.echo('Ensuring Rev4 tables exist.')
     toshi_hazard_store.model.migrate_r4()
+
 
 @main.command()
 @click.argument('partition')
@@ -292,10 +301,7 @@ def prod_from_gtfile(
     default='LOCAL',
     help="set the target store. defaults to LOCAL. ARROW does produces parquet instead of dynamoDB tables",
 )
-@click.option(
-    '-W',
-    '--work_folder',
-    default=lambda: os.getcwd(), help="defaults to current directory")
+@click.option('-W', '--work_folder', default=lambda: os.getcwd(), help="defaults to current directory")
 @click.option(
     '-O',
     '--output_folder',
@@ -323,7 +329,6 @@ def prod_from_gtfile(
     default=False,
     help="also get the realisations",
 )
-
 @click.option('-v', '--verbose', is_flag=True, default=False)
 @click.option('-d', '--dry-run', is_flag=True, default=False)
 def producers(
@@ -351,7 +356,7 @@ def producers(
     - optionally, create any new producer configs
     """
 
-    #if verbose:
+    # if verbose:
     #    echo_settings(work_folder)
 
     headers = {"x-api-key": API_KEY}
@@ -364,30 +369,25 @@ def producers(
         for edge in query_res['children']['edges']:
             yield edge['node']['child']['id']
 
-    #query the API for general task and
+    # query the API for general task and
     query_res = gtapi.get_gt_subtasks(gt_id)
 
     count = 0
-    for subtask_info in handle_subtasks(
-        gt_id,
-        gtapi,
-        get_hazard_task_ids(query_res),
-        work_folder,
-        with_rlzs,
-        verbose
-        ):
+    for subtask_info in handle_subtasks(gt_id, gtapi, get_hazard_task_ids(query_res), work_folder, with_rlzs, verbose):
 
         count += 1
         if dry_run:
             click.echo(f'DRY RUN. otherwise, would be processing subtask {count} {subtask_info} ')
             continue
 
-        #normal processing
+        # normal processing
         compatible_calc = get_compatible_calc(compatible_calc_fk.split("_"))
         # print("CC ", compatible_calc)
         if compatible_calc is None:
             raise ValueError(f'compatible_calc: {compatible_calc_fk} was not found')
-        handle_import_subtask_rev4(subtask_info, partition, compatible_calc, target, output_folder, verbose, update, with_rlzs, dry_run)
+        handle_import_subtask_rev4(
+            subtask_info, partition, compatible_calc, target, output_folder, verbose, update, with_rlzs, dry_run
+        )
 
 
 if __name__ == "__main__":

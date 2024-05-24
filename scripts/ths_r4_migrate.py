@@ -13,8 +13,8 @@ import os
 import pathlib
 
 import click
-import pyarrow as pa
 import pandas as pd
+import pyarrow as pa
 from dotenv import load_dotenv
 
 from toshi_hazard_store.model.revision_4 import hazard_models, pyarrow_dataset
@@ -231,10 +231,17 @@ def main(
 
             if target == 'ARROW':
                 model_generator = migrate_realisations_from_subtask(
-                    subtask_info, source, partition, compatible_calc, verbose, update, dry_run=False, bail_after=bail_after
+                    subtask_info,
+                    source,
+                    partition,
+                    compatible_calc,
+                    verbose,
+                    update,
+                    dry_run=False,
+                    bail_after=bail_after,
                 )
 
-            models= [model.as_pandas_model() for model in model_generator]
+            models = [model.as_pandas_model() for model in model_generator]
             model_count = len(models)
             rlz_count += model_count
             log.info(f"Produced {model_count} source models from {subtask_info.hazard_calc_id} in {gt_id}")

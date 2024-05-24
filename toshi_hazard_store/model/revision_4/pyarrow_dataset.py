@@ -5,19 +5,14 @@ import logging
 import pathlib
 import uuid
 from functools import partial
-from typing import TYPE_CHECKING, Iterable, Optional, Union
+from typing import Optional, Union
 
-import pandas as pd
 import pyarrow as pa
 import pyarrow.dataset
 import pyarrow.dataset as ds
 from pyarrow import fs
 
 log = logging.getLogger(__name__)
-
-if TYPE_CHECKING:
-    from .hazard_aggregation import HazardAggregation
-    from .hazard_realization_curve import HazardRealizationCurve
 
 
 def write_metadata(output_folder: pathlib.Path, visited_file: pyarrow.dataset.WrittenFile) -> None:
@@ -54,7 +49,7 @@ def append_models_to_dataset(
     base_dir: str,
     dataset_format: str = 'parquet',
     filesystem: Optional[fs.FileSystem] = None,
-    ):
+):
     """
     append realisation models to dataset using the pyarrow library
 
@@ -73,4 +68,3 @@ def append_models_to_dataset(
         file_visitor=write_metadata_fn,
         filesystem=filesystem,
     )
-

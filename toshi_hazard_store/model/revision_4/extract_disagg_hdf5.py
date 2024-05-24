@@ -1,15 +1,15 @@
+# flake8: noqa
 import json
-import pathlib
-
-import pytest
-import uuid
 import logging
+import pathlib
+import uuid
+from typing import Dict, List, Optional
+
 import numpy as np
+import pandas as pd
 import pyarrow as pa
 import pyarrow.dataset as ds
-import pandas as pd
-
-from typing import Dict, List, Optional
+import pytest
 
 try:
     import openquake  # noqa
@@ -21,23 +21,20 @@ except ImportError:
 if HAVE_OQ:
     from openquake.calculators.extract import Extractor
 
-from nzshm_common.location import coded_location
-from nzshm_common.location import location
-from toshi_hazard_store.oq_import.parse_oq_realizations import build_rlz_mapper
+from nzshm_common.location import coded_location, location
 
-from toshi_hazard_store.model.revision_4.extract_classical_hdf5 import build_nloc_0_mapping, build_nloc0_series
 from toshi_hazard_store.model.revision_4 import pyarrow_dataset
+from toshi_hazard_store.model.revision_4.extract_classical_hdf5 import build_nloc0_series, build_nloc_0_mapping
+from toshi_hazard_store.oq_import.parse_oq_realizations import build_rlz_mapper
 
 logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger(__name__)
 # log.setLevel(logging.DEBUG)
 
+
 def disaggs_to_record_batch_reader(
-        hdf5_file: str,
-        calculation_id: str,
-        compatible_calc_fk: str,
-        producer_config_fk:  str
-    ) -> pa.RecordBatchReader:
+    hdf5_file: pathlib.Path, calculation_id: str, compatible_calc_fk: str, producer_config_fk: str
+) -> pa.RecordBatchReader:
     """extract disagg statistics from from a 'disaggregation' openquake calc file as a pyarrow batch reader"""
     extractor = Extractor(str(hdf5_file))
 
@@ -80,7 +77,7 @@ def disaggs_to_record_batch_reader(
         # asdict=True
     )
 
-    def build_batch(disagg_rlzs, nloc_0: int, nloc_001:int):
+    def build_batch(disagg_rlzs, nloc_0: int, nloc_001: int):
 
         print('kind', disagg_rlzs.kind)
         print('imt', disagg_rlzs.imt)
@@ -92,7 +89,7 @@ def disaggs_to_record_batch_reader(
         # print('trt type', type(disagg_rlzs.trt))
         # print('trt shape', disagg_rlzs.trt.shape)
         trt_values = disagg_rlzs.trt.tolist()
-        #print('trt_values', trt_values)
+        # print('trt_values', trt_values)
 
         if not trt_values:
             trt_values = ['TRT unknown']
@@ -103,23 +100,28 @@ def disaggs_to_record_batch_reader(
 
         # Now we must convert the n_dimensional mumpy array into columnar series
         # shape_descr ['trt', 'mag', 'dist', 'eps', 'imt', 'poe']
-        nested_array = disagg_rlzs.array # 3D array for the given rlz_key
+        nested_array = disagg_rlzs.array  # 3D array for the given rlz_key
         n_trt, n_mag, n_dist, n_eps, n_imt, n_poe = nested_array.shape
         log.debug(f'shape {nested_array.shape}')
-        all_indices = n_trt*n_mag*n_dist*n_eps*n_imt*n_poe
+        all_indices = n_trt * n_mag * n_dist * n_eps * n_imt * n_poe
 
         assert len(disagg_rlzs.extra) == n_poe
 
         # create the np.arrays for our series
-        trt_idx = np.repeat(np.arange(n_trt), all_indices/n_trt)
-        mag_idx = np.repeat(np.tile(np.arange(n_mag),    n_trt),                all_indices/(n_trt*n_mag))
-        dist_idx = np.repeat(np.tile(np.arange(n_dist), (n_trt*n_mag)),         all_indices/(n_trt*n_mag*n_dist))
-        eps_idx = np.repeat(np.tile(np.arange(n_eps),   (n_trt*n_mag*n_dist)),  all_indices/(n_trt*n_mag*n_dist*n_eps))
-        imt_idx = np.repeat(np.tile(np.arange(n_imt),   (n_trt*n_mag*n_dist*n_eps)), all_indices/(n_trt*n_mag*n_dist*n_eps*n_imt))
+        trt_idx = np.repeat(np.arange(n_trt), all_indices / n_trt)
+        mag_idx = np.repeat(np.tile(np.arange(n_mag), n_trt), all_indices / (n_trt * n_mag))
+        dist_idx = np.repeat(np.tile(np.arange(n_dist), (n_trt * n_mag)), all_indices / (n_trt * n_mag * n_dist))
+        eps_idx = np.repeat(
+            np.tile(np.arange(n_eps), (n_trt * n_mag * n_dist)), all_indices / (n_trt * n_mag * n_dist * n_eps)
+        )
+        imt_idx = np.repeat(
+            np.tile(np.arange(n_imt), (n_trt * n_mag * n_dist * n_eps)),
+            all_indices / (n_trt * n_mag * n_dist * n_eps * n_imt),
+        )
 
-        rlz_idx = np.tile(np.arange(n_poe), int(all_indices/n_poe))
+        rlz_idx = np.tile(np.arange(n_poe), int(all_indices / n_poe))
 
-        poe_series = nested_array.reshape(all_indices) # get the actual poe_values
+        poe_series = nested_array.reshape(all_indices)  # get the actual poe_values
 
         # additional series for the data held outside the nested array
         vs30_series = np.full(all_indices, vs30)
@@ -149,12 +151,12 @@ def disaggs_to_record_batch_reader(
             log.debug(f"values {poe_series}")
 
         # Build the categorised series as pa.DictionaryArray objects
-        #compatible_calc_cat = pa.DictionaryArray.from_arrays(compatible_calc_idx, [compatible_calc_fk])
-        #producer_config_cat = pa.DictionaryArray.from_arrays(producer_config_idx, [producer_config_fk])
-        #calculation_id_cat = pa.DictionaryArray.from_arrays(calculation_id_idx, [calculation_id])
+        # compatible_calc_cat = pa.DictionaryArray.from_arrays(compatible_calc_idx, [compatible_calc_fk])
+        # producer_config_cat = pa.DictionaryArray.from_arrays(producer_config_idx, [producer_config_fk])
+        # calculation_id_cat = pa.DictionaryArray.from_arrays(calculation_id_idx, [calculation_id])
 
-        nloc_001_cat = pa.DictionaryArray.from_arrays(nloc_001_idx, ["MRO"]) #[l.code for l in nloc_001_locations])
-        nloc_0_cat = pa.DictionaryArray.from_arrays(nloc_0_idx, ["MRO"]) #nloc_0_map.keys())
+        nloc_001_cat = pa.DictionaryArray.from_arrays(nloc_001_idx, ["MRO"])  # [l.code for l in nloc_001_locations])
+        nloc_0_cat = pa.DictionaryArray.from_arrays(nloc_0_idx, ["MRO"])  # nloc_0_map.keys())
 
         # TODO make these more useful
         mag_bin_names = [str(x) for x in range(n_mag)]
@@ -164,7 +166,7 @@ def disaggs_to_record_batch_reader(
         trt_cat = pa.DictionaryArray.from_arrays(trt_idx, trt_values)
         mag_cat = pa.DictionaryArray.from_arrays(mag_idx, mag_bin_names)
         dist_cat = pa.DictionaryArray.from_arrays(dist_idx, dist_bin_names)
-        eps_cat =  pa.DictionaryArray.from_arrays(eps_idx, eps_bin_names)
+        eps_cat = pa.DictionaryArray.from_arrays(eps_idx, eps_bin_names)
 
         imt_cat = pa.DictionaryArray.from_arrays(imt_idx, list(disagg_rlzs.imt))
         rlz_cat = pa.DictionaryArray.from_arrays(rlz_idx, list(disagg_rlzs.extra))
@@ -172,14 +174,14 @@ def disaggs_to_record_batch_reader(
         # print(imt_cat)
         # print(rlz_cat)
 
-        #sources_digest_cat = pa.DictionaryArray.from_arrays(rlz_idx, sources_digests)
-        #gmms_digest_cat = pa.DictionaryArray.from_arrays(rlz_idx, gmms_digests)
+        # sources_digest_cat = pa.DictionaryArray.from_arrays(rlz_idx, sources_digests)
+        # gmms_digest_cat = pa.DictionaryArray.from_arrays(rlz_idx, gmms_digests)
 
         yield pa.RecordBatch.from_arrays(
             [
-                #compatible_calc_cat,
-                #producer_config_cat,
-                #calculation_id_cat,
+                # compatible_calc_cat,
+                # producer_config_cat,
+                # calculation_id_cat,
                 nloc_001_cat,
                 nloc_0_cat,
                 trt_cat,
@@ -189,16 +191,24 @@ def disaggs_to_record_batch_reader(
                 imt_cat,
                 rlz_cat,
                 vs30_series,
-                poe_series
-                #sources_digest_cat,
-                #gmms_digest_cat,
-                #values_series,
+                poe_series,
+                # sources_digest_cat,
+                # gmms_digest_cat,
+                # values_series,
             ],
             [
-                #"compatible_calc_fk", "producer_config_fk", "calculation_id",
-                "nloc_001", "nloc_0",
-                "trt", "mag", "dist", "eps", "imt", "rlz", "vs30", "poe"
-                #" sources_digest", "gmms_digest", "values"
+                # "compatible_calc_fk", "producer_config_fk", "calculation_id",
+                "nloc_001",
+                "nloc_0",
+                "trt",
+                "mag",
+                "dist",
+                "eps",
+                "imt",
+                "rlz",
+                "vs30",
+                "poe",
+                # " sources_digest", "gmms_digest", "values"
             ],
         )
 
@@ -208,9 +218,9 @@ def disaggs_to_record_batch_reader(
     dict_type = pa.dictionary(pa.int32(), pa.string(), True)
     schema = pa.schema(
         [
-            #("compatible_calc_fk", dict_type),
-            #("producer_config_fk", dict_type),
-            #("calculation_id", dict_type),
+            # ("compatible_calc_fk", dict_type),
+            # ("producer_config_fk", dict_type),
+            # ("calculation_id", dict_type),
             ("nloc_001", dict_type),
             ("nloc_0", dict_type),
             ('trt', dict_type),
@@ -229,14 +239,11 @@ def disaggs_to_record_batch_reader(
     return pa.RecordBatchReader.from_batches(schema, build_batch(disagg_rlzs, nloc_0=0, nloc_001=0))
 
 
-def extract_to_dataset(hdf5_file:pathlib.Path, dataset_folder):
+def extract_to_dataset(hdf5_file: pathlib.Path, dataset_folder):
     model_generator = disaggs_to_record_batch_reader(
-        hdf5_file,
-        calculation_id=hdf5_file.parent.name,
-        compatible_calc_fk="A_A",
-        producer_config_fk="A_B"
+        hdf5_file, calculation_id=hdf5_file.parent.name, compatible_calc_fk="A_A", producer_config_fk="A_B"
     )
-    pyarrow_dataset.append_models_to_dataset(model_generator, OUTPUT_FOLDER)
+    pyarrow_dataset.append_models_to_dataset(model_generator, str(OUTPUT_FOLDER))
     print(f"processed models in {hdf5_file.parent.name}")
 
 
@@ -246,30 +253,28 @@ def load_dataframe(dataset_folder):
     return table.to_pandas()
 
 
-
-
 WORKING = pathlib.Path('/GNSDATA/LIB/toshi-hazard-store/WORKING/DISAGG')
 OUTPUT_FOLDER = WORKING / "ARROW" / "DIRECT_DISAGG"
 
 # hdf5_file = WORKING / 'openquake_hdf5_archive-T3BlbnF1YWtlSGF6YXJkVGFzazoxMzU5MTQ1' / 'calc_1.hdf5' # bad file 4
-hdf5_file = WORKING / 'openquake_hdf5_archive-T3BlbnF1YWtlSGF6YXJkVGFzazo2OTI2MTg2' / 'calc_1.hdf5'             # bad file 3
-csvfile = WORKING / 'openquake_csv_archive-T3BlbnF1YWtlSGF6YXJkVGFzazo2OTI2MTg2' / 'TRT_Mag_Dist_Eps-0_1.csv'   # last
+hdf5_file = WORKING / 'openquake_hdf5_archive-T3BlbnF1YWtlSGF6YXJkVGFzazo2OTI2MTg2' / 'calc_1.hdf5'  # bad file 3
+csvfile = WORKING / 'openquake_csv_archive-T3BlbnF1YWtlSGF6YXJkVGFzazo2OTI2MTg2' / 'TRT_Mag_Dist_Eps-0_1.csv'  # last
 import random
+
 if __name__ == '__main__':
 
     """
-        disagg = pathlib.Path('/GNSDATA/LIB/toshi-hazard-store/WORKING/DISAGG')
-        bad_file_1 = disagg / 'calc_1.hdf5'
-        bad_file_2 = disagg / 'openquake_hdf5_archive-T3BlbnF1YWtlSGF6YXJkVGFzazoxMDYzMzU3' / 'calc_1.hdf5'
-        bad_file_3 = disagg / 'openquake_hdf5_archive-T3BlbnF1YWtlSGF6YXJkVGFzazo2OTI2MTg2' / 'calc_1.hdf5'
-        bad_file_4 = disagg / 'openquake_hdf5_archive-T3BlbnF1YWtlSGF6YXJkVGFzazoxMzU5MTQ1' / 'calc_1.hdf5'
+    disagg = pathlib.Path('/GNSDATA/LIB/toshi-hazard-store/WORKING/DISAGG')
+    bad_file_1 = disagg / 'calc_1.hdf5'
+    bad_file_2 = disagg / 'openquake_hdf5_archive-T3BlbnF1YWtlSGF6YXJkVGFzazoxMDYzMzU3' / 'calc_1.hdf5'
+    bad_file_3 = disagg / 'openquake_hdf5_archive-T3BlbnF1YWtlSGF6YXJkVGFzazo2OTI2MTg2' / 'calc_1.hdf5'
+    bad_file_4 = disagg / 'openquake_hdf5_archive-T3BlbnF1YWtlSGF6YXJkVGFzazoxMzU5MTQ1' / 'calc_1.hdf5'
     """
 
     # extract_to_dataset(hdf5_file, dataset_folder=OUTPUT_FOLDER)
 
     df0 = load_dataframe(dataset_folder=OUTPUT_FOLDER)
     df1 = pd.read_csv(str(csvfile), header=1)
-
 
     def reshape_csv_dataframe(df1):
         rlz_cols = [cname for cname in df1.columns if 'rlz' in cname]
@@ -279,10 +284,9 @@ if __name__ == '__main__':
                 drop_cols = rlz_cols.copy()
                 drop_cols.remove(key)
                 sub_df = df1.drop(columns=drop_cols)
-                yield sub_df.rename(columns = {key:"rlz"})
+                yield sub_df.rename(columns={key: "rlz"})
 
         return pd.concat(generate_subtables(df1, rlz_cols))
-
 
     def compare_hdf5_csv(df_hdf5, df_csv):
         print(f"HDF shape, {df_hdf5.shape}")
@@ -298,13 +302,13 @@ if __name__ == '__main__':
         print(f"CSV eps, {len(df_csv['eps'].unique())} {df_csv['mag'].unique()}")
         print(f"CSV imt, {len(df_csv['imt'].unique())}")
 
-    #compare_hdf5_csv(df0, df1)
+    # compare_hdf5_csv(df0, df1)
 
     print()
     print('RESHAPING')
     print('============================')
     df2 = reshape_csv_dataframe(df1)
-    #compare_hdf5_csv(df0, df2)
+    # compare_hdf5_csv(df0, df2)
 
     def random_spot_checks(df_hdf, df_csv):
         hdf_mag = df_hdf['mag'].unique().tolist()
@@ -319,18 +323,21 @@ if __name__ == '__main__':
         assert len(hdf_eps) == (len(csv_eps))
         assert len(hdf_dist) == (len(csv_dist))
 
-        eps_idx = random.randint(0, len(hdf_eps)-1)
-        mag_idx = random.randint(0, len(hdf_mag)-1)
-        dist_idx = random.randint(0, len(hdf_dist)-1)
+        eps_idx = random.randint(0, len(hdf_eps) - 1)
+        mag_idx = random.randint(0, len(hdf_mag) - 1)
+        dist_idx = random.randint(0, len(hdf_dist) - 1)
 
-        flt_hdf = (df_hdf.eps==hdf_eps[eps_idx]) & (df_hdf.mag==hdf_mag[mag_idx]) & (df_hdf.dist==hdf_dist[dist_idx])
-        flt_csv = (df_csv.eps==csv_eps[eps_idx]) & (df_csv.mag==csv_mag[mag_idx]) & (df_csv.dist==csv_dist[dist_idx])
+        flt_hdf = (
+            (df_hdf.eps == hdf_eps[eps_idx]) & (df_hdf.mag == hdf_mag[mag_idx]) & (df_hdf.dist == hdf_dist[dist_idx])
+        )
+        flt_csv = (
+            (df_csv.eps == csv_eps[eps_idx]) & (df_csv.mag == csv_mag[mag_idx]) & (df_csv.dist == csv_dist[dist_idx])
+        )
 
         # print(flt)
-        print( df_hdf[flt_hdf] )
+        print(df_hdf[flt_hdf])
         print()
-        print( df_csv[flt_csv] )
-
+        print(df_csv[flt_csv])
 
     random_spot_checks(df0, df2)
 
@@ -339,10 +346,12 @@ if __name__ == '__main__':
 
 def reshape_csv_classic_dataframe(df1):
     collapse_cols = [cname for cname in df1.columns if 'poe' in cname]
+
     def generate_subtables(df1, collapse_cols):
         for idx, key in enumerate(collapse_cols):
             drop_cols = collapse_cols.copy()
             drop_cols.remove(key)
             sub_df = df1.drop(columns=drop_cols)
-            yield sub_df.rename(columns = {key:"poe"})
+            yield sub_df.rename(columns={key: "poe"})
+
     return pd.concat(generate_subtables(df1, collapse_cols))

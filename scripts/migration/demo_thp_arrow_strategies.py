@@ -144,8 +144,8 @@ def duckdb_wont_quack_arrow(loc: CodedLocation, imt="PGA", vs30=275, compat_key=
     # f"imt = {imt} and CAST(vs30 as DECIMAL) = {vs30} and compatible_calc_fk = {compat_key}").arrow()
 
     t3 = time.monotonic()
-    print(table0.shape)
-    df0 = table0.to_pandas()
+    print(table.shape)
+    df0 = table.to_pandas()
     t4 = time.monotonic()
     for branch in range(912):  # this is NSHM count
         sources_digest = 'ef55f8757069'

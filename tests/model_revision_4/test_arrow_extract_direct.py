@@ -1,18 +1,9 @@
-import json
+import uuid
 from pathlib import Path
 
-import pytest
-import uuid
-import numpy as np
-import pyarrow as pa
 import pyarrow.dataset as ds
-
-# import pandas as pd
-
-from nzshm_common.location import coded_location
-from nzshm_common.location import location
-
-from typing import Dict, List, Optional
+import pytest
+from nzshm_common.location import coded_location, location
 
 try:
     import openquake  # noqa
@@ -24,12 +15,9 @@ except ImportError:
 if HAVE_OQ:
     from openquake.calculators.extract import Extractor
 
-from toshi_hazard_store.oq_import.parse_oq_realizations import build_rlz_mapper
-from toshi_hazard_store.transform import parse_logic_tree_branches
-from toshi_hazard_store.oq_import.parse_oq_realizations import build_rlz_source_map, build_rlz_gmm_map
-from toshi_hazard_store.oq_import.oq_manipulate_hdf5 import migrate_gsim_row, rewrite_calc_gsims
-
 from toshi_hazard_store.model.revision_4 import extract_classical_hdf5
+from toshi_hazard_store.oq_import.parse_oq_realizations import build_rlz_gmm_map, build_rlz_source_map
+from toshi_hazard_store.transform import parse_logic_tree_branches
 
 
 @pytest.mark.skip('showing my working')
@@ -53,6 +41,7 @@ def test_binning_locations():
 
     assert 0
 
+
 @pytest.mark.skip('large inputs not checked in')
 def test_logic_tree_registry_lookup():
 
@@ -73,10 +62,10 @@ def test_logic_tree_registry_lookup():
         source_lt, gsim_lt, rlz_lt = parse_logic_tree_branches(extractor)
 
         # check gsims
-        gmm_map = build_rlz_gmm_map(gsim_lt)
+        build_rlz_gmm_map(gsim_lt)
         # check sources
         try:
-            src_map = build_rlz_source_map(source_lt)
+            build_rlz_source_map(source_lt)
         except KeyError as exc:
             print(exc)
             raise
@@ -94,19 +83,7 @@ def test_logic_tree_registry_lookup():
     #
     # raises KeyError: 'disaggregation sources'
 
-    """
-    >>> gt_index['R2VuZXJhbFRhc2s6MTM1OTEyNQ==']['arguments']
-        {'hazard_config': 'RmlsZToxMjkxNjk4', 'model_type': 'COMPOSITE', 'disagg_config':
-        "{'source_ids': ['SW52ZXJzaW9uU29sdXRpb25Ocm1sOjEyOTE2MTE=', 'RmlsZToxMzA3MzI='], 'nrlz': 12, 'location': '-39.500~176.900',
-        'site_name': None, 'site_code': None, 'vs30': 300, 'imt': 'PGA', 'poe': 0.02, 'inv_time': 50,
-        'target_level': 1.279633045964304, 'level': 1.279633045964304,
-        'disagg_settings': {'disagg_bin_edges': {'dist': [0, 5.0, 10.0, 15.0, 20.0, 30.0, 40.0, 50.0, 60.0, 80.0, 100.0, 140.0, 180.0, 220.0, 260.0, 320.0, 380.0, 500.0]},
-        'num_epsilon_bins': 16, 'mag_bin_width': 0.1999, 'coordinate_bin_width': 5, 'disagg_outputs': 'TRT Mag Dist Mag_Dist TRT_Mag_Dist_Eps'}}",
-        'hazard_model_id': 'NSHM_v1.0.4', 'hazard_agg_target': 'mean', 'rupture_mesh_spacing': '4', 'ps_grid_spacing': '30', 'vs30': '300',
-        logic_tree_permutations': "[{'permute': [{'members': [{'tag': 'DISAGG', 'inv_id': 'SW52ZXJzaW9uU29sdXRpb25Ocm1sOjEyOTE2MTE=', 'bg_id': 'RmlsZToxMzA3MzI=', 'weight': 1.0}]}]}]"}
-
-    """
-    assert not build_maps(bad_file_4), f"bad_file_4 build map fails"
+    assert not build_maps(bad_file_4), "bad_file_4 build map fails"
 
     # first subtask of last gt in gt_index
     # T3BlbnF1YWtlSGF6YXJkVGFzazo2OTI2MTg2 from R2VuZXJhbFRhc2s6NjkwMTk2Mw==
@@ -120,18 +97,18 @@ def test_logic_tree_registry_lookup():
     >>> args = gt_index['R2VuZXJhbFRhc2s6NjkwMTk2Mw==']['arguments']
 
     """
-    assert not build_maps(bad_file_3), f"bad_file_3 build map fails"
+    assert not build_maps(bad_file_3), "bad_file_3 build map fails"
 
     # 2nd random choice (weird setup) ++ ValueError: Unknown GSIM: ParkerEtAl2021SInter
     # T3BlbnF1YWtlSGF6YXJkVGFzazoxMDYzMzU3 from ??
     # Created: February 2nd, 2023 at 9:22:36 AM GMT+13
     # raises KeyError: 'disaggregation sources'
 
-    assert not build_maps(bad_file_2), f"bad_file_2 build map fails"
+    assert not build_maps(bad_file_2), "bad_file_2 build map fails"
 
     # first random choice
     # raises KeyError: '[dmTL, bN[0.95, 16.5], C4.0, s0.42]'
-    assert not build_maps(bad_file_1), f"bad_file_1 build map fails"
+    assert not build_maps(bad_file_1), "bad_file_1 build map fails"
 
 
 @pytest.mark.skipif(not HAVE_OQ, reason="This test fails if openquake is not installed")
@@ -139,10 +116,9 @@ def test_hdf5_realisations_direct_to_parquet_roundtrip(tmp_path):
 
     hdf5_fixture = Path(__file__).parent.parent / 'fixtures' / 'oq_import' / 'calc_1.hdf5'
 
-    record_batch_reader = extract_classical_hdf5.rlzs_to_record_batch_reader(str(hdf5_fixture),
-        calculation_id = "dummy_calc_id",
-        compatible_calc_fk = "CCFK",
-        producer_config_fk = "PCFK")
+    record_batch_reader = extract_classical_hdf5.rlzs_to_record_batch_reader(
+        str(hdf5_fixture), calculation_id="dummy_calc_id", compatible_calc_fk="CCFK", producer_config_fk="PCFK"
+    )
 
     print(record_batch_reader)
 
@@ -182,8 +158,12 @@ def test_hdf5_realisations_direct_to_parquet_roundtrip(tmp_path):
 
     assert test_loc_df.shape == (1293084 / 3991, 10)
     assert test_loc_df['imt'].tolist()[0] == 'PGA'
-    assert test_loc_df['imt'].tolist()[-1] == 'SA(7.5)', "not so weird, as the IMT keys are sorted alphnumerically in openquake now."
-    assert test_loc_df['imt'].tolist().index('SA(10.0)') == 17 , "also not so weird, as the IMT keys are sorted alphnumerically"
+    assert (
+        test_loc_df['imt'].tolist()[-1] == 'SA(7.5)'
+    ), "not so weird, as the IMT keys are sorted alphnumerically in openquake now."
+    assert (
+        test_loc_df['imt'].tolist().index('SA(10.0)') == 17
+    ), "also not so weird, as the IMT keys are sorted alphnumerically"
 
     assert test_loc_df['nloc_001'].tolist()[0] == test_loc.code
     assert test_loc_df['nloc_0'].tolist()[0] == test_loc.resample(1.0).code

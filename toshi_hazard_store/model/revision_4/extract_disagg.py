@@ -1,11 +1,7 @@
 import json
-
-# import boto3.session
 import urllib.request
-import tempfile
-from pathlib import Path
-from nzshm_common.util import compress_string, decompress_string
 
+from nzshm_common.util import decompress_string
 
 INDEX_URL = "https://nzshm22-static-reports.s3.ap-southeast-2.amazonaws.com/gt-index/gt-index.json"
 

@@ -11,10 +11,10 @@ import pathlib
 import random
 
 import click
+import numpy as np
 import pyarrow as pa
 import pyarrow.compute as pc
 import pyarrow.dataset as ds
-import numpy as np
 
 log = logging.getLogger()
 
@@ -27,11 +27,9 @@ logging.getLogger('toshi_hazard_store').setLevel(logging.WARNING)
 from nzshm_common import location
 from nzshm_common.grids import load_grid
 from nzshm_common.location.coded_location import CodedLocation
-from pynamodb.models import Model
-
 from nzshm_model import branch_registry
 from nzshm_model.psha_adapter.openquake import gmcm_branch_from_element_text
-from toshi_hazard_store.oq_import.oq_manipulate_hdf5 import migrate_nshm_uncertainty_string
+from pynamodb.models import Model
 
 import toshi_hazard_store  # noqa: E402
 import toshi_hazard_store.config
@@ -47,6 +45,7 @@ from toshi_hazard_store.db_adapter.dynamic_base_class import ensure_class_bases_
 from toshi_hazard_store.db_adapter.sqlite import (  # noqa this is needed to finish the randon-rlz functionality
     SqliteAdapter,
 )
+from toshi_hazard_store.oq_import.oq_manipulate_hdf5 import migrate_nshm_uncertainty_string
 
 nz1_grid = load_grid('NZ_0_1_NB_1_1')
 city_locs = [
@@ -57,7 +56,35 @@ srwg_locs = [
     (location.LOCATIONS_BY_ID[key]['latitude'], location.LOCATIONS_BY_ID[key]['longitude'])
     for key in location.LOCATION_LISTS["SRWG214"]["locations"]
 ]
-IMTS = ['PGA', 'SA(0.1)', 'SA(0.15)', 'SA(0.2)', 'SA(0.25)', 'SA(0.3)', 'SA(0.35)', 'SA(0.4)', 'SA(0.5)', 'SA(0.6)', 'SA(0.7)', 'SA(0.8)', 'SA(0.9)', 'SA(1.0)', 'SA(1.25)', 'SA(1.5)', 'SA(1.75)', 'SA(2.0)', 'SA(2.5)', 'SA(3.0)', 'SA(3.5)', 'SA(4.0)', 'SA(4.5)', 'SA(5.0)', 'SA(6.0)', 'SA(7.5)', 'SA(10.0)']
+IMTS = [
+    'PGA',
+    'SA(0.1)',
+    'SA(0.15)',
+    'SA(0.2)',
+    'SA(0.25)',
+    'SA(0.3)',
+    'SA(0.35)',
+    'SA(0.4)',
+    'SA(0.5)',
+    'SA(0.6)',
+    'SA(0.7)',
+    'SA(0.8)',
+    'SA(0.9)',
+    'SA(1.0)',
+    'SA(1.25)',
+    'SA(1.5)',
+    'SA(1.75)',
+    'SA(2.0)',
+    'SA(2.5)',
+    'SA(3.0)',
+    'SA(3.5)',
+    'SA(4.0)',
+    'SA(4.5)',
+    'SA(5.0)',
+    'SA(6.0)',
+    'SA(7.5)',
+    'SA(10.0)',
+]
 all_locs = set(nz1_grid + srwg_locs + city_locs)
 
 # print(nz1_grid[:10])
@@ -65,6 +92,7 @@ all_locs = set(nz1_grid + srwg_locs + city_locs)
 # print(city_locs[:10])
 
 registry = branch_registry.Registry()
+
 
 def get_random_args(gt_info, how_many):
     for n in range(how_many):
@@ -89,13 +117,12 @@ def query_table(args):
     ):
         yield (res)
 
+
 def query_hazard_meta(args):
     # mRLZ = toshi_hazard_store.model.openquake_models.__dict__['OpenquakeRealization']
     importlib.reload(toshi_hazard_store.query.hazard_query)
     for res in toshi_hazard_store.query.hazard_query.get_hazard_metadata_v3(haz_sol_ids=[args['tid']], vs30_vals=[275]):
         yield (res)
-
-
 
 
 def get_table_rows(random_args_list):
@@ -115,7 +142,9 @@ def get_table_rows(random_args_list):
         for res in query_table(args):
             obj = res.to_simple_dict(force=True)
             # gmm_digest
-            gsim = gmcm_branch_from_element_text(migrate_nshm_uncertainty_string(gsim_lt['uncertainty'][str(obj['rlz'])]))
+            gsim = gmcm_branch_from_element_text(
+                migrate_nshm_uncertainty_string(gsim_lt['uncertainty'][str(obj['rlz'])])
+            )
             # print(gsim)
             gsim_id = registry.gmm_registry.get_by_identity(gsim.registry_identity)
 
@@ -194,7 +223,7 @@ def report_rlzs_grouped_by_calc(ds_name, verbose, bail_on_error=True):
     # dataset = ds.dataset(f'./WORKING/ARROW/{ds_name}', partitioning='hive')
     # , format='arrow')
     click.echo(f"querying arrow/parquet dataset {ds_name}")
-    #loc = CodedLocation(lat=-46, lon=169.5, resolution=0.001)
+    # loc = CodedLocation(lat=-46, lon=169.5, resolution=0.001)
     # fltA = (
     #     (pc.field("nloc_0") == pc.scalar(loc.downsample(1.0).code)) &\
     #     (pc.field("nloc_001") == pc.scalar(loc.code)) &\
@@ -206,9 +235,9 @@ def report_rlzs_grouped_by_calc(ds_name, verbose, bail_on_error=True):
     dataset = ds.dataset(dataset_folder, format='parquet', partitioning='hive')
 
     # flt = (pc.field("nloc_001") == pc.scalar(loc.code)) & \
-    flt = (pc.field("imt") == pc.scalar("PGA"))
-        # (pc.field('calculation_id') == pc.scalar(args['tid']))
-        # (pc.field('rlz') == pc.scalar(f"rlz-{args['rlz']:03d}")) #& \
+    flt = pc.field("imt") == pc.scalar("PGA")
+    # (pc.field('calculation_id') == pc.scalar(args['tid']))
+    # (pc.field('rlz') == pc.scalar(f"rlz-{args['rlz']:03d}")) #& \
     df = dataset.to_table(filter=flt).to_pandas()
 
     hazard_calc_ids = list(df.calculation_id.unique())
@@ -383,6 +412,7 @@ def count_rlz(context, source, ds_name, report, strict, verbose, dry_run):
         elif report == 'ALL':
             report_v3_grouped_by_calc(verbose, bail_on_error=strict)
 
+
 #############
 #
 # HHHEHRHHHE
@@ -410,7 +440,7 @@ def random_rlz_new(context, count, dataset):
     random_args_list = list(get_random_args(gt_info, count))
     dynamo_models = get_table_rows(random_args_list)
     print(list(dynamo_models.values())[:2])
-    #click.echo(dynamo_models)
+    # click.echo(dynamo_models)
 
     dataset_folder = pathlib.Path(dataset)
     assert dataset_folder.exists(), 'dataset not found'
@@ -428,18 +458,19 @@ def random_rlz_new(context, count, dataset):
                 """
                 # print('rlz', f"rlz-{args['rlz']:03d}")
 
-                dataset = ds.dataset(f'{str(dataset_folder)}/nloc_0={loc.resample(1).code}', format='parquet', partitioning='hive')
+                dataset = ds.dataset(
+                    f'{str(dataset_folder)}/nloc_0={loc.resample(1).code}', format='parquet', partitioning='hive'
+                )
                 # dataset = ds.dataset(dataset_folder, format='parquet', partitioning='hive')
-                flt = (pc.field("nloc_001") == pc.scalar(loc.code)) & \
-                    (pc.field("imt") == pc.scalar(args['imt']))
-                    # (pc.field('calculation_id') == pc.scalar(args['tid']))
-                    # (pc.field('rlz') == pc.scalar(f"rlz-{args['rlz']:03d}")) #& \
+                flt = (pc.field("nloc_001") == pc.scalar(loc.code)) & (pc.field("imt") == pc.scalar(args['imt']))
+                # (pc.field('calculation_id') == pc.scalar(args['tid']))
+                # (pc.field('rlz') == pc.scalar(f"rlz-{args['rlz']:03d}")) #& \
                 df = dataset.to_table(filter=flt).to_pandas()
 
                 for model in dynamo_models.values():
                     if model['nloc_001'] == loc.code:
-                        flt = ((df.sources_digest == model['sources_digest']) & (df.gmms_digest == model['gmms_digest']))
-                        row =  df[flt]
+                        flt = (df.sources_digest == model['sources_digest']) & (df.gmms_digest == model['gmms_digest'])
+                        row = df[flt]
                         if not row.shape[0] == 1:
                             raise ValueError(f"dataframe shape error {row.shape} for args {args}")
 
@@ -452,7 +483,7 @@ def random_rlz_new(context, count, dataset):
                         if not (row_values == model_values).all():
                             print(model)
                             print()
-                            print('dynamodb:',  model_values)
+                            print('dynamodb:', model_values)
                             print()
                             print(row)
                             print('dataset: ', row_values)
@@ -476,12 +507,12 @@ def random_rlz_new(context, count, dataset):
     diff_arrow_rlzs(random_args_list, dynamo_models)
 
 
-
 def wip():
     '''
     df = dataset.to_table(filter=flt).to_pandas()
     flt2 = (df.sources_digest == 'c8b5c5b43dbd') & (df.gmms_digest == 'a005ffbbdf4e') & (df.imt == 'SA(1.0)')
     '''
+
 
 @main.command()
 @click.argument('count', type=int)

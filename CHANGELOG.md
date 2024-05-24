@@ -1,11 +1,17 @@
 # Changelog
 
-## [0.9.0-alpha] - 2024-05-09
+## [0.9.0-alpha] - 2024-05-24
+
 ### Added
- - V4 epic tables:
- - scripts for conversion
- - script for sanity checking
+ - V4 epic tables
  - parquet support
+ - new scripts:
+     - ths_r4_filter_dataset
+     - ths_r4_import
+     - ths_r4_migrate
+     - ths_r4_query
+     - migration/ths_r4_sanity
+ - extract datasets directly from hdf5
 
 ### Changed
   - switch to nzshm-common#pre-release branch

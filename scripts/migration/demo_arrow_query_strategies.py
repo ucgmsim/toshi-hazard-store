@@ -9,6 +9,7 @@ import pathlib
 import random
 import sys
 import time
+from typing import List, Tuple
 
 import pyarrow as pa
 import pyarrow.compute as pc
@@ -38,7 +39,7 @@ class TimedDatasetTests:
         self.source = source
         self.dataset_name = dataset_name
         self.test_locations = test_locations
-        self._timing_log = []
+        self._timing_log: List[Tuple] = []
         self.partition = self._random_partition().code if partition else None
 
     def _random_partition(self):
@@ -65,7 +66,7 @@ class TimedDatasetTests:
             filesystem = fs.S3FileSystem(region='ap-southeast-2')
             root = 'ths-poc-arrow-test'
         else:
-            root = ARROW_DIR
+            root = str(ARROW_DIR)
             filesystem = fs.LocalFileSystem()
         if self.partition:
             return ds.dataset(
@@ -140,29 +141,6 @@ class TimedDatasetTests:
             flt = (pc.field('imt') == pc.scalar("PGA")) & (pc.field("nloc_001") == pc.scalar(self.test_location.code))
             df = dataset.to_table(filter=flt).to_pandas()
             assert df.shape[0] == 912
-
-        # hazard_calc_ids = list(df.calculation_id.unique())
-        elapsed_time = time.monotonic() - t0
-        fn = inspect.currentframe().f_code.co_name
-        self.log_timing(fn, elapsed_time - tr, f"{count} locations")
-
-    def time_query_many_locations_better_again(self, count):
-        t0 = time.monotonic()
-        tr = 0
-        dataset = self._open_dataset()
-        df = dataset.to_table().to_pandas()  # filter=(pc.field('imt') == pc.scalar("SA(0.5)")
-        for test in range(count):
-
-            t1 = time.monotonic()
-            self.random_new_location()
-            tr += time.monotonic() - t1
-
-            # now filter using pandas...
-            df0 = df[(df.nloc_001 == self.test_location.code) & (df.imt == "PGA")]
-            # print(df0)
-            if not df0.shape[0] == 912:
-                print(df0)
-                assert 0
 
         # hazard_calc_ids = list(df.calculation_id.unique())
         elapsed_time = time.monotonic() - t0

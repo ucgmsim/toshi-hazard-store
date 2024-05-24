@@ -28,9 +28,7 @@ def pytest_generate_tests(metafunc):
 def adapted_model(request, tmp_path):
     """This fixture reconfigures adaption of all table in the hazard_models module"""
     models = itertools.chain(
-        hazard_models.get_tables(),
-        hazard_realization_curve.get_tables(),
-        hazard_aggregate_curve.get_tables()
+        hazard_models.get_tables(), hazard_realization_curve.get_tables(), hazard_aggregate_curve.get_tables()
     )
 
     class AdaptedModelFixture:

@@ -1,7 +1,8 @@
 #! python3
 # flake8: noqa: F401
-import click
 from typing import TYPE_CHECKING
+
+import click
 
 if TYPE_CHECKING:
 
