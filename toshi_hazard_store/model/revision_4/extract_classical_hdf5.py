@@ -50,7 +50,7 @@ def rlzs_to_record_batch_reader(
         hdf5_file: str,
         calculation_id: str,
         compatible_calc_fk: str,
-        producer_config_fk:  str
+        producer_config_fk:  str  # TODO: decide if we actually want this column
     ) -> pa.RecordBatchReader:
     """extract realizations from a 'classical' openquake calc file as a pyarrow batch reader"""
     log.info(f'rlzs_to_record_batch_reader called with {hdf5_file}, {calculation_id}, {compatible_calc_fk}, {producer_config_fk}')

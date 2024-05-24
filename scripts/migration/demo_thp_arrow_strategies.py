@@ -1,6 +1,6 @@
 # flake8: noqa
 '''
-This modeul dmemonstrates way to use pyarrow to most efficiently perform queries used in THP project.
+This module dmemonstrates way to use pyarrow to most efficiently perform queries used in THP project.
 
 goals are:
  - load data as fast as possible from filesystem

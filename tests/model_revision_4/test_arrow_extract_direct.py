@@ -139,7 +139,10 @@ def test_hdf5_realisations_direct_to_parquet_roundtrip(tmp_path):
 
     hdf5_fixture = Path(__file__).parent.parent / 'fixtures' / 'oq_import' / 'calc_1.hdf5'
 
-    record_batch_reader = extract_classical_hdf5.rlzs_to_record_batch_reader(str(hdf5_fixture))
+    record_batch_reader = extract_classical_hdf5.rlzs_to_record_batch_reader(str(hdf5_fixture),
+        calculation_id = "dummy_calc_id",
+        compatible_calc_fk = "CCFK",
+        producer_config_fk = "PCFK")
 
     print(record_batch_reader)
 
@@ -169,7 +172,7 @@ def test_hdf5_realisations_direct_to_parquet_roundtrip(tmp_path):
     print(df.shape)
     print(df.tail())
     print(df.info())
-    assert df.shape == (1293084, 8)
+    assert df.shape == (1293084, 10)
 
     test_loc = location.get_locations(['MRO'])[0]
 
@@ -177,9 +180,10 @@ def test_hdf5_realisations_direct_to_parquet_roundtrip(tmp_path):
     print(test_loc_df[['nloc_001', 'nloc_0', 'imt', 'rlz', 'vs30', 'sources_digest', 'gmms_digest']])  # 'rlz_key'
     # print(test_loc_df.tail())
 
-    assert test_loc_df.shape == (1293084 / 3991, 8)
+    assert test_loc_df.shape == (1293084 / 3991, 10)
     assert test_loc_df['imt'].tolist()[0] == 'PGA'
-    assert test_loc_df['imt'].tolist()[-1] == 'SA(4.5)'  # weird value
+    assert test_loc_df['imt'].tolist()[-1] == 'SA(7.5)', "not so weird, as the IMT keys are sorted alphnumerically in openquake now."
+    assert test_loc_df['imt'].tolist().index('SA(10.0)') == 17 , "also not so weird, as the IMT keys are sorted alphnumerically"
 
     assert test_loc_df['nloc_001'].tolist()[0] == test_loc.code
     assert test_loc_df['nloc_0'].tolist()[0] == test_loc.resample(1.0).code

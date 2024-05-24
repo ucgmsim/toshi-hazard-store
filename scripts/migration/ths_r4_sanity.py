@@ -194,7 +194,7 @@ def report_rlzs_grouped_by_calc(ds_name, verbose, bail_on_error=True):
     # dataset = ds.dataset(f'./WORKING/ARROW/{ds_name}', partitioning='hive')
     # , format='arrow')
     click.echo(f"querying arrow/parquet dataset {ds_name}")
-    loc = CodedLocation(lat=-46, lon=169.5, resolution=0.001)
+    #loc = CodedLocation(lat=-46, lon=169.5, resolution=0.001)
     # fltA = (
     #     (pc.field("nloc_0") == pc.scalar(loc.downsample(1.0).code)) &\
     #     (pc.field("nloc_001") == pc.scalar(loc.code)) &\
@@ -202,9 +202,11 @@ def report_rlzs_grouped_by_calc(ds_name, verbose, bail_on_error=True):
     #     )
     # df = dataset.to_table(filter=fltA).to_pandas()
 
-    dataset = ds.dataset(f'{str(dataset_folder)}/nloc_0={loc.resample(1).code}', format='parquet', partitioning='hive')
-    flt = (pc.field("nloc_001") == pc.scalar(loc.code)) & \
-        (pc.field("imt") == pc.scalar("PGA"))
+    # dataset = ds.dataset(f'{str(dataset_folder)}/nloc_0={loc.resample(1).code}', format='parquet', partitioning='hive')
+    dataset = ds.dataset(dataset_folder, format='parquet', partitioning='hive')
+
+    # flt = (pc.field("nloc_001") == pc.scalar(loc.code)) & \
+    flt = (pc.field("imt") == pc.scalar("PGA"))
         # (pc.field('calculation_id') == pc.scalar(args['tid']))
         # (pc.field('rlz') == pc.scalar(f"rlz-{args['rlz']:03d}")) #& \
     df = dataset.to_table(filter=flt).to_pandas()
