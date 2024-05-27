@@ -1,6 +1,6 @@
 # flake8: noqa
 """
-Console script for filtering THS datasets into smaller ones
+Console script for filtering from existing THS parquet dataset, producing a smaller one.
 """
 
 import csv

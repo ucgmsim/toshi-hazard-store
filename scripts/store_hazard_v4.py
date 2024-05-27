@@ -1,4 +1,12 @@
-"""Console script for loading openquake hazard to new REV4 tables."""
+"""Console script for loading openquake hazard to new REV4 tables.
+
+WARNING:
+ -  this module uses toshi_hazard_store.oq_import/export_rlzs_rev4 which exports to
+    **DynamoDB** tables.
+ - This may be what you want, but the direction we're heading is to export directly to **Parquet**.
+   see scripts/ths_r4_import.py to see how parquet-direct works.
+
+"""
 
 import datetime as dt
 import logging

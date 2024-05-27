@@ -1,6 +1,6 @@
 # flake8: noqa
 """
-Console script for compacting THS datasets
+Console script for compacting THS rev4 parquet datasets
 """
 
 import csv

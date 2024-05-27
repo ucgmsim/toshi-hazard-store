@@ -1,21 +1,27 @@
 """
-Console script for preparing to load NSHM hazard curves to new REV4 tables using General Task(s) and nzshm-model.
+Console script for preparing to load NSHM hazard curves to new REV4 tables using General Task(s)
+and the nzshm-model python library.
 
-This is NSHM process specific, as it assumes the following:
- - hazard producer metadata is available from the NSHM toshi-api via **nshm-toshi-client** library
- - NSHM model characteristics are available in the **nzshm-model** library
+The use case for this is reprocessing a set of hazard outputs produced by the NSHM hazards pipeline.
 
-Hazard curves are stored using either:
-    - the new THS Rev4 tables which support dynamodb and sqlite dbadapter .
-    - directly to parquet data
+NSHM specific prerequisites are:
+    - that hazard producer metadata is available from the NSHM toshi-api via **nshm-toshi-client** library
+    - NSHM model characteristics are available in the **nzshm-model** library
 
-Given a general task containing hazard calcs used in NHSM, we want to iterate over the sub-tasks and do
-the setup required for importing the hazard curves:
+Process outline:
+    - Given a general task containing hazard calcs used in NHSM, we want to iterate over the sub-tasks and do
+      the setup required for importing the hazard curves:
+        - pull the configs and check we have a compatible producer config (or ...) cmd `producers`
+        - optionally create new producer configs automatically, and record info about these
+    - if new producer configs are created, then it is the users responsibility to assign
+      a CompatibleCalculation to each
+    - Hazard curves are acquired either:
+        - directly form the original HDF5 files stored in Toshi API
+        - from V3 RealisationCurves stored as PynamoDB records (dynamodb or sqlite3)
+    - Hazard curves are output as either:
+        - new THS Rev4 PynamoDB records (dynamodb or sqlite3).
+        - directly to a parquet dataset (ARROW options). Thsi is the newest/fastest option.
 
-    - pull the configs and check we have a compatible producer config (or ...) cmd `producers`
-    - optionally create new producer configs automatically, and record info about these
-       - NB if new producer configs are created, then it is the users responsibility to assign
-         a CompatibleCalculation to each
 """
 
 import collections
@@ -27,19 +33,8 @@ from typing import Iterable
 
 import click
 
-logging.basicConfig(level=logging.INFO)
-logging.getLogger('pynamodb').setLevel(logging.INFO)
-logging.getLogger('botocore').setLevel(logging.INFO)
-logging.getLogger('toshi_hazard_store').setLevel(logging.INFO)
-logging.getLogger('nzshm_model').setLevel(logging.INFO)
-logging.getLogger('gql.transport').setLevel(logging.WARNING)
-logging.getLogger('urllib3').setLevel(logging.INFO)
-logging.getLogger('root').setLevel(logging.INFO)
-
-log = logging.getLogger(__name__)
-
 import toshi_hazard_store  # noqa: E402
-from toshi_hazard_store.model.revision_4 import hazard_models
+from toshi_hazard_store.model.revision_4 import extract_classical_hdf5, hazard_models, pyarrow_dataset
 from toshi_hazard_store.model.revision_4.migrate_v3_to_v4 import ECR_REGISTRY_ID, ECR_REPONAME
 from toshi_hazard_store.oq_import import (  # noqa: E402
     create_producer_config,
@@ -57,7 +52,17 @@ try:
 except (ModuleNotFoundError, ImportError):
     print("WARNING: the transform module uses the optional openquake dependencies - h5py, pandas and openquake.")
 
-from toshi_hazard_store.model.revision_4 import extract_classical_hdf5, pyarrow_dataset
+logging.basicConfig(level=logging.INFO)
+logging.getLogger('pynamodb').setLevel(logging.INFO)
+logging.getLogger('botocore').setLevel(logging.INFO)
+logging.getLogger('toshi_hazard_store').setLevel(logging.INFO)
+logging.getLogger('nzshm_model').setLevel(logging.INFO)
+logging.getLogger('gql.transport').setLevel(logging.WARNING)
+logging.getLogger('urllib3').setLevel(logging.INFO)
+logging.getLogger('root').setLevel(logging.INFO)
+
+log = logging.getLogger(__name__)
+
 
 API_URL = os.getenv('NZSHM22_TOSHI_API_URL', "http://127.0.0.1:5000/graphql")
 API_KEY = os.getenv('NZSHM22_TOSHI_API_KEY', "")
@@ -299,7 +304,7 @@ def prod_from_gtfile(
     '--target',
     type=click.Choice(['AWS', 'LOCAL', 'ARROW'], case_sensitive=False),
     default='LOCAL',
-    help="set the target store. defaults to LOCAL. ARROW does produces parquet instead of dynamoDB tables",
+    help="set the target store. defaults to LOCAL. ARROW produces parquet instead of dynamoDB tables",
 )
 @click.option('-W', '--work_folder', default=lambda: os.getcwd(), help="defaults to current directory")
 @click.option(

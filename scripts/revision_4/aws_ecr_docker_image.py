@@ -1,6 +1,12 @@
-"""Retrieve NSHM openquake image details from the AWS ECR repos
+"""Retrieve NSHM docker image metadata from the AWS ECR repos.
 
+NSHM pipeline used a number of different versions/builds of openquake throughout the 2022/23 processing period. These
+builds were packaged as docker images and stored in an AWS Elastic Container Repository registry.
 
+The registry allow AWS batch jobs to access a docker image containing the correct components needed
+to build hazard relisation or disaggregation curves.
+
+The docker imges themselves carry metadata about the openquake configuration used at the time.
 """
 
 from datetime import datetime, timezone

@@ -1,6 +1,9 @@
 """
 Console script for preparing to load NSHM hazard curves to new REV4 tables using General Task(s) and nzshm-model.
 
+WARNING:
+ - maybe this module will be deprecated... It seems there's a lot of overlap with ./ths_r4_import.py
+
 This is NSHM process specific, as it assumes the following:
  - hazard producer metadata is available from the NSHM toshi-api via **nshm-toshi-client** library
  - NSHM model characteristics are available in the **nzshm-model** library

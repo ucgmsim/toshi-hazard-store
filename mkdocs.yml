@@ -12,7 +12,15 @@ nav:
   - Configuration: configuration.md
   - Usage: usage.md
   # - Local configuration: sqlite_adapter_usage.md
-  - CLI tools: cli.md
+  - CLI tools:
+      - store_hazard_v4: cli/store_hazard_v4.md
+      - ths_r4_import: cli/ths_r4_import.md
+      - ths_r4_migrate: cli/ths_r4_migrate.md
+      - ths_r4_defrag: cli/ths_r4_defrag.md
+      - ths_r4_sanity: cli/ths_r4_sanity.md
+      - ths_r4_filter_dataset: cli/ths_r4_filter_dataset.md
+      - ths_r4_query: cli/ths_r4_query.md
+      - Legacy scripts: cli/legacy.md
   - Query API:
       - Hazard: hazard_query_api.md
       - Gridded Hazard: gridded_hazard_query_api.md
@@ -23,7 +31,7 @@ nav:
       - Hazard Disaggregation: domain_model/disaggregation_models.md
       - PROPOSED:
         - Hazard: domain_model/proposed_hazard_models.md
-        - Migration Tests: domain_model/revision _4_migration_ testing.md
+        - Migration Tests: domain_model/revision_4_migration_testing.md
   - Contributing: contributing.md
   - Changelog: changelog.md
 theme:

@@ -1,6 +1,8 @@
 # flake8: noqa
 """
-Console script for querying tables before and after import/migration to ensure that we have what we expect
+Console script for querying tables before and after import/migration to ensure that we have what we expect.
+
+TODO this script needs a little housekeeping.
 """
 import ast
 import importlib
@@ -350,7 +352,7 @@ def main(context):
     '-S',
     type=click.Choice(['AWS', 'LOCAL', 'ARROW'], case_sensitive=False),
     default='LOCAL',
-    help="set the source store. defaults to LOCAL",
+    help="set the source store. defaults to LOCAL, LOCAL means local sqlite (v3), AWS means AWS (v3), ARROW means local arrow (v4)",
 )
 @click.option(
     '--ds-name',
@@ -370,12 +372,7 @@ def main(context):
 @click.option('-d', '--dry-run', is_flag=True, default=False)
 @click.pass_context
 def count_rlz(context, source, ds_name, report, strict, verbose, dry_run):
-    """Count the realisations from SOURCE by calculation id
-
-    where LOCAL means local sqlite (v3)\n
-        and AWS means AWS (v3)\n
-        and ARROW means local arrow (v4)
-    """
+    """Count the realisations from SOURCE by calculation id"""
     if verbose:
         click.echo(f"NZ 0.1grid has {len(nz1_grid)} locations")
         click.echo(f"All (0.1 grid + SRWG + NZ) has {len(all_locs)} locations")
