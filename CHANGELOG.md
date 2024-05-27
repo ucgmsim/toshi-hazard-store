@@ -12,10 +12,13 @@
      - ths_r4_query
      - migration/ths_r4_sanity
  - extract datasets directly from hdf5
+ - more documtention
 
 ### Changed
   - switch to nzshm-common#pre-release branch
   - switch to nzshm-model#pre-release branch
+  - move outdated scripts to scripts/legacy
+  - new documentation theme
 
 ## [0.8.0] - 2024-02
 ### Added

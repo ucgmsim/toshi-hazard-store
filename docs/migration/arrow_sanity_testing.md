@@ -1,9 +1,10 @@
-# Newest first:
+These are outputs from the [ths_r4_sanity script](../cli/ths_r4_sanity.md)
 
 ## ARROW_DIRECT May 10
 
 first test pass
 
+```
 INFO:pynamodb.settings:Override settings for pynamo available /etc/pynamodb/global_default_settings.py
 querying arrow/parquet dataset DIRECT_CLASSIC
 calculation_id, uniq_rlzs, uniq_locs, uniq_imts, uniq_gmms, uniq_srcs, uniq_vs30, consistent
@@ -58,6 +59,7 @@ T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NTEw, 2262897, 3991, 27, 21, 1, 1, True
 T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NTEy, 2262897, 3991, 27, 21, 1, 1, True
 
 Grand total: 96981300
+```
 
 ## NLOC IMT defragged
 
