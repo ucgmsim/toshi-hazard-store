@@ -1,6 +1,8 @@
 from .attributes import (
+    CompressedJsonicAttribute,
     CompressedListAttribute,
     CompressedPickleAttribute,
+    ForeignKeyAttribute,
     IMTValuesAttribute,
     LevelValuePairAttribute,
     PickleAttribute,

@@ -22,9 +22,9 @@ class OqImportTest(unittest.TestCase):
 
         from openquake.calculators.extract import Extractor
 
-        self._hdf5_filepath = Path(Path(__file__).parent, 'fixtures/oq_import', 'calc_9.hdf5')
-        self.meta_filepath = Path(Path(__file__).parent, 'fixtures/oq_import', 'meta')
-        self.rlzs_filepath = Path(Path(__file__).parent, 'fixtures/oq_import', 'rlzs')
+        self._hdf5_filepath = Path(Path(__file__).parent.parent, 'fixtures/oq_import', 'calc_9.hdf5')
+        self.meta_filepath = Path(Path(__file__).parent.parent, 'fixtures/oq_import', 'meta')
+        self.rlzs_filepath = Path(Path(__file__).parent.parent, 'fixtures/oq_import', 'rlzs')
         self.extractor = Extractor(str(self._hdf5_filepath))
         # self.dframe = datastore.DataStore(str(self._hdf5_filepath))
 
@@ -65,7 +65,7 @@ class OqImportTest(unittest.TestCase):
         self.assertEqual(meta.model.source_ids, meta.model.source_ids)
         self.assertEqual(meta.model.inv_time, meta.model.inv_time)
 
-    def test_export_rlzs(self):
+    def test_export_rlzs_v3(self):
 
         with open(self.meta_filepath, 'rb') as metafile:
             meta = pickle.load(metafile)
@@ -74,6 +74,9 @@ class OqImportTest(unittest.TestCase):
 
         with open(self.rlzs_filepath, 'rb') as rlzsfile:
             expected = pickle.load(rlzsfile)
+
+        assert rlzs[0].partition_key == '-41.3~174.8'
+        assert rlzs[0].sort_key == '-41.300~174.780:400:000000:HAZID'
 
         self.assertEqual(len(rlzs), len(expected))
         self.assertEqual(len(rlzs[0].values), 1)

@@ -1,4 +1,12 @@
-"""Queries for saving and retrieving gridded hazard convenience."""
+"""Queries for retrieving gridded hazard objects.
+
+Functions:
+    - get_one_gridded_hazard
+    - get_gridded_hazard
+
+Attributes:
+    mGH: alias for the GriddedHazard model
+"""
 
 import itertools
 import logging
@@ -19,7 +27,19 @@ def get_one_gridded_hazard(
     agg: str,
     poe: float,
 ) -> Iterator[mGH]:
-    """Fetch GriddedHazard based on single criteria."""
+    """Query the GriddedHazard table for a single item
+
+    Parameters:
+        hazard_model_id: id for the required Hazard model
+        location_grid_id: id for the location grid
+        vs30: the vs30 value
+        imt:
+        agg:
+        poe:
+
+    Yields:
+        GriddedHazard objects (one or none)
+    """
 
     qry = mGH.query(hazard_model_id, mGH.sort_key == f'{hazard_model_id}:{location_grid_id}:{vs30}:{imt}:{agg}:{poe}')
     log.debug(f"get_gridded_hazard: qry {qry}")
@@ -35,7 +55,18 @@ def get_gridded_hazard(
     aggs: Iterable[str],
     poes: Iterable[float],
 ) -> Iterator[mGH]:
-    """Fetch GriddedHazard based on criteria."""
+    """Query the GriddedHazard table
+
+    Parameters:
+        hazard_model_ids: ids Hazard model
+        location_grid_ids: ids for the location grids
+        vs30s: vs30 values eg [400, 500]
+        imts: imt (IntensityMeasureType) values e.g ['PGA', 'SA(0.5)']
+        aggs: aggregation values e.g. ['mean']
+        poes:
+    Yields:
+        GriddedHazard objects
+    """
 
     # partition_key = f"{obj.hazard_model_id}"
 
@@ -52,7 +83,7 @@ def get_gridded_hazard(
         return condition_expr
 
     total_hits = 0
-    for (hazard_model_id, grid_id, vs30, imt, agg, poe) in itertools.product(
+    for hazard_model_id, grid_id, vs30, imt, agg, poe in itertools.product(
         hazard_model_ids, location_grid_ids, vs30s, imts, aggs, poes
     ):
 

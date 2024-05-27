@@ -1,11 +1,20 @@
-"""Queries for saving and retrieving gridded hazard convenience."""
+"""Queries for retrieving hazard aggregation models.
+
+Functions:
+    - get_one_disagg_aggregation
+    - get_disagg_aggregates
+
+Attributes:
+    mDAE: alias for the  DisaggAggregationExceedance model
+    mDAO: alias for the DisaggAggregationOccurence model
+"""
 
 import decimal
 import itertools
 import logging
 from typing import Iterable, Iterator, List, Type, Union
 
-from nzshm_common.location.code_location import CodedLocation
+from nzshm_common.location.coded_location import CodedLocation
 from pynamodb.expressions.condition import Condition
 
 from toshi_hazard_store.model import (
@@ -34,8 +43,21 @@ def get_one_disagg_aggregation(
     poe: ProbabilityEnum,
     model: Type[Union[mDAE, mDAO]] = mDAE,
 ) -> Union[mDAE, mDAO, None]:
-    """Fetch model based on single model arguments."""
+    """Query the DisaggAggregation table(s) for a single item
 
+    Parameters:
+        hazard_model_id: id for the required Hazard model
+        hazard_agg: aggregation value e.g. 'mean'
+        disagg_agg: aggregation value e.g. '0.9'
+        location: id e.g. '-46.430~168.360'
+        vs30: vs30 value eg 400
+        imt: imt (IntensityMeasureType) value e.g 'PGA', 'SA(0.5)'
+        poe:
+        model: model type
+
+    Yields:
+        model object (one or none)
+    """
     qry = model.query(
         downsample_code(location, 0.1),
         range_key_condition=model.sort_key == f'{hazard_model_id}:{hazard_agg.value}:{disagg_agg.value}:'
@@ -60,6 +82,21 @@ def get_disagg_aggregates(
     probabilities: Iterable[ProbabilityEnum],
     dbmodel: Type[Union[mDAE, mDAO]] = mDAE,
 ) -> Iterator[Union[mDAE, mDAO]]:
+    """Query the DisaggAggregation table
+
+    Parameters:
+        hazard_model_ids: ids for the required Hazard models
+        hazard_aggs: aggregation values e.g. ['mean']
+        disagg_aggs: aggregation values e.g.  ['mean', '0.9']
+        locs: e.g. ['-46.430~168.360']
+        vs30s: vs30 value eg [400, 750]
+        imts: imt (IntensityMeasureType) value e.g []'PGA', 'SA(0.5)']
+        probabilities:
+        dbmodel: model type
+
+    Yields:
+        model objects
+    """
 
     hazard_agg_keys = [a.value for a in hazard_aggs]
     disagg_agg_keys = [a.value for a in disagg_aggs]
@@ -101,7 +138,7 @@ def get_disagg_aggregates(
         log.info('hash_key %s' % hash_location_code)
         hash_locs = list(filter(lambda loc: downsample_code(loc, 0.1) == hash_location_code, locs))
 
-        for (hloc, hazard_model_id, hazard_agg, disagg_agg, vs30, imt, probability) in itertools.product(
+        for hloc, hazard_model_id, hazard_agg, disagg_agg, vs30, imt, probability in itertools.product(
             hash_locs, hazard_model_ids, hazard_agg_keys, disagg_agg_keys, vs30s, imts, probability_keys
         ):
 

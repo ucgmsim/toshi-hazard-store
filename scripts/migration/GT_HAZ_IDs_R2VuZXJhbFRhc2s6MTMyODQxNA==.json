@@ -1,0 +1,506 @@
+{
+  "data": {
+    "node": {
+      "__typename": "GeneralTask",
+      "id": "R2VuZXJhbFRhc2s6MTMyODQxNA==",
+      "title": "Openquake Hazard calcs ",
+      "description": "Source Logic Tree v8.0.2",
+      "created": "2023-03-20T08:59:56.545577+00:00",
+      "children": {
+        "total_count": 49,
+        "edges": [
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDE3",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUyNg=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDE4",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUxNA=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI0",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUyMg=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI3",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUyOQ=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI2",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUyMQ=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDI5",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUxOQ=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDMy",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUxNw=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDMz",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUyNQ=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDM0",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUxNg=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDM2",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUyOA=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDM1",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUxOA=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDM5",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUyMA=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDQw",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUxMw=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDQy",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUyMw=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDQ0",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUyNw=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDQ2",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUxNQ=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDQ4",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUyNA=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDUw",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODU0OA=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDUy",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUzMw=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDU2",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODU0Nw=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDYw",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUzMA=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDY4",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODU0Mg=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDcw",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODU1MA=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDY5",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODU1Nw=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDc4",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUzNQ=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDc0",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODU0Ng=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDc3",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUzNw=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDgx",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODU0OQ=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDgz",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODU2MQ=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDg2",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODU1Mw=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDkz",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODU1Mg=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDgy",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUzNA=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDky",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODU1OQ=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDg1",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODU1NQ=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDk1",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODU0MQ=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDk0",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUzOQ=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDkw",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUzNg=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NTAx",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUzMg=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDk2",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODU1Ng=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDk5",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODU0NA=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NDk3",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODU0NQ=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NTA0",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODU2MA=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NTA1",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODU1NA=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NTA3",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODU0MA=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NTAz",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODU1MQ=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NTA4",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUzMQ=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NTA5",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODUzOA=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NTEw",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODU0Mw=="
+                }
+              }
+            }
+          },
+          {
+            "node": {
+              "child": {
+                "id": "T3BlbnF1YWtlSGF6YXJkVGFzazoxMzI4NTEy",
+                "hazard_solution": {
+                  "id": "T3BlbnF1YWtlSGF6YXJkU29sdXRpb246MTMyODU1OA=="
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

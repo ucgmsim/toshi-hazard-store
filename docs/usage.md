@@ -1,19 +1,13 @@
-# Usage
-
-
-### Environment & Authorisation pre-requisites
-
-```
-NZSHM22_HAZARD_STORE_STAGE=XXXX (TEST or PROD)
-NZSHM22_HAZARD_STORE_REGION=XXXXX (ap-southeast-2)
-AWS_PROFILE- ... (See AWS authentication)
-
-```
-
 ## toshi-hazard-store (library)
 
-To use toshi-hazard-store in a project
+To use toshi-hazard-store in a project you must first
 
+ - [install the library](./installation.md), and
+ - [configure it](./configuration.md) for your requirements (e./g cloud use (say the published NSHM), or local offline use)
+
+Now, you should be able to interact with the data available in the chosen database.
+
+##  Query the hazard store in python ...
 
 ```
 from toshi_hazard_store import query

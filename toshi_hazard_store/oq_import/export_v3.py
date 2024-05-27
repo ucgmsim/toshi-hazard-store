@@ -1,14 +1,22 @@
 import json
+import logging
 import math
+import random
 from dataclasses import dataclass
 
 import pandas as pd
 
 from toshi_hazard_store import model
-from toshi_hazard_store.config import NUM_BATCH_WORKERS
+from toshi_hazard_store.config import NUM_BATCH_WORKERS, USE_SQLITE_ADAPTER
+from toshi_hazard_store.model import openquake_models
 from toshi_hazard_store.multi_batch import save_parallel
 from toshi_hazard_store.transform import parse_logic_tree_branches
 from toshi_hazard_store.utils import normalise_site_code
+
+log = logging.getLogger(__name__)
+
+NUM_BATCH_WORKERS = 1 if USE_SQLITE_ADAPTER else NUM_BATCH_WORKERS
+BATCH_SIZE = 1000 if USE_SQLITE_ADAPTER else random.randint(15, 50)
 
 
 @dataclass
@@ -16,7 +24,7 @@ class OpenquakeMeta:
     source_lt: pd.DataFrame
     gsim_lt: pd.DataFrame
     rlz_lt: pd.DataFrame
-    model: model.ToshiOpenquakeMeta
+    model: openquake_models.ToshiOpenquakeMeta
 
 
 def export_meta_v3(extractor, toshi_hazard_id, toshi_gt_id, locations_id, source_tags, source_ids):
@@ -30,13 +38,16 @@ def export_meta_v3(extractor, toshi_hazard_id, toshi_gt_id, locations_id, source
     df_len += len(rlz_lt.to_json())
 
     if df_len >= 300e3:
-        print('WARNING: Dataframes for this job may be too large to store on DynamoDB.')
+        log.warning('WARNING: Dataframes for this job may be too large to store on DynamoDB.')
 
     vs30 = oq['reference_vs30_value']
+
     if math.isnan(vs30):
         vs30 = 0
 
-    obj = model.ToshiOpenquakeMeta(
+    log.debug(f'vs30: {vs30}')
+
+    obj = openquake_models.ToshiOpenquakeMeta(
         partition_key="ToshiOpenquakeMeta",
         hazard_solution_id=toshi_hazard_id,
         general_task_id=toshi_gt_id,
@@ -65,14 +76,12 @@ def export_rlzs_v3(extractor, oqmeta: OpenquakeMeta, return_rlz=False):
     rlz_keys = [k for k in rlzs.keys() if 'rlz-' in k]
     imtls = oq['hazard_imtls']  # dict of imt and the levels used at each imt e.g {'PGA': [0.011. 0.222]}
 
-    print('rlz', oqmeta.rlz_lt)
-    print()
-    print('src', oqmeta.source_lt)
-    print()
-    print('gsim', oqmeta.gsim_lt)
-    print()
+    log.debug('rlz %s' % oqmeta.rlz_lt)
+    log.debug('src %s' % oqmeta.source_lt)
+    log.debug('gsim %s' % oqmeta.gsim_lt)
 
     def generate_models():
+        count = 0
         for i_site in range(len(sites)):
             loc = normalise_site_code((sites.loc[i_site, 'lon'], sites.loc[i_site, 'lat']), True)
             # print(f'loc: {loc}')
@@ -87,7 +96,7 @@ def export_rlzs_v3(extractor, oqmeta: OpenquakeMeta, return_rlz=False):
                             vals=rlzs[rlz][i_site][i_imt].tolist(),
                         )
                     )
-                oq_realization = model.OpenquakeRealization(
+                oq_realization = openquake_models.OpenquakeRealization(
                     values=values,
                     rlz=i_rlz,
                     vs30=oqmeta.model.vs30,
@@ -97,11 +106,13 @@ def export_rlzs_v3(extractor, oqmeta: OpenquakeMeta, return_rlz=False):
                 )
                 if oqmeta.model.vs30 == 0:
                     oq_realization.site_vs30 = sites.loc[i_site, 'vs30']
-                oq_realization.set_location(loc)
-                yield oq_realization
+                yield oq_realization.set_location(loc)
+                count += 1
 
-    save_parallel("", generate_models(), model.OpenquakeRealization, NUM_BATCH_WORKERS)
+        log.debug(f'generate_models() produced {count} models.')
 
     # used for testing
     if return_rlz:
         return list(generate_models())
+
+    save_parallel("", generate_models(), openquake_models.OpenquakeRealization, NUM_BATCH_WORKERS, BATCH_SIZE)

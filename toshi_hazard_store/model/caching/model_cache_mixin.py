@@ -4,9 +4,9 @@ import logging
 from typing import Any, Dict, Iterable, Optional, Type, TypeVar
 
 import pynamodb.models
-from pynamodb.connection.base import OperationSettings
 from pynamodb.expressions.condition import Condition
 
+from toshi_hazard_store.db_adapter.sqlite import sqlite_store
 from toshi_hazard_store.model.caching import cache_store
 
 log = logging.getLogger(__name__)
@@ -32,7 +32,6 @@ class ModelCacheMixin(pynamodb.models.Model):
         attributes_to_get: Optional[Iterable[str]] = None,
         page_size: Optional[int] = None,
         rate_limit: Optional[float] = None,
-        settings: OperationSettings = OperationSettings.default,
     ) -> pynamodb.models.ResultIterator[_T]:  #
         """
         Proxy query function which trys to use the local_cache before hitting AWS via Pynamodb
@@ -53,14 +52,14 @@ class ModelCacheMixin(pynamodb.models.Model):
                 attributes_to_get,
                 page_size,
                 rate_limit,
-                settings,
+                # settings,
             )
 
         log.info('Try the local_cache first')
 
         if isinstance(filter_condition, Condition):
             conn = cache_store.get_connection(model_class=cls)
-            cached_rows = list(cache_store.get_model(conn, cls, range_key_condition, filter_condition))  # type: ignore
+            cached_rows = list(sqlite_store.get_model(conn, cls, hash_key, range_key_condition, filter_condition))
 
             minimum_expected_hits = cache_store.count_permutations(filter_condition)
             log.info('permutations: %s cached_rows: %s' % (minimum_expected_hits, len(cached_rows)))
@@ -68,7 +67,7 @@ class ModelCacheMixin(pynamodb.models.Model):
             if len(cached_rows) >= minimum_expected_hits:
                 return cached_rows  # type: ignore
             if len(cached_rows) < minimum_expected_hits:
-                log.warn('permutations: %s cached_rows: %s' % (minimum_expected_hits, len(cached_rows)))
+                log.warning('permutations: %s cached_rows: %s' % (minimum_expected_hits, len(cached_rows)))
                 result = []
                 for res in super().query(  # type: ignore
                     hash_key,
@@ -82,9 +81,8 @@ class ModelCacheMixin(pynamodb.models.Model):
                     attributes_to_get,
                     page_size,
                     rate_limit,
-                    settings,
                 ):
-                    cache_store.put_model(conn, res)
+                    sqlite_store.put_model(conn, res)
                     result.append(res)
                 return result  # type: ignore
 
@@ -103,7 +101,7 @@ class ModelCacheMixin(pynamodb.models.Model):
         if cache_store.cache_enabled():
             log.info("setup local cache")
             conn = cache_store.get_connection(model_class=cls)
-            cache_store.ensure_table_exists(conn, model_class=cls)
+            sqlite_store.ensure_table_exists(conn, model_class=cls)
 
         return super().create_table(  # type: ignore
             wait,

@@ -3,18 +3,21 @@
 import logging
 from typing import Iterable, Iterator, Sequence, Union
 
-from nzshm_common.location.code_location import CodedLocation
+from nzshm_common.location.coded_location import CodedLocation
 from pynamodb.attributes import JSONAttribute, ListAttribute, NumberAttribute, UnicodeAttribute, UnicodeSetAttribute
 from pynamodb.indexes import AllProjection, LocalSecondaryIndex
 from pynamodb.models import Model
 from pynamodb_attributes import IntegerAttribute, TimestampAttribute
 
-from toshi_hazard_store.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION
+from toshi_hazard_store.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION, SOURCE_DEPLOYMENT_STAGE, SOURCE_REGION
 from toshi_hazard_store.model.caching import ModelCacheMixin
 
 from .attributes import EnumConstrainedUnicodeAttribute, IMTValuesAttribute, LevelValuePairAttribute
 from .constraints import AggregationEnum, IntensityMeasureTypeEnum
 from .location_indexed_model import VS30_KEYLEN, LocationIndexedModel, datetime_now
+
+# MODELBASE = SqliteAdapter if USE_SQLITE_ADAPTER else Model
+# MODELCACHEBASE = SqliteAdapter if USE_SQLITE_ADAPTER else ModelCacheMixin
 
 log = logging.getLogger(__name__)
 
@@ -22,12 +25,14 @@ log = logging.getLogger(__name__)
 class ToshiOpenquakeMeta(Model):
     """Stores metadata from the job configuration and the oq HDF5."""
 
+    __metaclass__ = type
+
     class Meta:
         """DynamoDB Metadata."""
 
         billing_mode = 'PAY_PER_REQUEST'
-        table_name = f"THS_WIP_OpenquakeMeta-{DEPLOYMENT_STAGE}"
-        region = REGION
+        table_name = f"THS_WIP_OpenquakeMeta-{SOURCE_DEPLOYMENT_STAGE or DEPLOYMENT_STAGE}"
+        region = SOURCE_REGION or REGION
         if IS_OFFLINE:
             host = "http://localhost:8000"  # pragma: no cover
 
@@ -98,7 +103,7 @@ class HazardAggregation(ModelCacheMixin, LocationIndexedModel):
 
     def set_location(self, location: CodedLocation):
         """Set internal fields, indices etc from the location."""
-        super().set_location(location)
+        LocationIndexedModel.set_location(self, location)
 
         # update the indices
         vs30s = str(self.vs30).zfill(VS30_KEYLEN)
@@ -125,8 +130,10 @@ class HazardAggregation(ModelCacheMixin, LocationIndexedModel):
                     'partition_key',
                     'sort_key',
                     'values',
+                    'version',
+                    'site_vs30',
                 ]:
-                    model_attrs.remove(attr)
+                    model_attrs.remove(attr) if attr in model_attrs else None
 
                 levels = [f'poe-{value.lvl}' for value in model.values]
                 yield (model_attrs + levels)
@@ -139,12 +146,14 @@ class HazardAggregation(ModelCacheMixin, LocationIndexedModel):
 class OpenquakeRealization(LocationIndexedModel):
     """Stores the individual hazard realisation curves."""
 
+    # __metaclass__ = type
+
     class Meta:
         """DynamoDB Metadata."""
 
         billing_mode = 'PAY_PER_REQUEST'
-        table_name = f"THS_OpenquakeRealization-{DEPLOYMENT_STAGE}"
-        region = REGION
+        table_name = f"THS_OpenquakeRealization-{SOURCE_DEPLOYMENT_STAGE or DEPLOYMENT_STAGE}"
+        region = SOURCE_REGION or REGION
         if IS_OFFLINE:
             host = "http://localhost:8000"  # pragma: no cover
 
@@ -161,7 +170,8 @@ class OpenquakeRealization(LocationIndexedModel):
 
     def set_location(self, location: CodedLocation):
         """Set internal fields, indices etc from the location."""
-        super().set_location(location)
+        # print(type(self).__bases__)
+        LocationIndexedModel.set_location(self, location)
 
         # update the indices
         rlzs = str(self.rlz).zfill(6)
@@ -173,16 +183,15 @@ class OpenquakeRealization(LocationIndexedModel):
         return self
 
 
-tables = [
-    OpenquakeRealization,
-    ToshiOpenquakeMeta,
-    HazardAggregation,
-]
+def get_tables():
+    """table classes may be rebased, this makes sure we always get the latest class definition."""
+    for cls in [globals()['ToshiOpenquakeMeta'], globals()['OpenquakeRealization'], globals()['HazardAggregation']]:
+        yield cls
 
 
 def migrate():
     """Create the tables, unless they exist already."""
-    for table in tables:
+    for table in get_tables():
         if not table.exists():  # pragma: no cover
             table.create_table(wait=True)
             log.info(f"Migrate created table: {table}")
@@ -190,7 +199,7 @@ def migrate():
 
 def drop_tables():
     """Drop the tables, if they exist."""
-    for table in tables:
+    for table in get_tables():
         if table.exists():  # pragma: no cover
             table.delete_table()
             log.info(f'deleted table: {table}')

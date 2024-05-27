@@ -1,4 +1,5 @@
 """Console script for testing or pre-poulating toshi_hazard_store local cache."""
+
 # noqa
 import logging
 import os
@@ -9,7 +10,7 @@ import time
 import click
 import pandas as pd
 from nzshm_common.grids import RegionGrid, load_grid
-from nzshm_common.location.code_location import CodedLocation
+from nzshm_common.location.coded_location import CodedLocation
 from nzshm_common.location.location import LOCATION_LISTS, LOCATIONS, location_by_id
 
 from toshi_hazard_store import model, query
@@ -76,7 +77,7 @@ def cli():
 @cli.command()
 @click.pass_context
 def cache_info(ctx):
-    """Get statistcics about the local cache"""
+    """Get statistics about the local cache"""
     click.echo("Config settings from ENVIRONMENT")
     click.echo("--------------------------------")
     click.echo(f'LOCAL_CACHE_FOLDER: {LOCAL_CACHE_FOLDER}')
@@ -105,7 +106,7 @@ def cache_info(ctx):
 @click.option(
     '--model_id',
     '-M',
-    default='NSHM_1.0.2',
+    default='NSHM_v1.0.4',
     type=click.Choice(['SLT_v8_gmm_v2_FINAL', 'SLT_v5_gmm_v0_SRWG', 'NSHM_1.0.0', 'NSHM_v1.0.4']),
 )
 @click.pass_context

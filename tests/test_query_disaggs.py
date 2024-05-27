@@ -3,7 +3,7 @@ import unittest
 
 import numpy as np
 from moto import mock_dynamodb
-from nzshm_common.location.code_location import CodedLocation
+from nzshm_common.location.coded_location import CodedLocation
 from nzshm_common.location.location import LOCATIONS_BY_ID
 
 from toshi_hazard_store import model, query
@@ -21,7 +21,7 @@ probability = model.ProbabilityEnum._10_PCT_IN_50YRS
 
 
 def build_disagg_aggregation_models():
-    for (loc, vs30, imt, hazard_agg, disagg_agg) in itertools.product(locs[:5], vs30s, imts, hazard_aggs, disagg_aggs):
+    for loc, vs30, imt, hazard_agg, disagg_agg in itertools.product(locs[:5], vs30s, imts, hazard_aggs, disagg_aggs):
         yield model.DisaggAggregationExceedance.new_model(
             hazard_model_id=HAZARD_MODEL_ID,
             location=loc,

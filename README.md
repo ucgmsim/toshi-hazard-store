@@ -12,11 +12,18 @@
 * PyPI: <https://pypi.org/project/toshi-hazard-store/>
 * Free software: GPL-3.0-only
 
+
+This library provides different hazard storage options used withon NSHM hazard pipelines. Third parties may wish to
+process models based on, or similar in scale to the NZSHM 22.
+
 ## Features
 
-* Main purpose is to upload Openquake hazard results to a DynamodDB tables defined herein.
-* relates the results to the toshi hazard id identifying the OQ hazard job run.
-* extracts metadata from the openquake hdf5 solution
+* Extract realisations from PSHA (openquake) hazard calcs and store these in Parquet dataset.
+* Manage Openquake hazard results in AWS DynamodDB tables defined herein (used by NSHM project).
+* CLI tools for end users
+* **Legacy features:**
+	* Option for caching using sqlite, See NZSHM22_HAZARD_STORE_LOCAL_CACHE environment variable.
+	* Option to use a local sqlite store instead of DynamoDB, see THS_USE_SQLITE_ADAPTER and THS_SQLITE_FOLDER variables.
 
 ## Credits
 

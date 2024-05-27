@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from nzshm_common.location.code_location import CodedLocation
+from nzshm_common.location.coded_location import CodedLocation
 from pynamodb.attributes import UnicodeAttribute, VersionAttribute
 from pynamodb.models import Model
 from pynamodb_attributes import FloatAttribute, TimestampAttribute
@@ -18,6 +18,8 @@ def datetime_now():
 
 class LocationIndexedModel(Model):
     """Model base class."""
+
+    __metaclass__ = type
 
     partition_key = UnicodeAttribute(hash_key=True)  # For this we will use a downsampled location to 1.0 degree
     sort_key = UnicodeAttribute(range_key=True)

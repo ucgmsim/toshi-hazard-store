@@ -1,7 +1,44 @@
 # Changelog
 
-## [0.7.9] - 2024-02-26
+## [0.9.0] - 2024-05-27
 
+### Added
+ - V4 epic tables
+ - parquet support
+ - new scripts:
+     - ths_r4_filter_dataset
+     - ths_r4_import
+     - ths_r4_migrate
+     - ths_r4_query
+     - migration/ths_r4_sanity
+ - extract datasets directly from hdf5
+ - more documtention
+
+### Changed
+  - switch to nzshm-common#pre-release branch
+  - switch to nzshm-model#pre-release branch
+  - move outdated scripts to scripts/legacy
+  - new documentation theme
+
+## [0.8.0] - 2024-02
+### Added
+ - db_adapter architecture
+ - sqlite3 as db_adapter for localstorage option
+ - new envionment varisbale for localstorage
+ - more documentation
+ - use tmp_path for new localstorage tests
+ - db_adapter supports SS field type
+ - dynamodb unique behaviour implement in sqlite
+ - support for .env configuration (using python-dotenv)
+
+### Changed
+  - update openquake dependency for NSHM GSIMs
+  - drop python 3.8 and update deps for openquake
+  - more test coverage
+  - refactor tests to use temporary folders correctly
+  - migrated to pynamodb>=6.0
+
+## [0.7.9] - 2024-02-26
 ### Changed
  - dependencies for compatibility with openquake-engine v3.19
 

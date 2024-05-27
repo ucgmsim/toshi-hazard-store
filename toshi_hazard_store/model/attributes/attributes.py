@@ -1,10 +1,9 @@
 """This module defines some custom attributes."""
 
-
 import json
 import pickle
 import zlib
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Tuple, Union
 
 from nzshm_common.util import compress_string, decompress_string
 from pynamodb.attributes import (
@@ -16,6 +15,23 @@ from pynamodb.attributes import (
     UnicodeAttribute,
 )
 from pynamodb.constants import BINARY, STRING
+
+
+class ForeignKeyAttribute(UnicodeAttribute):
+    """
+    A string representation of a (hash_key, range_key) tuple.
+    """
+
+    def serialize(self, value: Tuple[str, str]) -> str:
+        # print(value)
+        assert len(value) == 2
+        return super().serialize("_".join(value))
+
+    def deserialize(self, value: str) -> Tuple[str, str]:
+        tup = super().deserialize(value).split("_")
+        if not len(tup) == 2:
+            raise ValueError(f"Invalid value cannot be deserialised: {value}")
+        return tuple(tup)
 
 
 class IMTValuesAttribute(MapAttribute):
@@ -79,6 +95,8 @@ class PickleAttribute(BinaryAttribute):
     """
     This class will serialize/deserialize any picklable Python object.
     """
+
+    legacy_encoding = True
 
     def serialize(self, value):
         """

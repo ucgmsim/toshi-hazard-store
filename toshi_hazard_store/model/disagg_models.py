@@ -4,7 +4,7 @@ import logging
 from datetime import datetime, timezone
 
 import numpy as np
-from nzshm_common.location.code_location import CodedLocation
+from nzshm_common.location.coded_location import CodedLocation
 from pynamodb.attributes import UnicodeAttribute
 from pynamodb_attributes import FloatAttribute
 
@@ -32,7 +32,7 @@ class DisaggAggregationBase(LocationIndexedModel):
     disagg_agg = EnumConstrainedUnicodeAttribute(AggregationEnum)
 
     disaggs = CompressedPickleAttribute()  # a very compressible numpy array,
-    bins = PickleAttribute()  # a much smaller numpy array
+    bins = PickleAttribute(legacy_encoding=True)  # a much smaller numpy array
 
     shaking_level = FloatAttribute()
 

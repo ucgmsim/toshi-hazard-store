@@ -3,29 +3,69 @@ site_url: https://GNS-Science.github.io/toshi-hazard-store
 repo_url: https://github.com/GNS-Science/toshi-hazard-store
 repo_name: GNS-Science/toshi-hazard-store
 #strict: true
+watch:
+  - toshi_hazard_store
+  - scripts
 nav:
-  - Home: index.md
-  - Installation: installation.md
-  - Usage: usage.md
-  - Modules: api.md
+  - Home:
+      - README: index.md
+      - Installation: installation.md
+      - Configuration: configuration.md
+  - Usage:
+      - Vanilla (DynamodDB): usage.md
+      - LOCAL (sqlite): sqlite_adapter_usage.md
+      # - Parquet: TODO.md
+  - CLI tools:
+      - store_hazard_v4: cli/store_hazard_v4.md
+      - ths_r4_import: cli/ths_r4_import.md
+      - ths_r4_migrate: cli/ths_r4_migrate.md
+      - ths_r4_defrag: cli/ths_r4_defrag.md
+      - ths_r4_sanity: cli/ths_r4_sanity.md
+      - ths_r4_filter_dataset: cli/ths_r4_filter_dataset.md
+      - ths_r4_query: cli/ths_r4_query.md
+      - Legacy scripts: cli/legacy.md
+  - Migrations:
+      # - Overview: migration_overview.md
+      - Hazard dataset May-2024: migration/hazard_import_processing-may-2024.md
+      - Arrow sanity tests: migration/arrow_sanity_testing.md
+      - Rev4 migration testing: migration/revision_4_migration_testing.md
+      - Rev4 disagg testing: migration/revision_4_disagg_testing.md
+  - Query API:
+      - Hazard: hazard_query_api.md
+      - Gridded Hazard: gridded_hazard_query_api.md
+      - Hazard Disaggregation: hazard_disagg_query_api.md
+  - Database Models:
+      - New Hazard: domain_model/proposed_hazard_models.md
+      - Hazard: domain_model/openquake_models.md
+      - Gridded Hazard: domain_model/gridded_hazard_models.md
+      - Hazard Disaggregation: domain_model/disaggregation_models.md
   - Contributing: contributing.md
   - Changelog: changelog.md
+
 theme:
   name: material
   language: en
   #logo: assets/logo.png
   palette:
-    scheme: preference
-    primary: indigo
-    accent: indigo
+    # Palette toggle for light mode
+    - scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
   features:
     - navigation.indexes
     - navigation.instant
-    - navigation.tabs.sticky
+    - navigation.tabs
+  #   - navigation.tabs.sticky
+
 markdown_extensions:
-  - pymdownx.emoji:
-      emoji_index: !!python/name:materialx.emoji.twemoji
-      emoji_generator: !!python/name:materialx.emoji.to_svg
+  - mkdocs-click
   - pymdownx.critic
   - pymdownx.caret
   - pymdownx.mark
@@ -36,37 +76,44 @@ markdown_extensions:
       generic: true
   - pymdownx.highlight:
       linenums: false
-  - pymdownx.superfences
   - pymdownx.inlinehilite
   - pymdownx.details
   - admonition
   - toc:
-      baselevel: 2
+      baselevel: 1
       permalink: true
-      slugify: !!python/name:pymdownx.slugs.uslugify
   - meta
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
 plugins:
   - include-markdown
   - search:
       lang: en
   - mkdocstrings:
-      watch:
-        - toshi_hazard_store
+      handlers:
+        python:
+          options:
+            show_submodules: true
+
 extra:
   social:
-    - icon: fontawesome/brands/twitter
-      # replace with your own tweet link below
-      link: https://github.com/waynerv/cookiecutter-pypackage
-      name: Tweet
-    - icon: fontawesome/brands/facebook
-      # replace with your own facebook link below
-      link: https://github.com/waynerv/cookiecutter-pypackage
-      name: Facebook
+    # - icon: fontawesome/brands/twitter
+    #   # replace with your own tweet link below
+    #   link: https://github.com/waynerv/cookiecutter-pypackage
+    #   name: Tweet
+    # - icon: fontawesome/brands/facebook
+    #   # replace with your own facebook link below
+    #   link: https://github.com/waynerv/cookiecutter-pypackage
+    #   name: Facebook
     - icon: fontawesome/brands/github
       link: https://github.com/GNS-Science/toshi-hazard-store
       name: Github
     - icon: material/email
-      link: "mailto:chrisbc@artisan.co.nz"
+      link: "mailto:nshm@gns.cri.nz"
   # to enable disqus, uncomment the following and put your disqus id below
   # disqus: disqus_id
 # uncomment the following and put your google tracking id below to enable GA

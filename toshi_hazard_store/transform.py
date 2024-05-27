@@ -1,4 +1,7 @@
-"""Helper functions to export an openquake calculation and save it with toshi-hazard-store."""
+"""Helper functions to export an openquake calculation and save it with toshi-hazard-store.
+
+Courtesy of Anne Hulsey
+"""
 
 import re
 from collections import namedtuple
@@ -49,6 +52,7 @@ def parse_logic_tree_branches(extractor):
         for j, x in zip(df.index, df['uncertainty']):
             tags = re.split('\\[|\\]|\nregion = \"|\"', x)
             if len(tags) > 4:
+                print(f'{tags[1]}_{tags[3]}')
                 df.loc[j, 'model name'] = f'{tags[1]}_{tags[3]}'
             else:
                 df.loc[j, 'model name'] = tags[1]
