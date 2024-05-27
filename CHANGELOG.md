@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.9.0-alpha] - 2024-05-24
+## [0.9.0] - 2024-05-27
 
 ### Added
  - V4 epic tables
