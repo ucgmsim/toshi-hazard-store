@@ -104,7 +104,7 @@ def drop_tables():
 
 
 class IndividualHazardRateRealizations(Model):
-    """A pynamodb model for aggregate hazard curves."""
+    """A pynamodb model for individual hazard rate realizations."""
 
     __metaclass__ = type
 
