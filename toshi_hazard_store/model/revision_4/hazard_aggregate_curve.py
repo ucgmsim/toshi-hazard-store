@@ -136,14 +136,8 @@ class IndividualHazardRateRealizations(Model):
 
     branches_hazard_rates = ListAttribute(of=NumberAttribute)
     branch_weight = FloatAttribute()
-    component_id_0_source_id = UnicodeAttribute()
-    component_id_0_gmm_id = UnicodeAttribute()
-    component_id_1_source_id = UnicodeAttribute()
-    component_id_1_gmm_id = UnicodeAttribute()
-    component_id_2_source_id = UnicodeAttribute()
-    component_id_2_gmm_id = UnicodeAttribute()
-    component_id_3_source_id = UnicodeAttribute()
-    component_id_3_gmm_id = UnicodeAttribute()
+    contributing_branches_hash_ids = UnicodeAttribute()
+
 
     def set_location(self, location: CodedLocation):
         """Set internal fields, indices etc from the location."""
