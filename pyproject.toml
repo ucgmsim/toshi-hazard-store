@@ -55,8 +55,8 @@ python-dotenv = "^1.0.1"
 pynamodb = "^6.0.0"
 pynamodb-attributes = "^0.4.0"
 pyarrow = "^15.0.2"
-nzshm-common = {git = "https://github.com/ucgmsim/nzshm-common-py.git", rev = "pre-release"}
-nzshm-model = {git = "https://github.com/ucgmsim/nzshm-model.git", rev = "pre-release", extras = ["toshi"]}
+nzshm-common = {git = "https://github.com/GNS-Science/nzshm-common-py.git", rev = "pre-release"}
+nzshm-model = {git = "https://github.com/GNS-Science/nzshm-model.git", rev = "pre-release", extras = ["toshi"]}
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.2.0"
