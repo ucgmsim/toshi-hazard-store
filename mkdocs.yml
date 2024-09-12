@@ -1,7 +1,7 @@
 site_name: toshi-hazard-store
-site_url: https://GNS-Science.github.io/toshi-hazard-store
-repo_url: https://github.com/GNS-Science/toshi-hazard-store
-repo_name: GNS-Science/toshi-hazard-store
+site_url: https://github.com/ucgmsim/toshi-hazard-store
+repo_url: https://github.com/ucgmsim/toshi-hazard-store
+repo_name: ucgmsim/toshi-hazard-store
 #strict: true
 watch:
   - toshi_hazard_store
@@ -110,7 +110,7 @@ extra:
     #   link: https://github.com/waynerv/cookiecutter-pypackage
     #   name: Facebook
     - icon: fontawesome/brands/github
-      link: https://github.com/GNS-Science/toshi-hazard-store
+      link: https://github.com/ucmgsim/toshi-hazard-store
       name: Github
     - icon: material/email
       link: "mailto:nshm@gns.cri.nz"
